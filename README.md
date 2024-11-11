@@ -1,4 +1,4 @@
-# Another DEX Flash-loan Arbitrage System
+# Another DEX Flash-loan Arbitrage Bot
 
 ## What?
 
@@ -38,7 +38,7 @@ Key features of this system include:
 ### Prerequisites
 
 Ensure you have the following installed:
-- Python 3.8+
+- Python 3.9+
 - pip
 - Ape
 
@@ -78,7 +78,7 @@ Ensure you have the following installed:
 
 3. Deploy the contracts:
     ```sh
-    ape run scripts/deploy.py --network your_network
+    ape run scripts/deploy.py
     ```
 
 ## Contributing

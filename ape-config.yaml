@@ -1,0 +1,18 @@
+dependencies:
+  - name: openzeppelin
+    github: OpenZeppelin/openzeppelin-contracts
+    version: 5.1.0
+  - name: aave-v3-origin
+    github: aave-dao/aave-v3-origin
+    version: 3.1.0
+
+networks:
+  polygon:
+    mainnet:
+      default_provider: alchemy
+      alchemy:
+        api_key: ${ALCHEMY_API_KEY}
+    testnet:
+      default_provider: alchemy
+      alchemy:
+        api_key: ${ALCHEMY_API_KEY}
