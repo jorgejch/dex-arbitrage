@@ -39,7 +39,7 @@ def main():
     parser = ArgumentParser()
     parser.add_argument("account", help="The account to deploy the contract from", type=str, required=True)
     parser.add_argument("--provider", help="The provider to use for the deployment", type=str, default="alchemy")
-    parser.add_argument("--test", help="Deploy the contract to the testnet", action="store_true")
+    parser.add_argument("--test", help="Deploy the contract to the testnet", action="store_true", default=True)
     
     args = parser.parse_args()
 
