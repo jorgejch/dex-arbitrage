@@ -46,14 +46,14 @@ Ensure you have the following installed:
 
 1. Clone the repository:
     ```sh
-    git clone https://github.com/yourusername/another-dex-flash-loan-arbitrage.git
-    cd another-dex-flash-loan-arbitrage
+    git clone git@github.com:jorgejch/dex-arbitrage.git
+    cd dex-arbitrage
     ```
 
 2. Create a virtual environment and activate it:
     ```sh
     python -m venv venv
-    source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+    source venv/bin/activate
     ```
 
 3. Install dependencies:
