@@ -7,8 +7,7 @@ import "@aave/src/contracts/interfaces/IPool.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
- * @title FlashLoanArbitrage
- * @author Jorge Haddad
+ * @title Flash-Loan Arbitrage Contract
  * @notice This is an arbitrage contract that uses AAVE v3 flash loans to make a profit on 0x DEX.
  */
 contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase {
