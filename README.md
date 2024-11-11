@@ -62,10 +62,7 @@ Ensure you have the following installed:
     ```
 
 4. Set up environment variables:
-    Create a `.env` file in the root directory and add your configuration:
-    ```env
-    ALCHEMY_API_KEY=your_alchemy_api_key
-    ```
+    Create a `.env` file in the root directory and add your configuration based on the `.env.template` file.
 
 ### Usage
 
