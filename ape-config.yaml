@@ -2,9 +2,9 @@ dependencies:
   - name: openzeppelin
     github: OpenZeppelin/openzeppelin-contracts
     version: 5.1.0
-  - name: aave-v3-origin
+  - name: aave
     github: aave-dao/aave-v3-origin
-    version: 3.1.0
+    version: 3.2.0
 
 networks:
   polygon:
@@ -16,3 +16,6 @@ networks:
       default_provider: alchemy
       alchemy:
         api_key: ${ALCHEMY_API_KEY}
+
+plugins:
+  - name: solidity 
