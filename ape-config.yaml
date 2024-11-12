@@ -17,5 +17,10 @@ networks:
       alchemy:
         api_key: ${ALCHEMY_API_KEY}
 
+test:
+  mnemonic: test test test test test test test test test test test junk
+  number_of_accounts: 2
+  balance: 1 ETH
+
 plugins:
   - name: solidity 
