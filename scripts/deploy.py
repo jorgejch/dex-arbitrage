@@ -1,11 +1,15 @@
+import os
+
 from ape import project, accounts, networks
 from argparse import ArgumentParser
+from dotenv import load_dotenv
 
 ############################################
 # Deploy the contract to the Polygon network
 # using the Alchemy provider.
 ############################################
 
+load_dotenv()
 
 def deploy_mainnet(account, provider):
     """"
@@ -15,7 +19,7 @@ def deploy_mainnet(account, provider):
     with networks.polygon.mainnet.use_provider(provider):
         # Deploy the contract
         contract = project.FlashLoanArbitrage.deploy(
-            "0x...AddressProvider",  # Replace with actual address
+            os.getenv("AAVE_POLYGON_MAINNET_POOL_ADDRESS_PROVIDER"),
             sender=account
         )
         print(f"Contract deployed at {contract.address}")
@@ -28,7 +32,7 @@ def deploy_testnet(account, provider):
     with networks.polygon.testnet.use_provider(provider):
         # Deploy the contract
         contract = project.FlashLoanArbitrage.deploy(
-            "0x...AddressProvider",  # Replace with actual address
+            os.getenv("AAVE_POLYGON_TESTNET_POOL_ADDRESS_PROVIDER"),
             sender=account
         )
         print(f"Contract deployed at {contract.address}")
