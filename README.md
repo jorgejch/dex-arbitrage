@@ -38,7 +38,7 @@ Key features of this system include:
 ### Prerequisites
 
 Ensure you have the following installed:
-- Python 3.9+
+- Python 3.9 - 3.12
 - pip
 - Ape
 
