@@ -26,7 +26,7 @@ Key features of this system include:
 
 ## Outline
 
-![Flash Loan Arbitrage Architecture](./diagrams/system_overview.svg)
+[Strategy](STRATEGY.md)
 
 ## Resources
 
