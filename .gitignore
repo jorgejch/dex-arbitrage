@@ -5,3 +5,4 @@ __pycache__/
 *.pyc
 .build/
 .pytest_cache/
+diagrams/*.digraph
