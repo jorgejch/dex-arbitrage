@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.10;
 
-import "@aave/src/contracts/misc/flashloan/base/FlashLoanSimpleReceiverBase.sol";
-import "@aave/src/contracts/interfaces/IPoolAddressesProvider.sol";
-import "@aave/src/contracts/interfaces/IPool.sol";
+import "@aave/core-v3/contracts/flashloan/base/FlashLoanSimpleReceiverBase.sol";
+import "@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol";
+import "@aave/core-v3/contracts/interfaces/IPool.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -13,7 +13,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  */
 contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable {
 
-    constructor(address _addressProvider) FlashLoanSimpleReceiverBase(IPoolAddressesProvider(_addressProvider)) Ownable() {}
+    constructor(address _addressProvider) FlashLoanSimpleReceiverBase(IPoolAddressesProvider(_addressProvider)) Ownable(msg.sender) {}
 
     /**
      * Execute the arbitrage operation.
@@ -71,7 +71,7 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable {
     function withdraw(address _token) external onlyOwner {
         uint256 balance = IERC20(_token).balanceOf(address(this));
         require(balance > 0, "No balance to withdraw");
-        IERC20(_token).transfer(owner, balance);
+        IERC20(_token).transfer(this.owner(), balance);
     }
 
     /**
