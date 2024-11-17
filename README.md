@@ -3,6 +3,7 @@
 ## What?
 
 Another Dex Flash-loan arbitrage system that:
+
 - is low cost, works on Binance Smart Chain (BSC);
 - uses AAVE for flash loans;
 - makes use of established patterns when existent;
@@ -13,17 +14,18 @@ Another Dex Flash-loan arbitrage system that:
 Decentralized exchanges (DEXs) often have price discrepancies due to liquidity variations and large trades. This system aims to exploit these discrepancies through flash loans, which allow borrowing large amounts of cryptocurrency without collateral, provided the loan is repaid within the same transaction.
 
 Key features of this system include:
+
 - **Mispricing**: Take advantage of mispricing between exchanges. When someone executes a large trade into one liquidity pool, it can create an imbalance, distorting the price and causing slippage for that trader.
 - **Smart Contract Relay**: Use a Solidity smart contract as a relay between our controller and the exchanges.
 - **Risk Management**: We can revert the entire transaction and only lose the transaction fee if it is not profitable with one line of code: `require(endBalance > startBalance, "Trade Reverted, No Profit Made");`
 
 ## Tech Stack
 
-* [Node.js](https://nodejs.org) - JavaScript runtime.
-* [TypeScript](https://www.typescriptlang.org) - Typed superset of JavaScript.
-* [Hardhat](https://hardhat.org) - Ethereum development environment.
-* [QuickNode](https://www.quicknode.com) - Ethereum node provider.
-* [Solidity](https://soliditylang.org) - Programming language for writing smart contracts.
+- [Node.js](https://nodejs.org) - JavaScript runtime.
+- [TypeScript](https://www.typescriptlang.org) - Typed superset of JavaScript.
+- [Hardhat](https://hardhat.org) - Ethereum development environment.
+- [QuickNode](https://www.quicknode.com) - Ethereum node provider.
+- [Solidity](https://soliditylang.org) - Programming language for writing smart contracts.
 
 ## Outline
 
@@ -31,13 +33,14 @@ Key features of this system include:
 
 ## Resources
 
-* Uniswap v2 router-based [smart contract](https://github.com/jamesbachini/DEX-Arbitrage/blob/main/contracts/Arb.sol).
+- Uniswap v2 router-based [smart contract](https://github.com/jamesbachini/DEX-Arbitrage/blob/main/contracts/Arb.sol).
 
 ## Getting Started
 
 ### Prerequisites
 
 Ensure you have the following installed:
+
 - Node.js
 - npm
 - TypeScript
@@ -45,12 +48,14 @@ Ensure you have the following installed:
 ### Installation
 
 1. Clone the repository:
+
     ```sh
     git clone https://github.com/jorgejch/dex-arbitrage.git
     cd dex-arbitrage
     ```
 
 2. Install dependencies:
+
     ```sh
     npm install
     ```
@@ -58,14 +63,15 @@ Ensure you have the following installed:
 ### Usage
 
 1. Compile the TypeScript files:
+
     ```sh
-    npx tsc
+    npm run build
     ```
 
 2. Run the deployment script:
+
     ```sh
-    npx ts-node src/scripts/deploy.ts
-    ```
+    npm run start
 
 ## Disclaimer
 
