@@ -81,6 +81,10 @@ Ensure you have the following installed:
     ape run scripts/deploy.py
     ```
 
+## Disclaimer
+
+This repo is not either an investment advice or a recommendation or solicitation to buy or sell any investment and should not be used in the evaluation of the merits of making any investment decision. It should not be relied upon for accounting, legal or tax advice or investment recommendations. The contents reflected herein are subject to change without being updated.
+
 ## Contributing
 
 Contributions are welcome! Please open an issue or submit a pull request.
