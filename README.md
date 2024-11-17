@@ -3,7 +3,7 @@
 ## What?
 
 Another Dex Flash-loan arbitrage system that:
-- is low cost, works on Polygon;
+- is low cost, works on Binance Smart Chain (BSC);
 - uses AAVE for flash loans;
 - makes use of established patterns when existent;
 - prefers open-source tools but does not shy away from freemium services.
@@ -13,7 +13,7 @@ Another Dex Flash-loan arbitrage system that:
 Decentralized exchanges (DEXs) often have price discrepancies due to liquidity variations and large trades. This system aims to exploit these discrepancies through flash loans, which allow borrowing large amounts of cryptocurrency without collateral, provided the loan is repaid within the same transaction.
 
 Key features of this system include:
-- **Mispricing Exploitation**: Take advantage of mispricing between exchanges. When someone executes a large trade into one liquidity pool, it can create an imbalance, distorting the price and causing slippage for that trader.
+- **Mispricing**: Take advantage of mispricing between exchanges. When someone executes a large trade into one liquidity pool, it can create an imbalance, distorting the price and causing slippage for that trader.
 - **Smart Contract Relay**: Use a Solidity smart contract as a relay between our controller and the exchanges.
 - **Risk Management**: We can revert the entire transaction and only lose the transaction fee if it is not profitable with one line of code: `require(endBalance > startBalance, "Trade Reverted, No Profit Made");`
 
