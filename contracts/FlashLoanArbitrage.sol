@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.10;
+pragma solidity ^0.8.21;
 
 import "@aave/core-v3/contracts/flashloan/base/FlashLoanSimpleReceiverBase.sol";
 import "@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol";
@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * @title Flash-Loan Arbitrage Contract
- * @notice This is an arbitrage contract that uses AAVE v3 flash loans to make a profit on Uniswap v4 compatible DEX.
+ * @notice This is an arbitrage contract that uses AAVE v3 flash loans to make a profit on Uniswap v3 compatible DEX.
  */
 contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable {
 
@@ -26,12 +26,12 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable {
      * @param params    The parameters
      */
     function executeOperation(
-        address asset,
-        uint256 amount,
-        uint256 premium,
-        address initiator,
-        bytes calldata params
-    ) external override returns (bool) {
+            address asset,
+            uint256 amount,
+            uint256 premium,
+            address initiator,
+            bytes calldata params
+        ) external override returns (bool) {
         // Arbitrage logic goes here
 
         // Repay AAVE flash loan
@@ -71,7 +71,7 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable {
     function withdraw(address _token) external onlyOwner {
         uint256 balance = IERC20(_token).balanceOf(address(this));
         require(balance > 0, "No balance to withdraw");
-        IERC20(_token).transfer(this.owner(), balance);
+        IERC20(_token).transfer(owner(), balance);
     }
 
     /**
