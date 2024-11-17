@@ -5,3 +5,4 @@ venv/
 diagrams/*.digraph
 node_modules/
 .pytest_cache/
+dist/
