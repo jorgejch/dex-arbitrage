@@ -5,27 +5,15 @@ import "@aave/src/contracts/misc/flashloan/base/FlashLoanSimpleReceiverBase.sol"
 import "@aave/src/contracts/interfaces/IPoolAddressesProvider.sol";
 import "@aave/src/contracts/interfaces/IPool.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * @title Flash-Loan Arbitrage Contract
- * @notice This is an arbitrage contract that uses AAVE v3 flash loans to make a profit on 0x DEX.
+ * @notice This is an arbitrage contract that uses AAVE v3 flash loans to make a profit on Uniswap v3 compatible DEX.
  */
-contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase {
-    address payable owner;
+contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable {
 
-    constructor(
-        address _addressProvider
-    ) FlashLoanSimpleReceiverBase(IPoolAddressesProvider(_addressProvider)) {
-        owner = payable(msg.sender);
-    }
-
-    /**
-     * Modifier to check if the caller is the owner.
-     */
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Caller is not the owner");
-        _;
-    }
+    constructor(address _addressProvider) FlashLoanSimpleReceiverBase(IPoolAddressesProvider(_addressProvider)) Ownable() {}
 
     /**
      * Execute the arbitrage operation.
