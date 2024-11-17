@@ -9,7 +9,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "author": "Jorge Haddad",
   "license": "MIT",
   "dependencies": {
     "@openzeppelin/contracts": "5.1.0",
