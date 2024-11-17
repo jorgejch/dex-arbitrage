@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * @title Flash-Loan Arbitrage Contract
- * @notice This is an arbitrage contract that uses AAVE v3 flash loans to make a profit on Uniswap v3 compatible DEX.
+ * @notice This is an arbitrage contract that uses AAVE v3 flash loans to make a profit on Uniswap v4 compatible DEX.
  */
 contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable {
 

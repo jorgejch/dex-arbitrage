@@ -1,8 +1,7 @@
 .DS_Store
 venv/
 .env
-__pycache__/
-*.pyc
 .build/
-.pytest_cache/
 diagrams/*.digraph
+node_modules/
+.pytest_cache/

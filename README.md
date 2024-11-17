@@ -19,9 +19,10 @@ Key features of this system include:
 
 ## Tech Stack
 
-* [Ape](https://apeworx.io) - Development environment for Ethereum software.
-* [Alchemy](https://www.alchemy.com/) - Blockchain infrastructure platform.
-* [Python](https://www.python.org) - Programming language for scripting and automation.
+* [Node.js](https://nodejs.org) - JavaScript runtime.
+* [TypeScript](https://www.typescriptlang.org) - Typed superset of JavaScript.
+* [Hardhat](https://hardhat.org) - Ethereum development environment.
+* [QuickNode](https://www.quicknode.com) - Ethereum node provider.
 * [Solidity](https://soliditylang.org) - Programming language for writing smart contracts.
 
 ## Outline
@@ -31,54 +32,39 @@ Key features of this system include:
 ## Resources
 
 * Uniswap v2 router-based [smart contract](https://github.com/jamesbachini/DEX-Arbitrage/blob/main/contracts/Arb.sol).
-* Based on the [Introduction To DEX Arbitrage](https://jamesbachini.com/dex-arbitrage/) tutorial by James Bachini.
 
 ## Getting Started
 
 ### Prerequisites
 
 Ensure you have the following installed:
-- Python 3.9 - 3.12
-- pip
-- Ape
+- Node.js
+- npm
+- TypeScript
 
 ### Installation
 
 1. Clone the repository:
     ```sh
-    git clone git@github.com:jorgejch/dex-arbitrage.git
+    git clone https://github.com/jorgejch/dex-arbitrage.git
     cd dex-arbitrage
     ```
 
-2. Create a virtual environment and activate it:
+2. Install dependencies:
     ```sh
-    python -m venv venv
-    source venv/bin/activate
+    npm install
     ```
-
-3. Install dependencies:
-    ```sh
-    pip install -r requirements.txt
-    ```
-
-4. Set up environment variables:
-    Create a `.env` file in the root directory and add your configuration based on the `.env.template` file.
 
 ### Usage
 
-1. Compile the smart contracts:
+1. Compile the TypeScript files:
     ```sh
-    ape compile
+    npx tsc
     ```
 
-2. Run the tests:
+2. Run the deployment script:
     ```sh
-    ape test
-    ```
-
-3. Deploy the contracts:
-    ```sh
-    ape run scripts/deploy.py
+    npx ts-node src/scripts/deploy.ts
     ```
 
 ## Disclaimer

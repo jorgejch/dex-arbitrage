@@ -4,22 +4,22 @@
 
 ## Overview
 
-The Python Controller continuously scans for arbitrage opportunities using data sources such as the DEX API to fetch token prices and other relevant information. When a profitable trade is identified, it triggers the smart contract defined in FlashLoanArbitrage.sol to execute the trade. The smart contract interacts with the Flash Loan Provider to borrow funds and the DEX to swap Token A for Token B and then back to Token A. Finally, the smart contract repays the flash loan and retains the profit.
+The strategy is defined as triangular arbitrage. The Controller continuously scans for arbitrage opportunities using data sources such as the PancakeSwap API to fetch token prices and other relevant information. When a profitable trade is identified, it triggers the smart contract defined in FlashLoanArbitrage.sol to execute the trade. The smart contract interacts with the AAVE Flash Loan Provider to borrow funds and the PancakeSwap DEX to swap Token A for Token B and then Token B for Token C, and finally back to Token A. The smart contract ensures that the flash loan is repaid within the same transaction and retains the profit after covering the loan and transaction fees.
 
 ![System Overview Diagram](diagrams/system_overview.digraph.svg)
 
 ## Components
 
-### Python Controller
+### Controller
 
-* The Python Controller is responsible for scanning the DEX API for arbitrage opportunities.
+* The Controller is responsible for scanning the DEX API for arbitrage opportunities.
 * It interacts with the Binance Smart Chain (BSC) using Alchemy.
 * It triggers the smart contract to execute the trade when a profitable opportunity is identified.
-* The Python Controller is deployed on a server to run continuously.
+* The Controller is deployed on a server to run continuously.
 
 #### Identify Arbitrage Opportunities
 
-The Python Controller continuously scans for profitable arbitrage opportunities by analyzing token prices across trading pairs on PancakeSwap. The process involves the following steps:
+The Controller continuously scans for profitable arbitrage opportunities by analyzing token prices across trading pairs on PancakeSwap. The process involves the following steps:
 
 1. **Fetch Real-Time Data**:
    - Use PancakeSwap's API to retrieve the latest prices for relevant token pairs (e.g., Token A/B and Token B/C).
@@ -37,11 +37,11 @@ The Python Controller continuously scans for profitable arbitrage opportunities 
    - Use this data for performance analysis and system optimization.
 
 5. **Trigger Execution**:
-   - If a profitable opportunity is identified, the Python Controller calls the smart contract to execute the trade atomically.
+   - If a profitable opportunity is identified, the Controller calls the smart contract to execute the trade atomically.
 
 ### FlashLoanArbitrage.sol
 
-* The FlashLoanArbitrage.sol smart contract is the relay between the Python Controller and the DEX.
+* The FlashLoanArbitrage.sol smart contract is the relay between the Controller and the DEX.
 * It uses PancakeSwap v4 as the DEX, and the AAVE flash loan provider to borrow funds.
 * The smart contract is deployed on the Binance Smart Chain (BSC).
 * Profit is retained by the smart contract after repaying the flash loan.
