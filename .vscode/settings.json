@@ -1,0 +1,6 @@
+{
+  "editor.formatOnSave": true,
+  "prettier.documentSelectors": [
+    "*.ts"
+  ]
+}
