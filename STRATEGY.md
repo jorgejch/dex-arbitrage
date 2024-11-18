@@ -22,22 +22,22 @@ The strategy is defined as triangular arbitrage. The Controller continuously sca
 The Controller continuously scans for profitable arbitrage opportunities by analyzing token prices across trading pairs on PancakeSwap. The process involves the following steps:
 
 1. **Fetch Real-Time Data**:
-   - Use PancakeSwap's API to retrieve the latest prices for relevant token pairs (e.g., Token A/B and Token B/C).
+   * Use PancakeSwap's API to retrieve the latest prices for relevant token pairs (e.g., Token A/B and Token B/C).
 
 2. **Analyze Price Discrepancies**:
-   - Compare the prices of token pairs to identify potential arbitrage opportunities.
-   - Calculate the expected profit for each identified opportunity.
+   * Compare the prices of token pairs to identify potential arbitrage opportunities.
+   * Calculate the expected profit for each identified opportunity.
 
 3. **Evaluate Profitability**:
-   - Consider transaction fees, slippage, and other factors to determine the net profit.
-   - Filter out opportunities that do not meet the profitability threshold.
+   * Consider transaction fees, slippage, and other factors to determine the net profit.
+   * Filter out opportunities that do not meet the profitability threshold.
 
 4. **Log Opportunities**:
-   - Record all identified arbitrage opportunities with details such as token pairs, expected profit, and execution parameters.
-   - Use this data for performance analysis and system optimization.
+   * Record all identified arbitrage opportunities with details such as token pairs, expected profit, and execution parameters.
+   * Use this data for performance analysis and system optimization.
 
 5. **Trigger Execution**:
-   - If a profitable opportunity is identified, the Controller calls the smart contract to execute the trade atomically.
+   * If a profitable opportunity is identified, the Controller calls the smart contract to execute the trade atomically.
 
 ### FlashLoanArbitrage.sol
 
