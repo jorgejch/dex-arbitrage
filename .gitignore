@@ -6,3 +6,4 @@ diagrams/*.digraph
 node_modules/
 .pytest_cache/
 dist/
+.address
