@@ -31,15 +31,22 @@ const config: HardhatUserConfig = {
     },
     hardhat: {},
     bsc: {
-      url: `https://misty-dry-pallet.bsc.quiknode.pro/${vars.get("QUICKNODE_API_KEY")}/`,
+      url: vars.get("QUICKNODE_BSC_HTTP_PROVIDER"),
       chainId: 56,
       gasPrice: 1000000000,
       accounts: [
         vars.get("BSC_PRIVATE_KEY"),
       ],
     },
+    sepolia: {
+      url: vars.get("QUICKNODE_SEPOLIA_HTTP_PROVIDER"),
+      chainId: 11155111,
+      accounts: [
+        vars.get("SEPOLIA_PRIVATE_KEY"),
+      ],
+    },
     bsctestnet: {
-      url: `https://bold-empty-field.bsc-testnet.quiknode.pro/${vars.get("QUICKNODE_TESTNET_API_KEY")}/`,
+      url: vars.get("QUICKNODE_BSCTESTNET_HTTP_PROVIDER"),
       chainId: 97,
       accounts: [
         vars.get("BSCTESTNET_PRIVATE_KEY"),

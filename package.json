@@ -16,7 +16,7 @@
     "runNode": "npx hardhat node",
     "deployLocal": "npx hardhat ignition deploy ignition/modules/aflab_testnet.ts --network localhost",
     "deployMainnet": "npx hardhat ignition deploy ignition/modules/aflab_mainnet.ts --network bsc",
-    "deployTestnet": "npx hardhat ignition deploy ignition/modules/aflab_testnet.ts --network bsctestnet",
+    "deployTestnet": "npx hardhat ignition deploy ignition/modules/aflab_testnet.ts --network sepolia",
     "printTestnetLogs": "ts-node scripts/printLogs.ts true",
     "printLogs": "ts-node scripts/printLogs.ts false"
   },
