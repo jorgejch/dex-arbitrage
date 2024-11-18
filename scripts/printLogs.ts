@@ -6,11 +6,11 @@ dotenv.config();
 // Get the logs of the Binance Smart Chain network of choice
 // (mainnet or testnet) for the wallet address of choice.
 function printLogs(
-  chainNum: 97 | 56,
-  networkName: "bsc" | "bsctestnet",
+  chainNum: 11155111 | 56,
+  networkName: "sepolia" | "bsc",
   httpProvider: string,
   isTestnet: boolean,
-  currency: "BNB" | "tBNB"
+  currency: "SepoliaETH" | "BNB"
 ) {
   const core = new Core({
     endpointUrl: httpProvider,
@@ -51,11 +51,11 @@ function printLogs(
 // Get the first parameter passed to the script.
 const isTestnet = process.argv[2] === "true";
 
-const chainNum = isTestnet ? 97 : 56;
-const networkName = isTestnet ? "bsctestnet" : "bsc";
-const currency = isTestnet ? "tBNB" : "BNB";
+const chainNum = isTestnet ? 11155111 : 56;
+const networkName = isTestnet ? "sepolia" : "bsc";
+const currency = isTestnet ? "SepoliaETH" : "BNB";
 const httpProvider = isTestnet
-  ? process.env.QUICKNODE_TESTNET_HTTP_PROVIDER || ""
+  ? process.env.QUICKNODE_SEPOLIA_HTTP_PROVIDER || ""
   : process.env.QUICKNODE_HTTP_PROVIDER || "";
 
 // WALLET_ADDRESS must be set in the .env file.
