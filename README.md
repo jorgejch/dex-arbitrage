@@ -6,6 +6,7 @@ Another Dex Flash-loan arbitrage system that:
 
 - is low cost, works on Binance Smart Chain (BSC);
 - uses AAVE for flash loans;
+- it uses PancakeSwap v3 for the DEX;
 - makes use of established patterns when existent;
 - prefers open-source tools but does not shy away from freemium services.
 
@@ -26,6 +27,7 @@ Key features of this system include:
 - [Hardhat](https://hardhat.org) - Ethereum development environment.
 - [QuickNode](https://www.quicknode.com) - Ethereum node provider.
 - [Solidity](https://soliditylang.org) - Programming language for writing smart contracts.
+- [PancakeSwap v3](https://pancakeswap.finance) - Decentralized exchange on Binance Smart Chain.
 
 ## Outline
 
@@ -60,6 +62,19 @@ Ensure you have the following installed:
     npm install
     ```
 
+3. Set up environment variables:
+    Create a `.env` file in the root directory and add your configuration:
+
+    ```env
+    QUICKNODE_TESTNET_API_KEY=your_quicknode_testnet_api_key
+    QUICKNODE_TESTNET_HTTP_PROVIDER=https://your-testnet-quicknode-url
+    QUICKNODE_API_KEY=your_quicknode_api_key
+    QUICKNODE_HTTP_PROVIDER=https://your-mainnet-quicknode-url
+    QUICKNODE_SEPOLIA_API_KEY=your_quicknode_sepolia_api_key
+    QUICKNODE_SEPOLIA_HTTP_PROVIDER=https://your-sepolia-quicknode-url
+    WALLET_ADDRESS=your_wallet_address
+    ```
+
 ### Usage
 
 1. Compile the TypeScript files:
@@ -72,6 +87,7 @@ Ensure you have the following installed:
 
     ```sh
     npm run start
+    ```
 
 ## Disclaimer
 
