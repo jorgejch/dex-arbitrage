@@ -13,12 +13,13 @@ import "@pancakeswap/v3-periphery/contracts/libraries/TransferHelper.sol";
  * @notice This is an arbitrage contract that uses AAVE v3 flash loans to make a profit on PancakeSwap v3.
  */
 contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
-    address immutable addressThis; 
-    ISwapRouter immutable router;
+    uint256 balanceReceived = 0;
+    address immutable addressThis = address(this);
+    ISwapRouter internal immutable router;
 
     /**
      * Event emitted when a swap is executed
-     *  
+     *
      * @param swapInfo An individual swap's information
      * @param amountIn Amount of the input token
      * @param amountOut Amount of the output token
@@ -31,11 +32,14 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
 
     /**
      * Event emitted when the arbitrage is started.
-     * 
+     *
      * @param data The arbitrage information
      * @param amountToBorrow The amount to borrow
      */
-    event ArbitrageStart(ArbitInfo indexed data, uint256 indexed amountToBorrow);
+    event ArbitrageStart(
+        ArbitInfo indexed data,
+        uint256 indexed amountToBorrow
+    );
 
     /**
      * Individual swap information.
@@ -73,7 +77,6 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
         Ownable(msg.sender)
     {
         router = ISwapRouter(swapRouter);
-        addressThis = address(this);
     }
 
     /**
@@ -104,11 +107,7 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
 
         amountOut = router.exactInputSingle(params);
 
-        emit Swap(
-            swapInfo,
-            amountIn,
-            amountOut
-        );
+        emit Swap(swapInfo, amountIn, amountOut);
 
         return amountOut;
     }
@@ -218,5 +217,7 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
     /**
      * Receive tokens.
      */
-    receive() external payable {}
+    receive() external payable {
+        balanceReceived += msg.value;
+    }
 }
