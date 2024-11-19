@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity 0.8.20;
 
 import "@aave/core-v3/contracts/flashloan/base/FlashLoanSimpleReceiverBase.sol";
 import "@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol";
@@ -36,7 +36,29 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable {
         SwapInfo swap1;
         SwapInfo swap2;
         SwapInfo swap3;
+        uint256 estimatedGasCost;
     }
+
+    /**
+     * Event emitted when a swap is executed
+     *  
+     * @param swapInfo The swap information
+     * @param amountIn Amount of the input token
+     * @param amountOut Amount of the output token
+     */
+    event Swap(
+        SwapInfo swapInfo,
+        uint256 amountIn,
+        uint256 amountOut
+    );
+
+    /**
+     * Event emitted when the arbitrage is started.
+     * 
+     * @param data The arbitrage information
+     * @param amount The amount to borrow
+     */
+    event ArbitrageStart(ArbitInfo data, uint256 amount);
 
     /**
      * Constructor.
@@ -48,6 +70,7 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable {
         address addressProvider,
         address swapRouter
     )
+        payable
         FlashLoanSimpleReceiverBase(IPoolAddressesProvider(addressProvider))
         Ownable(msg.sender)
     {
@@ -74,22 +97,25 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable {
                 tokenOut: swapInfo.tokenOut,
                 fee: swapInfo.poolFee,
                 recipient: address(this),
-                deadline: block.timestamp + 180, // 3 minutes
+                deadline: block.timestamp,
                 amountIn: amountIn,
                 amountOutMinimum: swapInfo.amountOutMinimum,
                 sqrtPriceLimitX96: 0 // No price limit
             });
 
-        // Execute the swap
         uint256 amountOut = router.exactInputSingle(params);
 
-        // Check the output amount to ensure we get the minimum amount and revert if not
         require(
             amountOut >= swapInfo.amountOutMinimum,
             "Insufficient output amount"
         );
 
-        // Return the output amount
+        emit Swap(
+            swapInfo,
+            amountIn,
+            amountOut
+        );
+
         return amountOut;
     }
 
@@ -111,7 +137,7 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable {
         address initiator,
         bytes calldata params
     ) external override returns (bool) {
-        require(msg.sender == address(POOL), "Malicius Callback");
+        require(msg.sender == address(POOL), "Malicious Callback");
         require(
             amount <= IERC20(asset).balanceOf(address(this)),
             "Invalid Balance"
@@ -132,11 +158,12 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable {
         SwapInfo memory swap3 = decoded.swap3;
         uint256 swap3AmountOut = _swapTokens(swap3, swap2AmountOut);
 
+        // Amount owed to the lending pool
         uint256 amountOwed = amount + premium;
 
-        // Check if the arbitrage opportunity is profitable and revert if not.
+        // Check if the arbitrage is profitable after accounting for gas costs
         require(
-            swap3AmountOut > amountOwed,
+            swap3AmountOut > amountOwed + decoded.estimatedGasCost,
             "Arbitrage Opportunity Not Profitable"
         );
 
@@ -158,6 +185,8 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable {
     ) external onlyOwner {
         address receiverAddress = address(this);
         uint16 referralCode = 0;
+
+        emit ArbitrageStart(data, amount);
 
         POOL.flashLoanSimple(
             receiverAddress,
@@ -184,7 +213,9 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable {
      *
      * @param token The token address
      */
-    function getBalance(address token) external view onlyOwner returns (uint256) {
+    function getBalance(
+        address token
+    ) external view onlyOwner returns (uint256) {
         return IERC20(token).balanceOf(address(this));
     }
 
