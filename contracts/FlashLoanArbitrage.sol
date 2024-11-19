@@ -108,8 +108,6 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
         amountOut = router.exactInputSingle(params);
 
         emit Swap(swapInfo, amountIn, amountOut);
-
-        return amountOut;
     }
 
     /**
@@ -128,7 +126,7 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
         uint256 premium,
         address /* initiator */,
         bytes calldata params
-    ) external override returns (bool) {
+    ) external override returns (bool isSucess) {
         require(msg.sender == address(POOL), "malicious callback");
         require(
             amount <= IERC20(asset).balanceOf(addressThis),
@@ -159,7 +157,7 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
         // Authorize flash loan repayment
         TransferHelper.safeApprove(asset, address(POOL), amountOwed);
 
-        return true;
+        isSucess = true;
     }
 
     /**
@@ -218,6 +216,6 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
      * Receive tokens.
      */
     receive() external payable {
-        balanceReceived += msg.value;
+        balanceReceived = balanceReceived + msg.value;
     }
 }
