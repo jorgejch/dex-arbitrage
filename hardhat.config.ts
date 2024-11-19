@@ -33,7 +33,6 @@ const config: HardhatUserConfig = {
     bsc: {
       url: vars.get("QUICKNODE_BSC_HTTP_PROVIDER"),
       chainId: 56,
-      gasPrice: 1000000000,
       accounts: [
         vars.get("BSC_PRIVATE_KEY"),
       ],
