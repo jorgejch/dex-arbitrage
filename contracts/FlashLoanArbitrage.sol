@@ -55,7 +55,7 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
         SwapInfo swap1;
         SwapInfo swap2;
         SwapInfo swap3;
-        uint256 estimatedGasCost;
+        uint256 estimatedGasCost; // converted to the input token
     }
 
     /**
@@ -172,18 +172,15 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
     function initiateFlashLoan(
         ArbitInfo memory data,
         uint256 amount
-    ) external onlyOwner {
-        address receiverAddress = addressThis;
-        uint16 referralCode = 0;
-
+    ) external payable onlyOwner {
         emit ArbitrageStart(data, amount);
 
         POOL.flashLoanSimple(
-            receiverAddress,
+            addressThis,
             data.swap1.tokenIn,
             amount,
             abi.encode(data),
-            referralCode
+            0
         );
     }
 
@@ -192,7 +189,7 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
      *
      * @param token The token address
      */
-    function withdraw(address token) external onlyOwner {
+    function withdraw(address token) external payable onlyOwner {
         uint256 balance = IERC20(token).balanceOf(addressThis);
         require(balance != 0, "no balance");
         IERC20(token).transfer(owner(), balance);
@@ -201,7 +198,7 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
     /**
      * Withdraw the BNB balance.
      */
-    function withdrawBNB() external onlyOwner {
+    function withdrawBNB() external payable onlyOwner {
         uint256 balance = addressThis.balance;
         require(balance != 0, "no balance");
         payable(owner()).transfer(balance);
@@ -214,7 +211,7 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
      */
     function getBalance(
         address token
-    ) external view onlyOwner returns (uint256) {
+    ) external payable onlyOwner returns (uint256) {
         return IERC20(token).balanceOf(addressThis);
     }
 
