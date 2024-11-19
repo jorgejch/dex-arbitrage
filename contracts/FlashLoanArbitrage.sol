@@ -5,7 +5,7 @@ import "@aave/core-v3/contracts/flashloan/base/FlashLoanSimpleReceiverBase.sol";
 import "@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol";
 import "@aave/core-v3/contracts/interfaces/IPool.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable2Step.sol";
 import "@pancakeswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "@pancakeswap/v3-periphery/contracts/libraries/TransferHelper.sol";
 
@@ -15,7 +15,7 @@ import "hardhat/console.sol";
  * @title Flash-Loan Arbitrage Contract
  * @notice This is an arbitrage contract that uses AAVE v3 flash loans to make a profit on PancakeSwap v3.
  */
-contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable {
+contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
     ISwapRouter immutable router;
 
     /**
