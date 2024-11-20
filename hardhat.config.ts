@@ -1,5 +1,6 @@
 import { HardhatUserConfig, vars } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
+import "@nomicfoundation/hardhat-verify";
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -51,6 +52,12 @@ const config: HardhatUserConfig = {
         vars.get("BSCTESTNET_PRIVATE_KEY"),
       ],
     },
+  },
+  sourcify:{
+    enabled: true
+  },
+  etherscan:{
+    apiKey: vars.get("ETHERSCAN_API_KEY")
   },
   paths: {
     sources: "./contracts",
