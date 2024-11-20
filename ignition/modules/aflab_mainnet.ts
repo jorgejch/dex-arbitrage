@@ -9,7 +9,7 @@ export default buildModule("aflab", (m) => {
    * 2. The address of the PancakeSwap v3 SwapRouter on BSC mainnet.
    */
   const flashLoanArbitrage = m.contract("FlashLoanArbitrage", [
-    "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e",
+    "0xff75B6da14FfbbfD355Daf7a2731456b3562Ba6D",
     "0x1b81D678ffb9C0263b24A97847620C99d213eB14",
   ]);
 
