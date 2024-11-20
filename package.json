@@ -1,8 +1,8 @@
 {
   "name": "dex-arbitrage",
   "version": "0.0.1",
-  "description": "A DEX flash-loan arbitrage system",
-  "main": "dist/index.js",
+  "description": "Another flash-loan arbitrage bot",
+  "main": "index.ts",
   "directories": {
     "test": "tests",
     "src": "src",
@@ -18,20 +18,20 @@
     "deployLocal": "npx hardhat ignition deploy ignition/modules/aflab_testnet.ts --network localhost",
     "deployMainnet": "npx hardhat ignition deploy ignition/modules/aflab_mainnet.ts --network bsc",
     "deployTestnet": "npx hardhat ignition deploy ignition/modules/aflab_testnet.ts --network sepolia",
-    "printTestnetLogs": "ts-node scripts/printLogs.ts true",
-    "printLogs": "ts-node scripts/printLogs.ts false"
+    "getContractBalance": "ts-node scripts/getContractBalance.ts 0xff00008c249140fA7E02480349C4660Fbb41681e",
+    "sendBNBToContract": "ts-node scripts/sendBNBToContract.ts 0xff00008c249140fA7E02480349C4660Fbb41681e 0.01"
   },
   "author": "Jorge Haddad",
   "license": "MIT",
-  "dependencies": {
-  },
   "devDependencies": {
     "@aave/core-v3": "1.19.3",
-    "@openzeppelin/contracts": "5.1.0",
-    "@pancakeswap/v3-periphery": "^1.0.2",
     "@nomicfoundation/hardhat-ignition-ethers": "^0.15.7",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.12",
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@nomicfoundation/hardhat-verify": "^2.0.12",
+    "@openzeppelin/contracts": "5.1.0",
+    "@pancakeswap/v3-core": "^1.0.2",
+    "@pancakeswap/v3-periphery": "^1.0.2",
     "@quicknode/sdk": "^2.3.0",
     "@types/node": "^20.2.5",
     "dotenv": "^16.4.5",
