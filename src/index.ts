@@ -9,17 +9,30 @@ const QUICKNODE_HTTP_URL = process.env.QUICKNODE_HTTP_URL ?? "";
 const WALLET_PRIVATE_KEY = process.env.WALLET_PRIVATE_KEY ?? "";
 const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS ?? "";
 
+/**
+ * Controller class that scans for arbitrage opportunities and triggers smart contract execution.
+ */
 class Controller {
   private readonly provider: ethers.JsonRpcProvider;
   private readonly wallet: ethers.Wallet;
   private readonly ws: WebSocket;
+  private readonly contractAddress: string;
 
-  constructor(providerUrl: string, privateKey: string, wsUrl: string) {
+  constructor(
+    providerUrl: string,
+    privateKey: string,
+    wsUrl: string,
+    contractAddress: string
+  ) {
     this.provider = new ethers.JsonRpcProvider(providerUrl);
     this.wallet = new ethers.Wallet(privateKey, this.provider);
     this.ws = new WebSocket(wsUrl);
+    this.contractAddress = contractAddress;
   }
 
+  /**
+   * Kicks off the controller by adding event listeners to the WebSocket connection.
+   */
   public async start() {
     this.ws.on("message", this.handleTradeData.bind(this));
 
@@ -42,6 +55,7 @@ class Controller {
   }
 
   private async scanForArbitrageOpportunities(tradeData: any) {
+    console.log(`Received trade data: ${JSON.stringify(tradeData)}`);
     const { tokenA, tokenB } = this.pickTokens(tradeData);
     const tokenC = await this.pickTokenC(tokenB);
 
@@ -92,15 +106,28 @@ class Controller {
   }
 }
 async function main() {
+  // Test env vars are set
+  if (!QUICKNODE_HTTP_URL) {
+    throw new Error("QUICKNODE_HTTP_URL is not set");
+  }
+  if (!WALLET_PRIVATE_KEY) {
+    throw new Error("WALLET_PRIVATE_KEY is not set");
+  }
+  if (!QUICKNODE_WSS_URL) {
+    throw new Error("QUICKNODE_WSS_URL is not set");
+  }
+  if (!CONTRACT_ADDRESS) {
+    throw new Error("CONTRACT_ADDRESS is not set");
+  }
+
   const controller = new Controller(
     QUICKNODE_HTTP_URL,
     WALLET_PRIVATE_KEY,
-    QUICKNODE_WSS_URL
+    QUICKNODE_WSS_URL,
+    CONTRACT_ADDRESS
   );
   controller.start();
-  console.log(
-    "Controller canning for arbitrage opportunities..."
-  );
+  console.log("Controller canning for arbitrage opportunities...");
 }
 
 main().catch((error) => {
