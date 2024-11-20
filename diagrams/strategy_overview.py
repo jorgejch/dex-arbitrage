@@ -42,7 +42,14 @@ diagram.node(
 )
 diagram.node(
     "SecondSwap",
-    "Swap Token B to Token A\non PancakeSwap",
+    "Swap Token B to Token C\non PancakeSwap",
+    shape="box",
+    style="filled",
+    fillcolor="lightblue",
+)
+diagram.node(
+    "ThirdSwap",
+    "Swap Token C to Token A\non PancakeSwap",
     shape="box",
     style="filled",
     fillcolor="lightblue",
@@ -67,7 +74,8 @@ diagram.edge(
 diagram.edge("IdentifyOpportunity", "End", label="Not Profitable", style="dashed")
 diagram.edge("InitiateFlashLoan", "FirstSwap")
 diagram.edge("FirstSwap", "SecondSwap")
-diagram.edge("SecondSwap", "RepayLoan")
+diagram.edge("SecondSwap", "ThirdSwap")
+diagram.edge("ThirdSwap", "RepayLoan")
 diagram.edge("RepayLoan", "End")
 
 # Render and save the diagram
