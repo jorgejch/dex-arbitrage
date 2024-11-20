@@ -10,12 +10,11 @@
   },
   "scripts": {
     "build": "tsc",
-    "start": "ts-node src/index.ts",
+    "start": "node dist/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
     "createAccount": "ts-node scripts/createAccount.ts",
     "runNode": "npx hardhat node",
     "compile": "npx hardhat compile",
-    "deployLocal": "npx hardhat ignition deploy ignition/modules/aflab_testnet.ts --network localhost",
     "deployMainnet": "npx hardhat ignition deploy ignition/modules/aflab_mainnet.ts --network bsc",
     "deployTestnet": "npx hardhat ignition deploy ignition/modules/aflab_testnet.ts --network sepolia",
     "getContractBalance": "ts-node scripts/getContractBalance.ts 0xff00008c249140fA7E02480349C4660Fbb41681e",
