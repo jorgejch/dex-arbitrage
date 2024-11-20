@@ -19,24 +19,27 @@ The strategy is defined as triangular arbitrage. The Controller continuously sca
 
 #### Identify Arbitrage Opportunities
 
-The Controller continuously scans for profitable arbitrage opportunities by analyzing token prices across trading pairs on PancakeSwap v3. The process involves the following steps:
+The Controller continuously scans for profitable arbitrage opportunities by analyzing trades, token prices and liquidity across trading pairs on PancakeSwap v3. The process involves the following steps:
 
-1. **Fetch Real-Time Data**:
-   * Use PancakeSwap v3's API to retrieve the latest prices for relevant token pairs (e.g., Token A/B and Token B/C).
+1. **Pick Tokens A and B**:
+   1. Use a QuickNode wss endpoint to collect real-time trade data from PancakeSwap v3.
+   2. In order to find token pair A/B candidates where a price discrepancy is probable, whenever a large trade is detected, fetch the latest token prices and liquidity information for the token pair involved in the trade.
+   3. Calculate the price impact of the trade.
+   4. If the price impact is significant, pick the token pair as a potential arbitrage opportunity tokens A and B.
 
-2. **Analyze Price Discrepancies**:
-   * Compare the prices of token pairs to identify potential arbitrage opportunities.
-   * Calculate the expected profit for each identified opportunity.
+2. **Pick Token C**:
+   1. Fetch the latest token prices and liquidity information for token pairs involving token B.
+   2. For each token pair with token B, verify that the C token participates in a pair with token A.
+   3. Calculate the expected profit from the arbitrage opportunity involving tokens A, B, and C.
+   4. Consider transaction fees, slippage, and other factors to determine the net profit.
+   5. Loop through all token C candidates and calculate the expected profit for each combination of tokens A, B, and C.
+   6. Pick the token C that maximizes the expected profit, if any.
 
-3. **Evaluate Profitability**:
-   * Consider transaction fees, slippage, and other factors to determine the net profit.
-   * Filter out opportunities that do not meet the profitability threshold.
-
-4. **Log Opportunities**:
+3. **Log Opportunities**:
    * Record all identified arbitrage opportunities with details such as token pairs, expected profit, and execution parameters.
    * Use this data for performance analysis and system optimization.
 
-5. **Trigger Execution**:
+4. **Trigger Execution**:
    * If a profitable opportunity is identified, the Controller calls the smart contract to execute the trade atomically.
 
 ### FlashLoanArbitrage.sol
