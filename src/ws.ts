@@ -1,6 +1,5 @@
 import { ethers } from "ethers";
 
-// Constants
 const RECONNECT_INTERVAL_BASE = 1000; // Base interval for reconnection attempts in milliseconds
 const EXPECTED_PONG_BACK = 15000; // Time to wait for a pong response in milliseconds
 const KEEP_ALIVE_CHECK_INTERVAL = 7500; // Interval for sending ping messages in milliseconds
@@ -10,10 +9,10 @@ const SIMULATE_DISCONNECT_INTERVAL = 30000; // Interval to simulate disconnectio
 /**
  * WebSocketManager class to manage WebSocket connections.
  */
-class WebSocketManager {
+class WebSocketManager <T> {
   private readonly url: string;
   private readonly simulateDisconnect: boolean;
-  private readonly events: [{ name: string; handler: () => void }];
+  private readonly events: { name: string; handler: (data: T) => void }[];
   private reconnectAttempts: number;
   private provider: ReconnectingWebSocketProvider | null;
 
@@ -26,7 +25,7 @@ class WebSocketManager {
    */
   constructor(
     url: string,
-    events: [{ name: string; handler: () => void }],
+    events: { name: string; handler: (data: T) => void }[] = [],
     simulateDisconnect = false
   ) {
     this.url = url;
