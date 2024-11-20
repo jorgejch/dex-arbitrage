@@ -1,13 +1,13 @@
-# Another DEX Flash-loan Arbitrage Bot
+# Another Flash-loan Arbitrage Bot (AFLAB)
 
 ## What?
 
-Another Dex Flash-loan arbitrage system that:
+Another Flash-loan arbitrage system that:
 
 - is low cost, works on Binance Smart Chain (BSC);
 - uses AAVE for flash loans;
 - it uses PancakeSwap v3 for the DEX;
-- makes use of established patterns when existent;
+- makes use of established patterns when they exist;
 - prefers open-source tools but does not shy away from freemium services.
 
 ## Introduction
@@ -26,7 +26,7 @@ Key features of this system include:
 - [TypeScript](https://www.typescriptlang.org) - Typed superset of JavaScript.
 - [Hardhat](https://hardhat.org) - Ethereum development environment.
 - [QuickNode](https://www.quicknode.com) - Ethereum node provider.
-- [Solidity](https://soliditylang.org) - Programming language for writing smart contracts.
+- [Solidity](https://soliditylang.org) - A programming language for writing smart contracts.
 - [PancakeSwap v3](https://pancakeswap.finance) - Decentralized exchange on Binance Smart Chain.
 
 ## Outline
@@ -62,18 +62,7 @@ Ensure you have the following installed:
     npm install
     ```
 
-3. Set up environment variables:
-    Create a `.env` file in the root directory and add your configuration:
-
-    ```env
-    QUICKNODE_TESTNET_API_KEY=your_quicknode_testnet_api_key
-    QUICKNODE_TESTNET_HTTP_PROVIDER=https://your-testnet-quicknode-url
-    QUICKNODE_API_KEY=your_quicknode_api_key
-    QUICKNODE_HTTP_PROVIDER=https://your-mainnet-quicknode-url
-    QUICKNODE_SEPOLIA_API_KEY=your_quicknode_sepolia_api_key
-    QUICKNODE_SEPOLIA_HTTP_PROVIDER=https://your-sepolia-quicknode-url
-    WALLET_ADDRESS=your_wallet_address
-    ```
+3. Set up environment variables: Create a `.env` file in the root directory and add your configuration as in the `.env.example` file.
 
 ### Usage
 
@@ -91,7 +80,7 @@ Ensure you have the following installed:
 
 ## Disclaimer
 
-This repo is not either an investment advice or a recommendation or solicitation to buy or sell any investment and should not be used in the evaluation of the merits of making any investment decision. It should not be relied upon for accounting, legal or tax advice or investment recommendations. The contents reflected herein are subject to change without being updated.
+This repo is not either investment advice or a recommendation or solicitation to buy or sell any investment. It should not be used to evaluate the merits of making any investment decision. It should not be relied upon for accounting, legal, tax advice, or investment recommendations. The contents reflected herein are subject to change unless updated.
 
 ## Contributing
 
