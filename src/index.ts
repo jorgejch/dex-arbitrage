@@ -32,7 +32,7 @@ class Controller {
   }
 
   /**
-   * Initializes the provider and sets up event listeners for new blocks.
+   * Initializes the websocket manager with the event listeners for new blocks.
    */
   public start() {
     const wsManager = new WebSocketManager(
@@ -105,7 +105,7 @@ class Controller {
     // Logic to trigger the smart contract to execute the trade
   }
 }
-async function main() {
+function main() {
   // Test env vars are set
   if (!HTTP_URL) {
     throw new Error("QUICKNODE_HTTP_URL is not set");
@@ -133,6 +133,4 @@ async function main() {
   console.log("Controller scanning for arbitrage opportunities...");
 }
 
-main().catch((error) => {
-  console.error("Error in main execution:", error);
-});
+main();
