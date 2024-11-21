@@ -40,6 +40,7 @@
     "typescript": "^5.1.3"
   },
   "dependencies": {
+    "graphql-request": "^7.1.2",
     "ws": "^8.18.0"
   }
 }
