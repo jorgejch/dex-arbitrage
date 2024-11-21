@@ -1,6 +1,6 @@
 import { PoolFactoryContract } from "./contracts/poolFactoryContract";
 import { PoolContract } from "./contracts/poolContract";
-import { ReconnectingWebSocketProvider } from "./ws";
+import { WebSocketManager } from "./ws";
 
 /**
  * Represents a DEX.
@@ -35,18 +35,18 @@ class Dex {
    * and populates the poolContracts map.
    * 
    * @param tokens A list of token pairs (order matters)
-   * @param provider The WebSocket provider
+   * @param wsManager The WebSocket Manager
    * @param abi The contract ABI
    */
   public async fetchPoolContracts(
     tokens: [token0: string, token1: string][],
-    provider: ReconnectingWebSocketProvider,
+    wsManager: WebSocketManager,
     abi: any
   ): Promise<void> {
     const poolAddresses: string[] =
       await this.poolFactoryContract.getPoolsAddresses(tokens);
     for (const poolAddress of poolAddresses) {
-      const poolContract = new PoolContract(poolAddress, provider, abi);
+      const poolContract = new PoolContract(poolAddress, wsManager, abi);
       this.addPoolContract(poolAddress, poolContract);
     }
   }
