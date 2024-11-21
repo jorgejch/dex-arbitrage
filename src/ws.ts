@@ -1,4 +1,5 @@
 import { ethers } from "ethers";
+import { EventEmitter } from "events";
 import WebSocket from "ws";
 
 const RECONNECT_INTERVAL_BASE = 1000; // Base interval for reconnection attempts in milliseconds
@@ -9,10 +10,12 @@ const SIMULATE_DISCONNECT_INTERVAL = 30000; // Interval to simulate disconnectio
 /**
  * WebSocketManager class to manage WebSocket connections.
  */
-class WebSocketManager {
+class WebSocketManager extends EventEmitter {
   private readonly url: string;
   private readonly simulateDisconnect: boolean;
-  private readonly setUpListeners: (provider: ReconnectingWebSocketProvider) => void;
+  private readonly setUpListeners: (
+    provider: ReconnectingWebSocketProvider
+  ) => void;
   private numOfReconnects: number;
   private provider: ReconnectingWebSocketProvider | null;
 
@@ -28,11 +31,19 @@ class WebSocketManager {
     setupListenersFunc: (provider: ReconnectingWebSocketProvider) => void,
     simulateDisconnect = false
   ) {
+    super();
     this.url = url;
     this.simulateDisconnect = simulateDisconnect;
     this.numOfReconnects = 0;
     this.provider = null;
     this.setUpListeners = setupListenersFunc;
+  }
+
+  public getProvider() {
+    if (!this.provider) {
+      throw new Error("WebSocket provider is not initialized");
+    }
+    return this.provider;
   }
 
   public start() {
@@ -42,12 +53,14 @@ class WebSocketManager {
 
     const ws = new WebSocket(this.url);
 
+    // Create a new ReconnectingWebSocketProvider
     this.provider = new ReconnectingWebSocketProvider(
       ws,
       this.handleReconnection.bind(this),
       this.simulateDisconnect
     );
 
+    // Set up event listeners
     this.setUpListeners(this.provider);
   }
 
@@ -60,6 +73,8 @@ class WebSocketManager {
     setTimeout(() => {
       console.log(`Reconnection number: ${this.numOfReconnects}`);
       this.start();
+      // Emit the reconnected event to update listener's state
+      this.emit("reconnected");
     }, RECONNECT_INTERVAL_BASE);
     console.log(
       `Scheduled reconnection attempt ${this.numOfReconnects} in ${RECONNECT_INTERVAL_BASE} ms`
