@@ -9,10 +9,10 @@ const SIMULATE_DISCONNECT_INTERVAL = 30000; // Interval to simulate disconnectio
 /**
  * WebSocketManager class to manage WebSocket connections.
  */
-class WebSocketManager<T> {
+class WebSocketManager {
   private readonly url: string;
   private readonly simulateDisconnect: boolean;
-  private readonly events: { name: string; handler: (data: T) => void }[];
+  private readonly setUpListeners: (provider: ReconnectingWebSocketProvider) => void;
   private numOfReconnects: number;
   private provider: ReconnectingWebSocketProvider | null;
 
@@ -25,14 +25,14 @@ class WebSocketManager<T> {
    */
   constructor(
     url: string,
-    events: { name: string; handler: (data: T) => void }[] = [],
+    setupListenersFunc: (provider: ReconnectingWebSocketProvider) => void,
     simulateDisconnect = false
   ) {
     this.url = url;
     this.simulateDisconnect = simulateDisconnect;
     this.numOfReconnects = 0;
     this.provider = null;
-    this.events = events;
+    this.setUpListeners = setupListenersFunc;
   }
 
   public start() {
@@ -48,13 +48,7 @@ class WebSocketManager<T> {
       this.simulateDisconnect
     );
 
-    this.events.forEach((event) => {
-      if (this.provider) {
-        this.provider.on(event.name, event.handler.bind(this));
-      } else {
-        throw new Error("WebSocket provider is not initialized");
-      }
-    });
+    this.setUpListeners(this.provider);
   }
 
   /**
@@ -99,7 +93,6 @@ class ReconnectingWebSocketProvider extends ethers.WebSocketProvider {
     ws.on("open", this.onOpen.bind(this));
     ws.on("error", this.onError.bind(this));
     ws.on("close", this.onClose.bind(this));
-    ws.on("message", this.onMessage.bind(this));
     ws.on("pong", () => {
       console.debug("Received a pong");
       clearTimeout(this.pingTimeout);
@@ -140,10 +133,6 @@ class ReconnectingWebSocketProvider extends ethers.WebSocketProvider {
 
   private onError(error: any) {
     console.error("WebSocket error:", error);
-  }
-
-  private onMessage(data: any, isBinary: boolean) {
-    console.debug(`Received message: ${JSON.stringify(data)}. Binary: ${isBinary}`);
   }
 
   private clearIntervals() {
