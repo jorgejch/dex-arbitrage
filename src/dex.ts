@@ -21,14 +21,6 @@ class Dex {
     this.poolContracts[poolAddress] = contract;
   }
 
-  private getPoolContract(poolAddress: string): any {
-    return this.poolContracts[poolAddress];
-  }
-
-  private removePoolContract(poolAddress: string): void {
-    delete this.poolContracts[poolAddress];
-  }
-
   /**
    * Get a list of pool contract addresses.
    * 
