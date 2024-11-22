@@ -1,5 +1,5 @@
 import { Contract } from "ethers";
-import { WebSocketManager } from "../ws";
+import { WebSocketManager } from '../ws.js';
 
 abstract class BaseContract {
   protected _contract: Contract | null = null;

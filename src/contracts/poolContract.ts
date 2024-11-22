@@ -1,6 +1,6 @@
 import { Contract } from "ethers";
-import { WebSocketManager } from "../ws";
-import { BaseContract } from "./baseContract";
+import { WebSocketManager } from "../ws.js";
+import { BaseContract } from "./baseContract.js";
 
 /**
  * Represents a pool contract.
