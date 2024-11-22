@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
-    "target": "ES2023",
-    "module": "commonjs",
+    "target": "esnext",
+    "module": "NodeNext",
+    "moduleResolution": "nodenext",
     "strict": true,
     "sourceMap": true,
     "esModuleInterop": true,
@@ -12,9 +13,5 @@
   },
   "include": [
     "src/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
   ]
 }
