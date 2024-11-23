@@ -1,10 +1,17 @@
-import { HardhatUserConfig, vars } from "hardhat/config";
-import "@nomicfoundation/hardhat-toolbox";
-import "@nomicfoundation/hardhat-verify";
+const { vars } = require("hardhat/config");
 
-const config: HardhatUserConfig = {
+module.exports = {
   solidity: {
     compilers: [
+      {
+        version: "0.6.0",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200
+          }
+        }
+      },
       {
         version: "0.8.0",
         settings: {
@@ -60,9 +67,7 @@ const config: HardhatUserConfig = {
     apiKey: vars.get("ETHERSCAN_API_KEY")
   },
   paths: {
-    sources: "./contracts",
-    tests: "./test"
+    sources: "contracts",
+    tests: "tests/unit"
   }
 };
-
-export default config;
