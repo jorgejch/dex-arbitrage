@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "esnext",
+    "target": "es2022",
     "module": "NodeNext",
     "moduleResolution": "nodenext",
     "strict": true,
@@ -9,9 +9,12 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "types": ["vitest/globals"]
   },
-  "include": [
-    "src/**/*.ts"
-  ]
+  "ts-node": {
+    "experimentalResolver": true,
+    "files": true 
+  },
+  "include": ["src/**/*.ts", "tests/**/*.ts"]
 }
