@@ -8,6 +8,7 @@ class Dex {
   private pools: Map<string, Pool>;
   private inputTokenSymbolIndex: Map<string, Pool[]>;
   private readonly subgraph: PSv3Subgraph;
+  private contracts: Map<string, any>;
 
   /**
    * @param subgraph The Graph Subgraph instance
