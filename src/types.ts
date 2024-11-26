@@ -1,4 +1,13 @@
 /**
+ * Contract type enum
+ * @enum {string}
+ */
+enum ContractType {
+  TEST,
+  POOL
+}
+
+/**
  * Token object
  * @typedef {Object} Token
  * @property {string} id The token ID
@@ -56,4 +65,4 @@ type Pool = {
   hourlySnapshots: HourlySnapshot[];
 };
 
-export { Pool, Token, Fee, HourlySnapshot };
+export { Pool, Token, Fee, HourlySnapshot, ContractType };
