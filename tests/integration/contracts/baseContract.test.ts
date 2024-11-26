@@ -3,7 +3,7 @@ import { BaseContract } from "../../../src/contracts/baseContract.js";
 import { WebSocketManager } from "../../../src/ws.js";
 import { config } from "../../../src/common.js";
 import { Contract } from "ethers";
-import { expect, describe, beforeEach, test } from "vitest";
+import { expect, describe, beforeEach, test, vi } from "vitest";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -26,6 +26,10 @@ class TestContract extends BaseContract {
       console.log("Event received:", event);
     });
   }
+
+  public getWsManager() {
+    return this.wsManager;
+  }
 }
 
 describe("Base Contract Integration Tests", () => {
@@ -36,20 +40,32 @@ describe("Base Contract Integration Tests", () => {
 
     const wsManager = new WebSocketManager(
       url,
-      false,
-      (wsManager: WebSocketManager) => {}
+      false
     );
 
     testContract = new TestContract(
       "0x1234",
       wsManager,
-      [config.POOL_ABI],
-      ContractType.POOL
+      config.POOL_ABI,
+      ContractType.TEST
     );
+    if (!testContract.getWsManager().isInitialized()) {
+      testContract.initialize();
+    }
   });
 
   test("should initialize the contract", () => {
-    testContract.initialize();
     expect(testContract).toBeDefined();
+    expect(testContract.getContractType()).toBe(ContractType.TEST);
+    expect(testContract.getWsManager().isInitialized()).toBe(true);
+  });
+
+  test.skip("should handle WebSocket reconnected event", () => {
+    // Simulate the WebSocket reconnected event to test if the contract reinitializes correctly
+    if (testContract.getWsManager().isInitialized()) {
+      if (!testContract.getWsManager().emitEvent("reconnected")){
+        throw new Error("Failed to emit reconnected event");
+      }
+    }
   });
 });
