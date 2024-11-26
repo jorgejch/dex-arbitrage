@@ -1,3 +1,4 @@
+import { ContractType } from "../types.js";
 import { WebSocketManager } from "../ws.js";
 import { Contract } from "ethers";
 
@@ -11,28 +12,22 @@ abstract class BaseContract {
   private abi: any;
   // This is an instance of the ethers.js Contract class
   private contract?: Contract;
+  private contractType: ContractType;
 
   /**
    * @param address The contract address
    * @param wsManager The WebSocket Manager
    * @param abi The contract ABI
+   * @param contractType One of the ContractType enum values
    */
-  constructor(address: string, wsManager: WebSocketManager, abi: any) {
+  constructor(address: string, wsManager: WebSocketManager, abi: any, contractType: ContractType) {
     this.address = address;
     this.wsManager = wsManager;
     this.abi = abi;
+    this.contractType = contractType;
 
     // Reinitialize when reconnected
     this.wsManager.on("reconnected", this.initialize.bind(this));
-  }
-
-  /**
-   * Initializes the contract.
-   * Must be called before interacting with the contract.
-   */
-  public initialize() {
-    this.createContract();
-    this.listenForEvents(this.contract as Contract);
   }
 
   /**
@@ -43,7 +38,7 @@ abstract class BaseContract {
     try {
       this.contract = new Contract(
         this.address,
-        this.abi,
+        this.abi[0],
         this.wsManager.getProvider()
       );
     } catch (error) {
@@ -58,6 +53,22 @@ abstract class BaseContract {
    * @param contract The ethers.js contract instance
    */
   protected abstract listenForEvents(contract: Contract): void;
+  /**
+   * Initializes the contract.
+   * Must be called before interacting with the contract.
+   */
+  public initialize() {
+    this.wsManager.start();
+    this.createContract();
+    this.listenForEvents(this.contract as Contract);
+  }
+
+  /**
+   * Get the contract's type.
+   */
+  public getContractType(): ContractType {
+    return this.contractType;
+  }
 }
 
 export { BaseContract };
