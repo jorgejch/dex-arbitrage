@@ -43,10 +43,14 @@ abstract class BaseSubgraph {
         }
       } catch (error) {
         attempts++;
-        logger.warn(`Attempt ${attempts} failed: ${error}`);
+        logger.warn(
+          `Attempt ${attempts} failed: ${error}`,
+          this.constructor.name
+        );
         if (attempts >= maxRetries) {
           logger.error(
-            `Error fetching data after ${attempts} attempts: ${error}`
+            `Error fetching data after ${attempts} attempts: ${error}`,
+            this.constructor.name
           );
           throw new Error("Failed to fetch data, max retries exceeded");
         }
@@ -72,6 +76,10 @@ abstract class BaseSubgraph {
       throw new Error("Failed to initialize Graffle");
     }
     this.customInit();
+    logger.info(
+      `Initialized subgraph: ${this.constructor.name}`,
+      this.constructor.name
+    );
   }
 
   /**

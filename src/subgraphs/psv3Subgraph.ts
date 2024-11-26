@@ -72,7 +72,8 @@ class PSv3Subgraph extends BaseSubgraph {
     let totalRecords = 0;
 
     logger.debug(
-      `Getting pools with pagination. Parameters: {limit: ${limit}, numOfPagesPerCall: ${numPagestoFetch}, pageSize: ${pageSize}}`
+      `Getting pools. Parameters: {limit: ${limit}, numOfPagesPerCall: ${numPagestoFetch}, pageSize: ${pageSize}}`,
+      this.constructor.name
     );
 
     while (hasMore && totalRecords < limit) {
@@ -106,7 +107,8 @@ class PSv3Subgraph extends BaseSubgraph {
       }
 
       logger.debug(
-        `Fetched ${fetchedRecords} records. Total records: ${totalRecords}`
+        `Fetched ${fetchedRecords} records. Total records: ${totalRecords}`,
+        this.constructor.name
       );
 
       // Update skip and check if more records need to be fetched
