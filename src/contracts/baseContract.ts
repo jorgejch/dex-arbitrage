@@ -51,6 +51,12 @@ abstract class BaseContract {
     }
   }
 
+  /**
+   * Listen for events emitted by the contract.
+   * Must be implemented by the subclass.
+   * 
+   * @param contract The ethers.js contract instance
+   */
   protected abstract listenForEvents(contract: Contract): void;
 }
 
