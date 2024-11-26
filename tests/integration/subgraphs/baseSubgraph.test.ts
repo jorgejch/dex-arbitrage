@@ -6,41 +6,53 @@ import dotenv from "dotenv";
 dotenv.config();
 
 class TestSubgraph extends BaseSubgraph {
+  protected customInit(): void {
+    this.addQuery("liqPools", this.gql`{liquidityPools(first: 5) {id}}`);
+  }
   constructor(url: string) {
     super(url);
+    console.log(`Instantiating Subgraph with url ${url}`);
   }
 
-  public testQuery() {
-    return this.gql`
-      {
-        tokens(first: 5) {
-          name
-        }
-      }
-    `;
+  public async testQuery(): Promise<{ send: () => Promise<any> }> {
+    const query = this.getQuery("liqPools");
+    return await this.fetchData(query);
   }
 
   public async fetchData(query: { send: () => Promise<any> }): Promise<any> {
-    return super.fetchData(query);
+    try {
+      return await super.fetchData(query);
+    } catch (error) {
+      console.error(`Error fetching data: ${error}`);
+      throw error;
+    }
   }
 }
 
 describe("Base Subgraph Integration Tests", () => {
-  const apiKey = process.env.THE_GRAPH_API_KEY ?? "";
+  const baseUrl = process.env.THE_GRAPH_BASE_URL ?? "";
+  const subgraphName = process.env.THE_GRAPH_PANCAKESWAP_V3_SUBGRAPH_NAME ?? "";
   let testSubgraph: TestSubgraph;
 
   beforeEach(() => {
-    if (!apiKey) {
-      throw new Error("THE_GRAPH_API_KEY is not set");
+    if (!baseUrl) {
+      throw new Error("THE_GRAPH_BASE_URL is not set");
     }
-    testSubgraph = new TestSubgraph(getTGPancakeSwapMessariUrl(apiKey));
+     
+    if (!subgraphName) {
+      throw new Error("THE_GRAPH_PANCAKESWAP_V3_SUBGRAPH_NAME is not set");
+    }
+
+    testSubgraph = new TestSubgraph(
+      getTGPancakeSwapMessariUrl(baseUrl, subgraphName)
+    );
+
+    testSubgraph.initialize();
   });
 
   test("should fetch data from the subgraph", async () => {
-    testSubgraph.initialize();
-    const query = testSubgraph.testQuery();
-    const data = await testSubgraph.fetchData(query);
+    const data = await testSubgraph.testQuery();
     expect(data).toBeDefined();
-    expect(data).toHaveProperty("tokens");
+    expect(data).toHaveProperty("liquidityPools");
   });
 });
