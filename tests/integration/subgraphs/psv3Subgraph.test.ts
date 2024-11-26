@@ -1,15 +1,17 @@
 import { test, expect, describe, beforeEach } from "vitest";
-import { PSv3Subgraph } from "../../../src/subgraphs/psv3Subgraph.js";
+import { DexPoolSubgraph } from "../../../src/subgraphs/dexPoolSubgraph.js";
 import dotenv from "dotenv";
+import { getTGPancakeSwapMessariUrl } from "../../../src/common.js";
 
 dotenv.config();
 
 describe("PSv3Subgraph", {}, () => {
-  let subgraph: PSv3Subgraph;
+  let subgraph: DexPoolSubgraph;
 
   beforeEach(() => {
     const baseUrl = process.env.THE_GRAPH_BASE_URL ?? "";
-    const subgraphName = process.env.THE_GRAPH_PANCAKESWAP_V3_SUBGRAPH_NAME ?? "";
+    const subgraphName =
+      process.env.THE_GRAPH_PANCAKESWAP_V3_SUBGRAPH_NAME ?? "";
 
     if (!baseUrl) {
       throw new Error("THE_GRAPH_BASE_URL is not set");
@@ -19,7 +21,7 @@ describe("PSv3Subgraph", {}, () => {
       throw new Error("THE_GRAPH_PANCAKESWAP_V3_SUBGRAPH_NAME is not set");
     }
 
-    subgraph = new PSv3Subgraph(baseUrl, subgraphName);
+    subgraph = new DexPoolSubgraph(getTGPancakeSwapMessariUrl(baseUrl, subgraphName));
     subgraph.initialize();
   });
 

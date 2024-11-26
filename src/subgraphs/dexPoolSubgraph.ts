@@ -3,20 +3,20 @@ import { getTGPancakeSwapMessariUrl, logger } from "../common.js";
 import { Pool } from "../types.js";
 
 /**
- * PSv3Subgraph is a class that provides methods to interact with the 
+ * PSv3Subgraph is a class that provides methods to interact with the
  * PancakeSwap v3 subgraph developed by Messari.
- * 
+ *
  * https://github.com/messari/subgraphs/tree/master/subgraphs/uniswap-v3-forks
  */
-class PSv3Subgraph extends BaseSubgraph {
+class DexPoolSubgraph extends BaseSubgraph {
   /**
    * Constructor for PSv3Subgraph.
    *
    * @param baseURL The base URL for the The Graph Node
    * @param name The subgraph name
    */
-  constructor(baseURL: string, name: string) {
-    super(getTGPancakeSwapMessariUrl(baseURL, name));
+  constructor(url: string) {
+    super(url);
   }
 
   protected customInit(): void {
@@ -119,4 +119,4 @@ class PSv3Subgraph extends BaseSubgraph {
   }
 }
 
-export { PSv3Subgraph };
+export { DexPoolSubgraph };
