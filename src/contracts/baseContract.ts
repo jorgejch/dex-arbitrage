@@ -1,11 +1,16 @@
+import { WebSocketManager } from "../ws.js";
 import { Contract } from "ethers";
-import { WebSocketManager } from '../ws.js';
 
+/**
+ * BaseContract is a class that provides methods to interact with a smart contract.
+ * It includes methods to initialize the contract and listen for events.
+ */
 abstract class BaseContract {
-  protected _contract: Contract | null = null;
-  private readonly _address: string;
-  private readonly _wsManager: WebSocketManager;
-  private readonly _abi: any;
+  private address: string;
+  private wsManager: WebSocketManager;
+  private abi: any;
+  // This is an instance of the ethers.js Contract class
+  private contract?: Contract;
 
   /**
    * @param address The contract address
@@ -13,12 +18,12 @@ abstract class BaseContract {
    * @param abi The contract ABI
    */
   constructor(address: string, wsManager: WebSocketManager, abi: any) {
-    this._address = address;
-    this._wsManager = wsManager;
-    this._abi = abi;
+    this.address = address;
+    this.wsManager = wsManager;
+    this.abi = abi;
 
     // Reinitialize when reconnected
-    this._wsManager.on("reconnected", this.initialize.bind(this));
+    this.wsManager.on("reconnected", this.initialize.bind(this));
   }
 
   /**
@@ -27,27 +32,26 @@ abstract class BaseContract {
    */
   public initialize() {
     this.createContract();
-    this.listenForEvents(this._contract as Contract);
+    this.listenForEvents(this.contract as Contract);
   }
 
+  /**
+   * Create or update the contract instance.
+   * This is necessary to handle reconnections.
+   */
   private createContract() {
     try {
-      this._contract = new Contract(
-        this._address,
-        this._abi,
-        this._wsManager.getProvider()
+      this.contract = new Contract(
+        this.address,
+        this.abi,
+        this.wsManager.getProvider()
       );
     } catch (error) {
       console.error(`Error creating contract: ${error}`);
     }
   }
 
-  /**
-   * Implement this method to listen for contract events.
-   * 
-   * @param contract The contract instance
-   */
-  abstract listenForEvents(contract: Contract): void;
+  protected abstract listenForEvents(contract: Contract): void;
 }
 
 export { BaseContract };
