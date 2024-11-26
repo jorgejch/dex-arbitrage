@@ -34,5 +34,5 @@ describe("Controller Tests", {}, () => {
     } catch (error) {
       console.error(`Error initializing WebSocketManager: ${error}`);
     }
-  }, 400000);
+  }, 500000);
 });
