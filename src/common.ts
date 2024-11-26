@@ -6,10 +6,7 @@ import aflabAbi from "./abis/flashLoanArbitrageAbi.js";
  * Mostly static configuration values
  */
 const config = {
-  THE_GRAPH_PANCAKESWAP_MESSARI_SUBGRAPH_ID:
-    "A1BC1hzDsK4NTeXBpKQnDBphngpYZAwDUF7dEBfa3jHK",
-  THE_GRAPH_PANCAKESWAP_MESSARI_SUBGRAPH_BASE_URL:
-    "https://gateway.thegraph.com",
+  LOGGER_PREFIX: "FlashLoanArbitrage",
   POOL_FACTORY_ADDRESS: "0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865",
   POOL_FACTORY_ABI: poolFactoryAbi,
   POOL_ABI: poolAbi,
@@ -17,12 +14,60 @@ const config = {
 };
 
 /**
- * Get the The Graph PancakeSwap Messari subgraph URL.
+ * Get the The Graph PancakeSwap v3 subgraph URL.
  *
  * @param apiKey The API key
- * @returns The The Graph PancakeSwap Messari subgraph URL
+ * @returns The The Graph PancakeSwap v3 subgraph URL
  */
-const getTGPancakeSwapMessariUrl = (apiKey: string) => {
-  return `${config.THE_GRAPH_PANCAKESWAP_MESSARI_SUBGRAPH_BASE_URL}/api/${apiKey}/subgraphs/id/${config.THE_GRAPH_PANCAKESWAP_MESSARI_SUBGRAPH_ID}`;
+const getTGPancakeSwapUrl = (baseUrl: string, subgraphName: string) => {
+  return `${baseUrl}/subgraphs/name/${subgraphName}`;
 };
-export { config, getTGPancakeSwapMessariUrl };
+
+/**
+ * Exponential backoff delay function.
+ *
+ * @param attempt The number of the current attempt
+ * @param baseDelay Base delay in milliseconds
+ * @returns A promise that resolves after a delay
+ */
+function exponentialBackoffDelay(
+  attempt: number,
+  baseDelay: number = 100
+): Promise<void> {
+  const delay = Math.pow(2, attempt) * baseDelay + Math.random() * baseDelay; // Add jitter to avoid collisions
+  return new Promise((resolve) => setTimeout(resolve, delay));
+}
+
+/**
+ * Logger class.
+ */
+class Logger {
+  private readonly prefix: string;
+
+  /**
+   * @param prefix The logger prefix
+   */
+  constructor(prefix: string) {
+    this.prefix = prefix;
+  }
+
+  public debug(message: string): void {
+    console.debug(`[${this.prefix}] [DEBUG] ${message}`);
+  }
+
+  public info(message: string): void {
+    console.log(`[${this.prefix}] [INFO] ${message}`);
+  }
+
+  public warn(message: string): void {
+    console.warn(`[${this.prefix}] [WARN] ${message}`);
+  }
+
+  public error(message: string): void {
+    console.error(`[${this.prefix}] [ERROR] ${message}`);
+  }
+}
+
+const logger = new Logger(config.LOGGER_PREFIX);
+
+export { config, getTGPancakeSwapUrl as getTGPancakeSwapMessariUrl, exponentialBackoffDelay, logger };
