@@ -42,26 +42,6 @@ class PoolFactoryContract extends BaseContract {
 
     return await this._contract?.getPool(token0, token1);
   }
-
-  /**
-   * Get a list of pools from the contract for a list of token pairs.
-   *
-   * @param pairs A list of token pair addresses
-   * @returns A list of pool addresses
-   */
-  public async getPoolsAddresses(
-    pairs: [token0: string, token1: string][]
-  ): Promise<string[]> {
-    const poolAddresses: string[] = [];
-    for (const [token0, token1] of pairs) {
-      const poolAddress = await this.getPoolAddress(token0, token1);
-      if (poolAddress) {
-        poolAddresses.push(poolAddress);
-      }
-    }
-
-    return poolAddresses;
-  }
 }
 
 export { PoolFactoryContract };
