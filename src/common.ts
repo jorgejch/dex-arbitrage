@@ -56,8 +56,8 @@ class Logger {
   }
 
   private formatMessage(message: string, extraPrefix?: string): string {
-    const prefix = extraPrefix ? `[${this.prefix}][${extraPrefix}]` : `${this.prefix}`;
-    return `${prefix} ${message}`;
+    const prefix = extraPrefix ? `[${this.prefix}][${extraPrefix}]` : `[${this.prefix}]`;
+    return `${prefix}${message}`;
   }
 
   public debug(message: string, extraPrefix?: string): void {
