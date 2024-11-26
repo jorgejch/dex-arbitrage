@@ -11,6 +11,10 @@ const config = {
   POOL_FACTORY_ABI: poolFactoryAbi,
   POOL_ABI: poolAbi,
   AFLAB_ABI: aflabAbi,
+  RECONNECT_INTERVAL_BASE: 1000, // Base interval for WSS reconnection attempts in milliseconds
+  EXPECTED_PONG_BACK: 5000, // Time to wait for a pong response in milliseconds
+  KEEP_ALIVE_CHECK_INTERVAL: 7500, // Interval for sending ping messages in milliseconds
+  SIMULATE_DISCONNECT_INTERVAL: 15000, // Interval to simulate disconnections in milliseconds
 };
 
 /**
@@ -51,20 +55,25 @@ class Logger {
     this.prefix = prefix;
   }
 
-  public debug(message: string): void {
-    console.debug(`[${this.prefix}] [DEBUG] ${message}`);
+  private formatMessage(message: string, extraPrefix?: string): string {
+    const prefix = extraPrefix ? `[${this.prefix}][${extraPrefix}]` : `${this.prefix}`;
+    return `${prefix} ${message}`;
   }
 
-  public info(message: string): void {
-    console.log(`[${this.prefix}] [INFO] ${message}`);
+  public debug(message: string, extraPrefix?: string): void {
+    console.debug(this.formatMessage(`[DEBUG] ${message}`, extraPrefix));
   }
 
-  public warn(message: string): void {
-    console.warn(`[${this.prefix}] [WARN] ${message}`);
+  public info(message: string, extraPrefix?: string): void {
+    console.log(this.formatMessage(`[INFO] ${message}`, extraPrefix));
   }
 
-  public error(message: string): void {
-    console.error(`[${this.prefix}] [ERROR] ${message}`);
+  public warn(message: string, extraPrefix?: string): void {
+    console.warn(this.formatMessage(`[WARN] ${message}`, extraPrefix));
+  }
+
+  public error(message: string, extraPrefix?: string): void {
+    console.error(this.formatMessage(`[ERROR] ${message}`, extraPrefix));
   }
 }
 
