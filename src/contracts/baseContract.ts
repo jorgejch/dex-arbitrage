@@ -1,3 +1,4 @@
+import { logger } from "../common.js";
 import { ContractType } from "../types.js";
 import { WebSocketManager } from "../ws.js";
 import { Contract } from "ethers";
@@ -7,12 +8,12 @@ import { Contract } from "ethers";
  * It includes methods to initialize the contract and listen for events.
  */
 abstract class BaseContract {
-  private address: string;
-  private wsManager: WebSocketManager;
+  protected wsManager: WebSocketManager;
+  protected address: string;
+  protected contract?: Contract; // This is an instance of the ethers.js Contract class
+  protected contractType: ContractType;
   private abi: any;
-  // This is an instance of the ethers.js Contract class
-  private contract?: Contract;
-  private contractType: ContractType;
+  private numReinitializations = 0;
 
   /**
    * @param address The contract address
@@ -20,7 +21,12 @@ abstract class BaseContract {
    * @param abi The contract ABI
    * @param contractType One of the ContractType enum values
    */
-  constructor(address: string, wsManager: WebSocketManager, abi: any, contractType: ContractType) {
+  constructor(
+    address: string,
+    wsManager: WebSocketManager,
+    abi: any,
+    contractType: ContractType
+  ) {
     this.address = address;
     this.wsManager = wsManager;
     this.abi = abi;
@@ -38,7 +44,7 @@ abstract class BaseContract {
     try {
       this.contract = new Contract(
         this.address,
-        this.abi[0],
+        this.abi,
         this.wsManager.getProvider()
       );
     } catch (error) {
@@ -49,18 +55,30 @@ abstract class BaseContract {
   /**
    * Listen for events emitted by the contract.
    * Must be implemented by the subclass.
-   * 
+   *
    * @param contract The ethers.js contract instance
    */
   protected abstract listenForEvents(contract: Contract): void;
+
   /**
    * Initializes the contract.
    * Must be called before interacting with the contract.
+   * Has to be kinda idenpotent.
    */
-  public initialize() {
-    this.wsManager.start();
+  public initialize(...args: any[]): void {
+    logger.debug(
+      `Contract ${this.address} initialization # ${this.numReinitializations}`,
+      this.constructor.name
+    );
     this.createContract();
     this.listenForEvents(this.contract as Contract);
+    logger.info(
+      args
+        ? `Initialized contract ${this.address}`
+        : `Reinitialized contract ${this.address} after reconnection number ${this.numReinitializations}. Args: ${args}`,
+      this.constructor.name
+    );
+    this.numReinitializations++;
   }
 
   /**
