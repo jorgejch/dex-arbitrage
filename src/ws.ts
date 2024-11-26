@@ -14,7 +14,7 @@ class WebSocketManager extends EventEmitter {
   private readonly url: string;
   private readonly simulateDisconnect: boolean;
   private readonly setUpListeners: (
-    provider: ReconnectingWebSocketProvider
+    wsManager: WebSocketManager
   ) => void;
   private numOfReconnects: number;
   private provider: ReconnectingWebSocketProvider | null;
@@ -28,7 +28,7 @@ class WebSocketManager extends EventEmitter {
    */
   constructor(
     url: string,
-    setupListenersFunc: (provider: ReconnectingWebSocketProvider) => void,
+    setupListenersFunc: (wsManager: WebSocketManager) => void,
     simulateDisconnect = false
   ) {
     super();
@@ -61,7 +61,7 @@ class WebSocketManager extends EventEmitter {
     );
 
     // Set up event listeners
-    this.setUpListeners(this.provider);
+    this.setUpListeners(this);
   }
 
   /**
