@@ -1,54 +1,57 @@
-import { PoolFactoryContract } from "./contracts/poolFactoryContract";
-import { PoolContract } from "./contracts/poolContract";
-import { WebSocketManager } from "./ws";
+import { PSv3Subgraph } from "./subgraphs/psv3Subgraph.js";
+import { Pool } from "./types.js";
 
 /**
  * Represents a DEX.
  */
 class Dex {
-  private poolContracts: { [key: string]: any };
-  private readonly poolFactoryContract: PoolFactoryContract;
+  private pools: Map<string, Pool>;
+  private inputTokenSymbolIndex: Map<string, Pool[]>;
+  private readonly subgraph: PSv3Subgraph;
 
   /**
-   * @param poolFactoryContract The pool factory contract instance
+   * @param subgraph The Graph Subgraph instance
    */
-  constructor(poolFactoryContract: PoolFactoryContract) {
-    this.poolContracts = {};
-    this.poolFactoryContract = poolFactoryContract;
+  constructor(subgraph: PSv3Subgraph) {
+    this.pools = new Map<string, Pool>();
+    this.inputTokenSymbolIndex = new Map<string, Pool[]>();
+    this.subgraph = subgraph;
   }
 
-  private addPoolContract(poolAddress: string, contract: any): void {
-    this.poolContracts[poolAddress] = contract;
+  /**
+   * Initialize the DEX.
+   */
+  public async initialize(): Promise<void> {
+    this.subgraph.initialize();
+
+    const pools = await this.subgraph.getPools();
+
+    for (const pool of pools) {
+      this.pools.set(pool.id, pool);
+
+      for (const token of pool.inputTokens) {
+        if (!this.inputTokenSymbolIndex.has(token.symbol)) {
+          this.inputTokenSymbolIndex.set(token.symbol, []);
+        }
+        this.inputTokenSymbolIndex.get(token.symbol)!.push(pool);
+      }
+    }
   }
 
   /**
    * Get a list of pool contract addresses.
-   * 
-   * @returns A list of pool contract addresses
    */
-  public getPoolContractsAddresses(): string[] {
-    return Object.keys(this.poolContracts);
+  public getPoolAddresses(): string[] {
+    return Array.from(this.pools.keys());
   }
 
   /**
-   * Fetches the DEX's pool contracts from the PoolFactory contract
-   * and populates the poolContracts map.
-   * 
-   * @param tokens A list of token pairs (order matters)
-   * @param wsManager The WebSocket Manager
-   * @param abi The contract ABI
+   * Get pools by input token symbol.
+   * @param symbol The input token symbol
+   * @returns A list of pools that have the input token symbol
    */
-  public async fetchPoolContracts(
-    tokens: [token0: string, token1: string][],
-    wsManager: WebSocketManager,
-    abi: any
-  ): Promise<void> {
-    const poolAddresses: string[] =
-      await this.poolFactoryContract.getPoolsAddresses(tokens);
-    for (const poolAddress of poolAddresses) {
-      const poolContract = new PoolContract(poolAddress, wsManager, abi);
-      this.addPoolContract(poolAddress, poolContract);
-    }
+  public getPoolsByInputTokenSymbol(symbol: string): Pool[] {
+    return this.inputTokenSymbolIndex.get(symbol) || [];
   }
 }
 
