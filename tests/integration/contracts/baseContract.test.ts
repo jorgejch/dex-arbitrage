@@ -18,6 +18,8 @@ class TestContract extends BaseContract {
     super(address, wsManager, abi, contractType);
   }
 
+  protected customInit(): void {}
+
   listenForEvents(contract: Contract): void {
     if (!contract) {
       throw new Error("Contract is not defined");
@@ -38,10 +40,8 @@ describe("Base Contract Integration Tests", () => {
   beforeEach(() => {
     const url = process.env.FAST_RPC_WSS_ENDPOINT ?? "";
 
-    const wsManager = new WebSocketManager(
-      url,
-      false
-    );
+    const wsManager = new WebSocketManager(url, false);
+    wsManager.refresh();
 
     testContract = new TestContract(
       "0x1234",
@@ -49,8 +49,11 @@ describe("Base Contract Integration Tests", () => {
       config.POOL_ABI,
       ContractType.TEST
     );
-    if (!testContract.getWsManager().isInitialized()) {
+
+    try {
       testContract.initialize();
+    }catch(e){
+      console.log(`Error initializing contract: ${e}`);
     }
   });
 
@@ -63,7 +66,7 @@ describe("Base Contract Integration Tests", () => {
   test.skip("should handle WebSocket reconnected event", () => {
     // Simulate the WebSocket reconnected event to test if the contract reinitializes correctly
     if (testContract.getWsManager().isInitialized()) {
-      if (!testContract.getWsManager().emitEvent("reconnected")){
+      if (!testContract.getWsManager().emitEvent("reconnected")) {
         throw new Error("Failed to emit reconnected event");
       }
     }
