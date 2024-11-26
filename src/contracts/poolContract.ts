@@ -1,3 +1,4 @@
+import { ContractType } from "../types.js";
 import { Contract } from "ethers";
 import { WebSocketManager } from "../ws.js";
 import { BaseContract } from "./baseContract.js";
@@ -16,10 +17,9 @@ class PoolContract extends BaseContract {
     wsManager: WebSocketManager,
     abi: any
   ) {
-    super(address, wsManager, abi);
+    super(address, wsManager, abi, ContractType.POOL);
   }
 
-  // TODO: Implement this method
   listenForEvents(contract: Contract): void {
     contract.on("Swap", (sender, amount0In, amount1In, amount0Out, amount1Out) => {
       console.log(`Swap event: sender=${sender}, amount0In=${amount0In}, amount1In=${amount1In}, amount0Out=${amount0Out}, amount1Out=${amount1Out}`);
