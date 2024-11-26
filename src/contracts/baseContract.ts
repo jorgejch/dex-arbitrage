@@ -33,7 +33,7 @@ abstract class BaseContract {
     this.contractType = contractType;
 
     // Reinitialize when reconnected
-    this.wsManager.on("reconnected", this.initialize.bind(this));
+    this.wsManager.on("reconnected", this.refresh.bind(this));
   }
 
   /**
@@ -61,11 +61,27 @@ abstract class BaseContract {
   protected abstract listenForEvents(contract: Contract): void;
 
   /**
-   * Initializes the contract.
+   * Custom initialization logic.
+   * Must be implemented by the subclass.
+   * This method is called after the contract instance is created.
+   */
+  protected abstract customInit(): void;
+
+  /**
+   * Initialize the contract.
+   * Should be called before interacting with the contract.
+   * Should be called only once.
+   */
+  public initialize(): void {
+    this.refresh();
+  }
+
+  /**
+   * Refresh the contract.
    * Must be called before interacting with the contract.
    * Has to be kinda idenpotent.
    */
-  public initialize(...args: any[]): void {
+  public refresh(...args: any[]): void {
     logger.debug(
       `Contract ${this.address} initialization # ${this.numReinitializations}`,
       this.constructor.name
