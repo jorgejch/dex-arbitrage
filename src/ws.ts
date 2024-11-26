@@ -13,9 +13,7 @@ const SIMULATE_DISCONNECT_INTERVAL = 30000; // Interval to simulate disconnectio
 class WebSocketManager extends EventEmitter {
   private readonly url: string;
   private readonly simulateDisconnect: boolean;
-  private readonly setUpListeners: (
-    wsManager: WebSocketManager
-  ) => void;
+  private readonly setUpListeners: (wsManager: WebSocketManager) => void;
   private numOfReconnects: number;
   private provider: ReconnectingWebSocketProvider | null;
 
@@ -28,8 +26,10 @@ class WebSocketManager extends EventEmitter {
    */
   constructor(
     url: string,
-    setupListenersFunc: (wsManager: WebSocketManager) => void,
-    simulateDisconnect = false
+    simulateDisconnect = false,
+    setupListenersFunc: (wsManager: WebSocketManager) => void = (
+      wsManager: WebSocketManager
+    ) => {}
   ) {
     super();
     this.url = url;
@@ -60,7 +60,7 @@ class WebSocketManager extends EventEmitter {
       this.simulateDisconnect
     );
 
-    // Set up event listeners
+    // Set up extra event listeners
     this.setUpListeners(this);
   }
 
