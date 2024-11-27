@@ -1,4 +1,4 @@
-import { ContractType, Pool, Token } from "../types.js";
+import { ContractType, Pool, Token, Fee } from "../types.js";
 import { Contract } from "ethers";
 import { WebSocketManager } from "../ws.js";
 import { BaseContract } from "./baseContract.js";
@@ -10,7 +10,10 @@ import { PSv3Swap } from "../swaps/psv3Swap.js";
  */
 class PoolContract extends BaseContract {
   private readonly pool: Pool;
-  private processSwap: (psv3Swap: PSv3Swap, lastPoolSqrtPriceX96: bigint) => Promise<void>;
+  private readonly processSwap: (
+    psv3Swap: PSv3Swap,
+    lastPoolSqrtPriceX96: bigint
+  ) => Promise<void>;
   private lastPoolSqrtPriceX96: bigint;
 
   /**
@@ -24,7 +27,10 @@ class PoolContract extends BaseContract {
     wsManager: WebSocketManager,
     abi: any,
     pool: Pool,
-    processSwapFunction: (psv3Swap: PSv3Swap, lastPoolSqrtPriceX96: bigint) => Promise<void>
+    processSwapFunction: (
+      psv3Swap: PSv3Swap,
+      lastPoolSqrtPriceX96: bigint
+    ) => Promise<void>
   ) {
     super(address, wsManager, abi, ContractType.POOL);
     this.processSwap = processSwapFunction;
@@ -72,7 +78,7 @@ class PoolContract extends BaseContract {
       );
 
       /*
-       * The first Swap caught is a sacrifice 
+       * The first Swap caught is a sacrifice
        * in order to initialize lastPoolSqrtPriceX96
        */
       if (this.lastPoolSqrtPriceX96 !== BigInt(0)) {
@@ -118,8 +124,20 @@ class PoolContract extends BaseContract {
     return this.pool;
   }
 
+  public getLastPoolSqrtPriceX96(): bigint {
+    return this.lastPoolSqrtPriceX96;
+  }
+
   public getInputTokens(): Array<Token> {
     return [this.pool.inputTokens[0], this.pool.inputTokens[1]];
+  }
+
+  public getPoolFee(amount: bigint): bigint {
+    // Sum all the Pools fees
+    return this.pool.fees.reduce((acc, fee) => {
+      const scaledFeePercentage = BigInt(Math.round(fee.feePercentage * 1e6));
+      return acc + (amount * scaledFeePercentage) / BigInt(1e6);
+    }, BigInt(0));
   }
 }
 
