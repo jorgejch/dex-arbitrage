@@ -12,8 +12,8 @@ The strategy is defined as triangular arbitrage. The Controller continuously sca
 
 ### Controller
 
-* The Controller is responsible for scanning the PancakeSwap v3 API for arbitrage opportunities.
-* It interacts with the Binance Smart Chain (BSC) using QuickNode.
+* The Controller is responsible for scanning PancakeSwap v3 for arbitrage opportunities.
+* It interacts with the Binance Smart Chain (BSC) using an RPC endpoint provider. Through wss and REST APIs, it fetches real-time data such as token prices, liquidity, and trade information.
 * It triggers the smart contract to execute the trade when a profitable opportunity is identified.
 * The Controller is deployed on a server to run continuously.
 
@@ -23,17 +23,16 @@ The Controller continuously scans for profitable arbitrage opportunities by anal
 
 1. **Pick Tokens A and B**:
    1. Use a QuickNode wss endpoint to collect real-time trade data from PancakeSwap v3.
-   2. In order to find token pair A/B candidates where a price discrepancy is probable, whenever a large trade is detected, fetch the latest token prices and liquidity information for the token pair involved in the trade.
-   3. Calculate the price impact of the trade.
-   4. If the price impact is significant, pick the token pair as a potential arbitrage opportunity tokens A and B.
+   1. In order to find token pair A/B candidates where a price discrepancy is probable, whenever a large trade is detected, fetch the latest token prices and liquidity information for the token pair involved in the trade.
+   1. Calculate the price impact of the tradein bps.
+      * `Price Impact = (Price After - Price Before) / Price Before * 10,000`
+   1. If the price impact is significant, pick the token pair as a potential arbitrage opportunity tokens A and B.
 
 2. **Pick Token C**:
-   1. Fetch the latest token prices and liquidity information for token pairs involving token B.
-   2. For each token pair with token B, verify that the C token participates in a pair with token A.
-   3. Calculate the expected profit from the arbitrage opportunity involving tokens A, B, and C.
-   4. Consider transaction fees, slippage, and other factors to determine the net profit.
-   5. Loop through all token C candidates and calculate the expected profit for each combination of tokens A, B, and C.
-   6. Pick the token C that maximizes the expected profit, if any.
+   1. For each pool with a token pair containing token B, verify that the C token participates in a pair with token A.
+   1. Calculate all the expected profit possibilities from the arbitrage opportunity involving tokens A, B, and Cs.
+      * Consider transaction fees, slippage, and other factors to determine the net profit.
+   1. Pick the token C that maximizes the expected profit, if any.
 
 3. **Log Opportunities**:
    * Record all identified arbitrage opportunities with details such as token pairs, expected profit, and execution parameters.
