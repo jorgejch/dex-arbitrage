@@ -27,17 +27,13 @@ The Controller continuously scans for profitable arbitrage opportunities by anal
       * `Price Impact = (Price After - Price Before) / Price Before * 10,000`
    1. If the price impact is significant, pick the token pair as a potential arbitrage opportunity's tokens A and B.
 
-2. **Pick Token C**:
+1. **Pick Token C**:
    1. For each pool with a token pair containing token B, verify that the C token participates in a pair with token A.
    1. Calculate all the expected profit possibilities from the arbitrage opportunity involving tokens A, B, and Cs.
       * Consider transaction fees, slippage, and other factors to determine the net profit.
-   1. Pick the token C that maximizes the expected profit, if any.
+   1. Pick the tokens C & A pool that maximizes the expected profit, if any.
 
-3. **Log Opportunities**:
-   * Record all identified arbitrage opportunities with details such as token pairs, expected profit, and execution parameters.
-   * Use this data for performance analysis and system optimization.
-
-4. **Trigger Execution**:
+1. **Trigger Execution**:
    * If a profitable opportunity is identified, the Controller calls the smart contract to execute the trade atomically.
 
 ### FlashLoanArbitrage.sol
