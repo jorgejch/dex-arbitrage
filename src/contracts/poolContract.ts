@@ -10,7 +10,8 @@ import { PSv3Swap } from "../swaps/psv3Swap.js";
  */
 class PoolContract extends BaseContract {
   private readonly pool: Pool;
-  private processSwap: (psv3Swap: PSv3Swap) => Promise<void>;
+  private processSwap: (psv3Swap: PSv3Swap, lastPoolSqrtPriceX96: bigint) => Promise<void>;
+  private lastPoolSqrtPriceX96: bigint;
 
   /**
    * @param address The pool contract address
@@ -23,24 +24,25 @@ class PoolContract extends BaseContract {
     wsManager: WebSocketManager,
     abi: any,
     pool: Pool,
-    processSwapFunction: (psv3Swap: PSv3Swap) => Promise<void>
+    processSwapFunction: (psv3Swap: PSv3Swap, lastPoolSqrtPriceX96: bigint) => Promise<void>
   ) {
     super(address, wsManager, abi, ContractType.POOL);
     this.processSwap = processSwapFunction;
     this.pool = pool;
+    this.lastPoolSqrtPriceX96 = BigInt(0);
   }
 
   private swapEventCallback(
     ...args: [
       string,
       string,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
       number,
-      number,
-      number,
-      number,
-      number,
-      number,
-      number,
+      bigint,
+      bigint,
     ]
   ) {
     try {
@@ -68,7 +70,17 @@ class PoolContract extends BaseContract {
         protocolFeesToken1,
         poolContractAddress
       );
-      this.processSwap(swap);
+
+      /*
+       * The first Swap caught is a sacrifice 
+       * in order to initialize lastPoolSqrtPriceX96
+       */
+      if (this.lastPoolSqrtPriceX96 !== BigInt(0)) {
+        this.processSwap(swap, this.lastPoolSqrtPriceX96);
+      }
+
+      // Keep track of the last pool price
+      this.lastPoolSqrtPriceX96 = sqrtPriceX96;
     } catch (error) {
       logger.error(
         `Error processing swap event: ${error}`,
