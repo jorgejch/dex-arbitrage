@@ -2,7 +2,7 @@ import { BaseDex } from "./baseDex.js";
 import { DexPoolSubgraph } from "../subgraphs/dexPoolSubgraph.js";
 import { PSv3Swap } from "../swaps/psv3Swap.js";
 import { Token } from "../types.js";
-import { logger } from "../common.js";
+import { logger, isPriceImpactSignificant } from "../common.js";
 import { WebSocketManager } from "../ws.js";
 import { PoolContract } from "../contracts/poolContract.js";
 import abi from "../abis/pancakeSwapv3PoolAbi.js";
@@ -19,16 +19,19 @@ class PSv3Dex extends BaseDex {
     super(wsManager, subgraph);
   }
 
-  async processSwap(swap: PSv3Swap) {
-    logger.debug(
-      `Received swap data: sender=${swap.sender}, recipient=${swap.recipient}, amount0=${swap.amount0}, amount1=${swap.amount1}, sqrtPriceX96=${swap.sqrtPriceX96}, liquidity=${swap.liquidity}, tick=${swap.tick}, protocolFeesToken0=${swap.protocolFeesToken0}, protocolFeesToken1=${swap.protocolFeesToken1}, contractAddress=${swap.contractAddress}`,
-      this.constructor.name
-    );
+  async processSwap(swap: PSv3Swap, lastPoolSqrtPriceX96: bigint) {
 
+    let contract: PoolContract | undefined;
     let inputTokens: Token[];
+
     try {
-      inputTokens =
-        this.getContract(swap.contractAddress)?.getInputTokens() || [];
+      contract = this.getContract(swap.contractAddress);
+
+      if (contract === undefined) {
+        throw new Error("Contract not found");
+      }
+
+      inputTokens = contract.getInputTokens();
     } catch (error) {
       logger.error(
         `Error fetching input tokens: ${error}`,
@@ -37,15 +40,36 @@ class PSv3Dex extends BaseDex {
       throw error;
     }
 
-    const tradeDirection = this.inferTradeDirection(
-      swap.amount0,
-      swap.amount1,
-      inputTokens[0],
-      inputTokens[1]
+    swap.setTokens(inputTokens);
+    const swapName =  `${swap.getTokens()[0].symbol} -> ${swap.getTokens()[1].symbol}`;
+    logger.info(
+      `Processing swap: ${swapName}, amount0=${swap.amount0}, amount1=${swap.amount1}`,
+      this.constructor.name
     );
-    logger.info(`Trade Direction: ${tradeDirection}`, this.constructor.name);
+    const priceImpact = swap.calculatePriceImpact(lastPoolSqrtPriceX96);
+    logger.info(
+      `Calculated price impact of ${priceImpact} for swap: ${swapName}`,
+      this.constructor.name
+    );
 
-    // Further processing with token0, token1, and tradeDirection...
+    if (isPriceImpactSignificant(priceImpact)) {
+      logger.info(
+        `Significant price impact detected for swap: ${swapName}`,
+        this.constructor.name
+      );
+
+      let tokenC: Token | null;
+
+      try {
+        tokenC = await this.pickTokenC(swap.getTokens()[1]);
+      } catch (error) {
+        logger.error(
+          `Error identifying arbitrage opportunity: ${error}`,
+          this.constructor.name
+        );
+        throw error;
+      }
+    }
   }
 
   private async pickTokenC(tokenB: Token): Promise<Token | null> {

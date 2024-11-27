@@ -26,8 +26,8 @@ abstract class BaseDex {
     this.contractsMap = new Map<string, PoolContract>();
     this.pools = [];
   }
-  
-  protected inferTradeDirection(
+
+  protected inferSwapDirection(
     amount0: number,
     amount1: number,
     token0: Token,
@@ -84,7 +84,7 @@ abstract class BaseDex {
    *
    * @param swap The swap event
    */
-  public abstract processSwap(swap: BaseSwap): Promise<void>;
+  public abstract processSwap(swap: BaseSwap, lastPoolSqrtPriceX96: bigint): Promise<void>;
 
   /**
    * Initialize the DEX.
