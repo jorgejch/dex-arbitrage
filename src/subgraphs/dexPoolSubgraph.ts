@@ -1,5 +1,5 @@
 import { BaseSubgraph } from "./baseSubgraph.js";
-import { getTGPancakeSwapMessariUrl, logger } from "../common.js";
+import { getTGPancakeSwapUrl, logger } from "../common.js";
 import { Pool } from "../types.js";
 
 /**

@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach } from "vitest";
 import { BaseSubgraph } from "../../../src/subgraphs/baseSubgraph.js";
-import { getTGPancakeSwapMessariUrl } from "../../../src/common.js";
+import { getTGPancakeSwapUrl } from "../../../src/common.js";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -38,14 +38,12 @@ describe("Base Subgraph Integration Tests", () => {
     if (!baseUrl) {
       throw new Error("THE_GRAPH_BASE_URL is not set");
     }
-     
+
     if (!subgraphName) {
       throw new Error("THE_GRAPH_PANCAKESWAP_V3_SUBGRAPH_NAME is not set");
     }
 
-    testSubgraph = new TestSubgraph(
-      getTGPancakeSwapMessariUrl(baseUrl, subgraphName)
-    );
+    testSubgraph = new TestSubgraph(getTGPancakeSwapUrl(baseUrl, subgraphName));
 
     testSubgraph.initialize();
   });
