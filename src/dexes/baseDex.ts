@@ -57,12 +57,47 @@ abstract class BaseDex {
   }
 
   /**
-   * Get pools by input token symbol.
-   * @param symbol The input token symbol
-   * @returns A list of pools that have the input token symbol
+   * Retrieves a list of possible intermediary tokens B (that are not A or C).
+   * Token B participates in pools with tokens A and token C.
+   *
+   * @param tokenASymbol - Symbol of token A.
+   * @param tokenCSymbol - Symbol of token C.
+   * @returns An array of tokens satisfying the criteria.
    */
-  public getPoolsByInputTokenSymbol(symbol: string): Pool[] {
-    return this.inputTokenSymbolIndex.get(symbol) || [];
+  public getPossibleIntermediaryTokens(
+    tokenASymbol: string,
+    tokenCSymbol: string
+  ): Token[] {
+    const poolsA = this.inputTokenSymbolIndex.get(tokenASymbol);
+    const poolsC = this.inputTokenSymbolIndex.get(tokenCSymbol);
+
+    if (poolsA === undefined || poolsC === undefined) {
+      return [];
+    }
+
+    const possibleBs: Set<string> = new Set();
+
+    // Find all possible token Bs that are not A or C in the pools paired with A
+    for (const pool of poolsA) {
+      for (const token of pool.inputTokens) {
+        if (token.symbol !== tokenASymbol && token.symbol !== tokenCSymbol) {
+          possibleBs.add(token.symbol);
+        }
+      }
+    }
+
+    const result: Token[] = [];
+
+    // Find all possible token Bs that are not A or C in the pools paired with C
+    for (const pool of poolsC) {
+      for (const token of pool.inputTokens) {
+        if (token.symbol !== tokenASymbol && token.symbol !== tokenCSymbol && possibleBs.has(token.symbol)) {
+          result.push(token);
+        }
+      }
+    }
+
+    return result;
   }
 
   /**
@@ -84,7 +119,10 @@ abstract class BaseDex {
    *
    * @param swap The swap event
    */
-  public abstract processSwap(swap: BaseSwap, lastPoolSqrtPriceX96: bigint): Promise<void>;
+  public abstract processSwap(
+    swap: BaseSwap,
+    lastPoolSqrtPriceX96: bigint
+  ): Promise<void>;
 
   /**
    * Initialize the DEX.

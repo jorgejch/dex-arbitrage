@@ -25,11 +25,11 @@ type Token = {
 /**
  * Fee object
  * @typedef {Object} Fee
- * @property {string} feePercentage The fee percentage
+ * @property {number} feePercentage The fee percentage
  * @property {string} feeType The fee type
  */
 type Fee = {
-  feePercentage: string;
+  feePercentage: number;
   feeType: string;
 };
 
