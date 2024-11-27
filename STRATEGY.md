@@ -29,7 +29,7 @@ The Controller continuously scans for profitable arbitrage opportunities by anal
 
 1. **Pick Token C**:
    1. For each pool with a token pair containing token B, verify that the C token participates in a pair with token A.
-   1. Calculate all the expected profit possibilities from the arbitrage opportunity involving tokens A, B, and Cs.
+   1. Calculate all the expected profit possibilities from the arbitrage opportunities involving tokens A, B, and Cs.
       * Consider transaction fees, slippage, and other factors to determine the net profit.
    1. Pick the tokens C & A pool that maximizes the expected profit, if any.
 
