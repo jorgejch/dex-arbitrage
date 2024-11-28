@@ -13,7 +13,6 @@ import { logger, convertSqrtPriceX96ToBigInt } from "../common.js";
  * @property {bigint} amount1 - The amount of token1 involved in the swap.
  * @property {number} sqrtPriceX96 - The square root of the price after the swap times 2^96, used for precision in calculations.
  * @property {bigint} liquidity - The liquidity of the pool after the swap.
- * @property {number} tick - TThe log base 1.0001 of price of the pool after the swap.
  * @property {string} poolContract - The address of the pool contract where the swap occurred.
  * @property {Token[]} [inputTokens] - Optional array of input tokens for the swap.
  */
@@ -24,7 +23,6 @@ abstract class BaseSwap {
   amount1: bigint;
   sqrtPriceX96: bigint;
   liquidity: bigint;
-  tick: number;
   poolContract: string;
   inputTokens?: Token[];
 
@@ -35,7 +33,6 @@ abstract class BaseSwap {
     amount1: bigint,
     sqrtPriceX96: bigint,
     liquidity: bigint,
-    tick: number,
     poolContract: string
   ) {
     this.sender = sender;
@@ -44,7 +41,6 @@ abstract class BaseSwap {
     this.amount1 = amount1;
     this.sqrtPriceX96 = sqrtPriceX96;
     this.liquidity = liquidity;
-    this.tick = tick;
     this.poolContract = poolContract;
   }
 
@@ -79,6 +75,14 @@ abstract class BaseSwap {
    * @throws An error if the price before the swap is zero
    */
   public calculatePriceImpact(lastPoolSqrtPriceX96: bigint): bigint {
+    if (lastPoolSqrtPriceX96 <= BigInt(0)) {
+      logger.warn(
+        `Invalid lastPoolSqrtPriceX96: ${lastPoolSqrtPriceX96}`,
+        this.constructor.name
+      );
+      return BigInt(0);
+    } 
+
     // Calculate the price before the swap
     const priceAfter: bigint = convertSqrtPriceX96ToBigInt(this.sqrtPriceX96);
     const priceBefore: bigint = convertSqrtPriceX96ToBigInt(lastPoolSqrtPriceX96);

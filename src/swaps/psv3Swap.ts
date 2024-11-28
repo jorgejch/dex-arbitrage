@@ -15,7 +15,6 @@ class PSv3Swap extends BaseSwap {
     amount1: bigint,
     sqrtPriceX96: bigint,
     liquidity: bigint,
-    tick: number,
     protocolFeesToken0: bigint,
     protocolFeesToken1: bigint,
     contractAddress: string
@@ -27,26 +26,11 @@ class PSv3Swap extends BaseSwap {
       amount1,
       sqrtPriceX96,
       liquidity,
-      tick,
       contractAddress
     );
     this.protocolFeesToken0 = protocolFeesToken0;
     this.protocolFeesToken1 = protocolFeesToken1;
     this.contractAddress = contractAddress;
-  }
-
-  /**
-   * Calculate the protocol fees for the swap
-   * 
-   * @returns The protocol fees
-   * @throws An error if the protocol fees are not set
-   */
-  public calculateProtocolFees(): bigint {
-    if (this.protocolFeesToken0 === undefined || this.protocolFeesToken1 === undefined) {
-      throw new Error("Protocol fees not set");
-    }
-
-    return this.protocolFeesToken0 + this.protocolFeesToken1;
   }
 }
 
