@@ -1,5 +1,5 @@
 import { BaseSubgraph } from "./baseSubgraph.js";
-import { getTGPancakeSwapUrl, logger } from "../common.js";
+import { getHoursSinceUnixEpoch, logger } from "../common.js";
 import { Pool } from "../types.js";
 
 /**
@@ -24,28 +24,31 @@ class DexPoolSubgraph extends BaseSubgraph {
     this.addQuery(
       "pools",
       this.gql`
-        query($size: Int!, $offset: Int!) {
-          liquidityPools(
-            first: $size
-            skip: $offset
-            orderBy: totalValueLockedUSD
-            orderDirection: desc
-          ) {
-            id
-            name
-            symbol
-            fees {
-              feePercentage
-              feeType
-            }
-            inputTokens {
-              id
-              name
-              symbol
-              decimals
-            }
+      query ($hoursSinceUnixEpoch: Int!, $size: Int!, $offset: Int!) {
+        liquidityPoolHourlySnapshots(
+        first: $size,
+        skip: $offset,
+        orderBy: totalValueLockedUSD,
+        orderDirection: desc,
+        where: { hour: $hoursSinceUnixEpoch }
+        ) {
+        pool {
+          id
+          name
+          symbol
+          fees {
+          feePercentage
+          feeType
+          }
+          inputTokens {
+          id
+          name
+          symbol
+          decimals
           }
         }
+        }
+      }
       `
     );
   }
@@ -59,9 +62,10 @@ class DexPoolSubgraph extends BaseSubgraph {
    * @returns A list of Pool objects.
    */
   public async getPools(
-    limit: number = 27,
-    numPagestoFetch: number = 1,
-    pageSize: number = 27
+    limit: number = 50,
+    numPagestoFetch: number = 5,
+    pageSize: number = 10,
+    hsUnixEpoch: number = getHoursSinceUnixEpoch()
   ): Promise<Pool[]> {
     const allPools: Pool[] = [];
     const uniquePoolIds = new Set<string>();
@@ -71,10 +75,10 @@ class DexPoolSubgraph extends BaseSubgraph {
     let totalRecords = 0;
 
     logger.debug(
-      `Getting pools. Parameters: {limit: ${limit}, numOfPagesPerCall: ${numPagestoFetch}, pageSize: ${pageSize}}`,
+      `Getting pools. Parameters: {limit: ${limit}, numOfPagesPerCall: ${numPagestoFetch}, pageSize: ${pageSize}, hoursSinceUnixEpoch: ${hsUnixEpoch}}`,
       this.constructor.name
     );
-
+   
     while (hasMore && totalRecords < limit) {
       // Create an array of promises to fetch multiple pages in parallel
       const fetchPromises = [];
@@ -82,6 +86,7 @@ class DexPoolSubgraph extends BaseSubgraph {
         // Fetch numPagestoFetch pages in parallel
         fetchPromises.push(
           this.fetchData(query, {
+            hoursSinceUnixEpoch: hsUnixEpoch,
             size: pageSize,
             offset: skip + i * pageSize,
           })
@@ -100,7 +105,13 @@ class DexPoolSubgraph extends BaseSubgraph {
       // Process the responses
       let fetchedRecords = 0;
       for (const response of responses) {
-        const pools = response.liquidityPools;
+        if (!response) {
+          throw new Error(`Invalid Response: ${JSON.stringify(response)}`);
+        }
+
+        const snapshots: [] = response.liquidityPoolHourlySnapshots;
+        const pools: Pool[] = snapshots.map((snapshot: any) => snapshot.pool);
+
         for (const pool of pools) {
           if (!uniquePoolIds.has(pool.id)) {
             uniquePoolIds.add(pool.id);

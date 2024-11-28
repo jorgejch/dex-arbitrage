@@ -24,6 +24,10 @@ abstract class BaseSubgraph {
     this.subgraphUrl = subgraphUrl;
   }
 
+  protected getUrl(): string {
+    return this.subgraphUrl;
+  }
+
   /**
    * @param query The GraphQL query
    * @returns {Promise<any>} The data
