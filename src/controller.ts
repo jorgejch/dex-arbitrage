@@ -5,7 +5,7 @@ import { DexPoolSubgraph } from "./subgraphs/dexPoolSubgraph.js";
 
 import { ethers } from "ethers";
 import dotenv from "dotenv";
-import { getTGPancakeSwapMessariUrl, logger } from "./common.js";
+import { getTGPancakeSwapUrl, logger } from "./common.js";
 dotenv.config();
 
 /**
@@ -36,10 +36,7 @@ class Controller {
         new PSv3Dex(
           this.wsManager,
           new DexPoolSubgraph(
-            getTGPancakeSwapMessariUrl(
-              theGraphBaseUrl,
-              pancakeswapV3SubgraphName
-            )
+            getTGPancakeSwapUrl(theGraphBaseUrl, pancakeswapV3SubgraphName)
           )
         ),
       ];
