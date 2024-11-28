@@ -67,22 +67,19 @@ describe("BaseDex", () => {
         id: "1", inputTokens: [tokenA, tokenB],
         name: "",
         symbol: "",
-        fees: [],
-        hourlySnapshots: [],
+        fees: []
       }
       const pool2: Pool = {
         id: "2", inputTokens: [tokenB, tokenC],
         name: "",
         symbol: "",
-        fees: [],
-        hourlySnapshots: []
+        fees: []
       };
       const pool3: Pool = {
         id: "3", inputTokens: [tokenC, tokenA],
         name: "",
         symbol: "",
-        fees: [],
-        hourlySnapshots: []
+        fees: []
       };
 
       // Set the pools 1-3 in the map
@@ -103,15 +100,13 @@ describe("BaseDex", () => {
         id: "1", inputTokens: [tokenA, tokenB],
         name: "",
         symbol: "",
-        fees: [],
-        hourlySnapshots: []
+        fees: []
       };
       const pool2: Pool = {
         id: "2", inputTokens: [tokenC, tokenD],
         name: "",
         symbol: "",
-        fees: [],
-        hourlySnapshots: []
+        fees: []
       };
 
       dex.getInputTokenSymbolIndex().set("A", [pool1]);
