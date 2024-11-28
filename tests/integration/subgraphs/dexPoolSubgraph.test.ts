@@ -10,18 +10,25 @@ describe("PSv3Subgraph", {}, () => {
 
   beforeEach(() => {
     const baseUrl = process.env.THE_GRAPH_BASE_URL ?? "";
-    const subgraphName =
-      process.env.THE_GRAPH_PANCAKESWAP_V3_SUBGRAPH_NAME ?? "";
+    const subgraphName = process.env.THE_GRAPH_PANCAKESWAP_V3_SUBGRAPH_ID ?? "";
+    const apiKey = process.env.THE_GRAPH_API_KEY ?? "";
 
     if (!baseUrl) {
       throw new Error("THE_GRAPH_BASE_URL is not set");
     }
 
     if (!subgraphName) {
-      throw new Error("THE_GRAPH_PANCAKESWAP_V3_SUBGRAPH_NAME is not set");
+      throw new Error("THE_GRAPH_PANCAKESWAP_V3_SUBGRAPH_ID is not set");
     }
 
-    subgraph = new DexPoolSubgraph(getTGPancakeSwapUrl(baseUrl, subgraphName));
+    if (!apiKey) {
+      throw new Error("THE_GRAPH_API_KEY is not set");
+    }
+
+    console.log(  getTGPancakeSwapUrl(baseUrl, subgraphName, apiKey) );
+    subgraph = new DexPoolSubgraph(
+      getTGPancakeSwapUrl(baseUrl, subgraphName, apiKey)
+    );
     subgraph.initialize();
   });
 
@@ -41,8 +48,8 @@ describe("PSv3Subgraph", {}, () => {
 
   test("getPools() should return a default list of pools, in parallel and paginating", async () => {
     const pools = await subgraph.getPools();
-    console.log(pools);
     expect(pools).toBeDefined();
     expect(pools).toBeTypeOf("object");
+    console.log(pools.length);
   }, 300000);
 });

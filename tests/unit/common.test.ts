@@ -1,10 +1,11 @@
 import { describe, it, expect, vi } from "vitest";
 import {
-  getLastFullHourUnixTime,
+  getHoursSinceUnixEpoch,
   getTGPancakeSwapUrl,
   exponentialBackoffDelay,
   isPriceImpactSignificant,
-  convertSqrtPriceX96ToBigInt
+  convertSqrtPriceX96ToBigInt,
+  logger
 } from "../../src/common.js";
 
 describe("getLastFullHourUnixTime", () => {
@@ -15,7 +16,20 @@ describe("getLastFullHourUnixTime", () => {
 
     vi.setSystemTime(mockDate);
 
-    const result = getLastFullHourUnixTime();
+    const result = getHoursSinceUnixEpoch();
+    expect(result).toBe(expectedHoursSinceEpoch);
+
+    vi.useRealTimers();
+  });
+
+  it("should return the correct number of hours since Unix epoch minus 1 for now", () => {
+    const date = new Date();
+    const expectedHoursSinceEpoch =
+      Math.floor((date.getTime() / (3600 * 1000)) - 1)
+
+    const result = getHoursSinceUnixEpoch();
+    console.log(expectedHoursSinceEpoch)
+    console.log(result)
     expect(result).toBe(expectedHoursSinceEpoch);
 
     vi.useRealTimers();
@@ -28,7 +42,7 @@ describe("getLastFullHourUnixTime", () => {
 
     vi.setSystemTime(mockDate);
 
-    const result = getLastFullHourUnixTime();
+    const result = getHoursSinceUnixEpoch();
     expect(result).toBe(expectedHoursSinceEpoch);
 
     vi.useRealTimers();
@@ -39,9 +53,10 @@ describe("getTGPancakeSwapUrl", () => {
   it("should return the correct URL", () => {
     const baseUrl = "https://api.thegraph.com";
     const subgraphName = "pancakeswap";
-    const expectedUrl = `${baseUrl}/subgraphs/name/${subgraphName}`;
+    const apiKey = "api-key";
+    const expectedUrl = `${baseUrl}/api/${apiKey}/subgraphs/id/${subgraphName}`;
 
-    const result = getTGPancakeSwapUrl(baseUrl, subgraphName);
+    const result = getTGPancakeSwapUrl(baseUrl, subgraphName, apiKey);
     expect(result).toBe(expectedUrl);
   });
 });

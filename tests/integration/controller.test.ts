@@ -11,7 +11,8 @@ const WALLET_PRIVATE_KEY: string = process.env.WALLET_PRIVATE_KEY ?? "";
 const AFLAB_CONTRACT_ADDRESS: string = process.env.CONTRACT_ADDRESS ?? "";
 const THE_GRAPH_BASE_URL: string = process.env.THE_GRAPH_BASE_URL ?? "";
 const PANCAKESWAP_V3_SUBGRAPH_NAME: string =
-  process.env.THE_GRAPH_PANCAKESWAP_V3_SUBGRAPH_NAME ?? "";
+  process.env.THE_GRAPH_PANCAKESWAP_V3_SUBGRAPH_ID ?? "";
+const THE_GRAPH_API_KEY: string = process.env.THE_GRAPH_API_KEY ?? "";
 
 describe("Controller Tests", {}, () => {
   let controller: Controller;
@@ -23,6 +24,7 @@ describe("Controller Tests", {}, () => {
       WALLET_PRIVATE_KEY,
       AFLAB_CONTRACT_ADDRESS,
       THE_GRAPH_BASE_URL,
+      THE_GRAPH_API_KEY,
       PANCAKESWAP_V3_SUBGRAPH_NAME,
       true
     );

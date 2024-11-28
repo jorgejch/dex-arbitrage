@@ -32,6 +32,8 @@ class TestSubgraph extends BaseSubgraph {
 describe("Base Subgraph Integration Tests", () => {
   const baseUrl = process.env.THE_GRAPH_BASE_URL ?? "";
   const subgraphName = process.env.THE_GRAPH_PANCAKESWAP_V3_SUBGRAPH_NAME ?? "";
+  const apiKey = process.env.THE_GRAPH_API_KEY ?? "";
+
   let testSubgraph: TestSubgraph;
 
   beforeEach(() => {
@@ -43,7 +45,7 @@ describe("Base Subgraph Integration Tests", () => {
       throw new Error("THE_GRAPH_PANCAKESWAP_V3_SUBGRAPH_NAME is not set");
     }
 
-    testSubgraph = new TestSubgraph(getTGPancakeSwapUrl(baseUrl, subgraphName));
+    testSubgraph = new TestSubgraph(getTGPancakeSwapUrl(baseUrl, subgraphName,apiKey));
 
     testSubgraph.initialize();
   });
