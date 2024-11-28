@@ -1,6 +1,5 @@
 import poolAbi from "./abis/pancakeSwapv3PoolAbi.js";
 import aflabAbi from "./abis/flashLoanArbitrageAbi.js";
-import { Int } from "graffle/utilities-for-generated";
 
 /**
  * Mostly static configuration values
@@ -20,11 +19,17 @@ const config = {
 /**
  * Get the The Graph PancakeSwap v3 subgraph URL.
  *
+ * @param baseUrl The base URL for The Graph Node
+ * @param subgraphName The subgraph name
  * @param apiKey The API key
  * @returns The The Graph PancakeSwap v3 subgraph URL
  */
-const getTGPancakeSwapUrl = (baseUrl: string, subgraphName: string) => {
-  return `${baseUrl}/subgraphs/name/${subgraphName}`;
+const getTGPancakeSwapUrl = (
+  baseUrl: string,
+  subgraphName: string,
+  apiKey: string
+) => {
+  return `${baseUrl}/api/${apiKey}/subgraphs/id/${subgraphName}`;
 };
 
 /**
@@ -134,7 +139,7 @@ export {
   exponentialBackoffDelay,
   isPriceImpactSignificant,
   convertSqrtPriceX96ToBigInt,
-  getHoursSinceUnixEpoch as getLastFullHourUnixTime,
+  getHoursSinceUnixEpoch,
   logger,
   Logger,
 };

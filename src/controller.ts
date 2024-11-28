@@ -2,11 +2,9 @@ import { WebSocketManager } from "./ws.js";
 import { BaseDex } from "./dexes/baseDex.js";
 import { PSv3Dex } from "./dexes/psv3Dex.js";
 import { DexPoolSubgraph } from "./subgraphs/dexPoolSubgraph.js";
+import { getTGPancakeSwapUrl, logger } from "./common.js";
 
 import { ethers } from "ethers";
-import dotenv from "dotenv";
-import { getTGPancakeSwapUrl, logger } from "./common.js";
-dotenv.config();
 
 /**
  * Controller class that scans for arbitrage opportunities and triggers smart contract execution.
@@ -24,9 +22,19 @@ class Controller {
     walletPrivateKey: string,
     aflabContractAddress: string,
     theGraphBaseUrl: string,
+    theGraphApiKey: string,
     pancakeswapV3SubgraphName: string,
     simulateDisconnect: boolean = false
   ) {
+    logger.info(
+      `Initializing Controller with arguments:
+      \tAFLAB contract Address: ${aflabContractAddress}
+      \tThe Graph Base URL: ${theGraphBaseUrl}
+      \tPS v3 Subgraph name: ${pancakeswapV3SubgraphName}
+      \tSimulate disconnect: ${simulateDisconnect}`,
+      this.constructor.name
+    );
+
     try {
       this.httpProvider = new ethers.JsonRpcProvider(httpProviderUrl);
       this.wsManager = new WebSocketManager(wsProviderUrl, simulateDisconnect);
@@ -36,7 +44,11 @@ class Controller {
         new PSv3Dex(
           this.wsManager,
           new DexPoolSubgraph(
-            getTGPancakeSwapUrl(theGraphBaseUrl, pancakeswapV3SubgraphName)
+            getTGPancakeSwapUrl(
+              theGraphBaseUrl,
+              pancakeswapV3SubgraphName,
+              theGraphApiKey
+            )
           )
         ),
       ];
@@ -81,7 +93,7 @@ class Controller {
       await Promise.all(dexInitPromises);
     } catch (error) {
       logger.error(`Error initializing DEXes: ${error}`, this.constructor.name);
-      throw error;
+      return;
     }
   }
   public stop() {
