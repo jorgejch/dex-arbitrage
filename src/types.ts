@@ -62,7 +62,6 @@ type Pool = {
   symbol: string;
   inputTokens: Token[];
   fees: Fee[];
-  hourlySnapshots: HourlySnapshot[];
 };
 
-export { Pool, Token, Fee, HourlySnapshot, ContractType };
+export { Pool, Token, Fee, ContractType };
