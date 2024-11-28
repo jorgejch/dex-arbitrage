@@ -59,7 +59,7 @@ class PoolContract extends BaseContract {
         amount1,
         sqrtPriceX96,
         liquidity,
-        tick,
+        ,
         protocolFeesToken0,
         protocolFeesToken1,
       ] = args;
@@ -71,7 +71,6 @@ class PoolContract extends BaseContract {
         amount1,
         sqrtPriceX96,
         liquidity,
-        tick,
         protocolFeesToken0,
         protocolFeesToken1,
         poolContractAddress
@@ -81,7 +80,7 @@ class PoolContract extends BaseContract {
        * The first Swap caught is a sacrifice
        * in order to initialize lastPoolSqrtPriceX96
        */
-      if (this.getLastPoolSqrtPriceX96() !== BigInt(0)) {
+      if (this.getLastPoolSqrtPriceX96() > BigInt(0)) {
         this.processSwap(swap, this.lastPoolSqrtPriceX96);
       }
 
@@ -134,7 +133,7 @@ class PoolContract extends BaseContract {
 
   /**
    * Get the pool fees.
-   * 
+   *
    * @param amount The amount to calculate the fees for
    * @returns The pool fees
    */
