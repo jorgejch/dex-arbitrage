@@ -81,7 +81,7 @@ class PoolContract extends BaseContract {
        * The first Swap caught is a sacrifice
        * in order to initialize lastPoolSqrtPriceX96
        */
-      if (this.lastPoolSqrtPriceX96 !== BigInt(0)) {
+      if (this.getLastPoolSqrtPriceX96() !== BigInt(0)) {
         this.processSwap(swap, this.lastPoolSqrtPriceX96);
       }
 
@@ -132,6 +132,12 @@ class PoolContract extends BaseContract {
     return [this.pool.inputTokens[0], this.pool.inputTokens[1]];
   }
 
+  /**
+   * Get the pool fees.
+   * 
+   * @param amount The amount to calculate the fees for
+   * @returns The pool fees
+   */
   public getPoolFee(amount: bigint): bigint {
     // Sum all the Pools fees
     return this.pool.fees.reduce((acc, fee) => {
