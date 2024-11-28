@@ -28,15 +28,16 @@ abstract class BaseDex {
   }
 
   /**
-   * Calculates the expected profit for a triangular arbitrage opportunity.
+   * Calculates the expected profit for a series of swaps.
    *
-   * @param tokenA The starting token (Token A in the arbitrage cycle).
-   * @param tokenB The intermediate token (Token B in the arbitrage cycle).
-   * @param tokenC The final token used to return to Token A.
-   * @param inputAmount The amount of token A to swap.
-   * @param swap1PoolContract The pool contract where the initial and final swap occurs.
-   * @param swap2PoolContract The pool contract where the second swap occurs.
-   * @returns The expected profit in terms of Token A.
+   * @param tokenA The initial token
+   * @param tokenB The intermediary token
+   * @param tokenC The final token
+   * @param inputAmount The input amount of tokenA
+   * @param swap1PoolContract The pool contract where the first swap occurs
+   * @param swap2PoolContract The pool contract where the second swap occurs
+   * @param swap3PoolContract The pool contract where the third swap occurs
+   * @returns The expected profit in terms of Token A
    */
   private calculateExpectedProfit(
     tokenA: Token,
@@ -47,60 +48,88 @@ abstract class BaseDex {
     swap2PoolContract: PoolContract,
     swap3PoolContract: PoolContract
   ): bigint {
-    if (!swap1PoolContract || !swap2PoolContract || !swap3PoolContract) {
-      throw new Error("Swap pool contract not found");
-    }
-
-    // Step 1: Calculate the cost of swapping Token A for Token B and obtain the output amount
-    const lastPoolSqrtPriceX96AtoB =
-      swap1PoolContract.getLastPoolSqrtPriceX96();
-
-    if (!lastPoolSqrtPriceX96AtoB) {
-      logger.warn("Sqrt price of Token A to Token B swap contract, not initialized.")
+    // Step 1: Token A to Token B
+    const sqrtPriceX96AtoB = swap1PoolContract.getLastPoolSqrtPriceX96();
+    if (!sqrtPriceX96AtoB) {
+      logger.warn(
+        "Last price value for Token A to Token B swap has not been initialized.",
+        this.constructor.name
+      );
       return BigInt(0);
     }
 
-    const priceAtoB = convertSqrtPriceX96ToBigInt(lastPoolSqrtPriceX96AtoB);
-    const feeAtoB = swap1PoolContract.getPoolFee(inputAmount);
-    const outputAtoB =
-      (inputAmount * BigInt(10 ** tokenB.decimals)) / priceAtoB - feeAtoB;
-
-    // Step 2: Calculate the cost of swapping Token B for Token C and obtain the output amount
-    const lastPoolSqrtPriceX96BtoC =
-      swap2PoolContract.getLastPoolSqrtPriceX96();
-
-    if (!lastPoolSqrtPriceX96BtoC) {
-      logger.warn("Sqrt price of Token B to Token C swap contract, not initialized.")
-      return BigInt(0);
-    }
-
-    const feeBtoC = swap2PoolContract.getPoolFee(outputAtoB);
-    const priceBtoC = convertSqrtPriceX96ToBigInt(
-      swap2PoolContract.getLastPoolSqrtPriceX96()
+    const priceAtoB = convertSqrtPriceX96ToBigInt(sqrtPriceX96AtoB);
+    const adjustedPriceAtoB =
+      (priceAtoB * BigInt(10 ** tokenB.decimals)) /
+      BigInt(10 ** tokenA.decimals);
+    const grossOutputB =
+      (inputAmount * adjustedPriceAtoB) / BigInt(10 ** tokenB.decimals);
+    const feeAtoB = swap1PoolContract.getPoolFee(grossOutputB);
+    const netOutputB = grossOutputB - feeAtoB;
+    logger.info(
+      `Net output for Token A to Token B swap is less than or equal to zero.\n\tNet output: ${netOutputB}\n\tGross output: ${grossOutputB}\n\tFee: ${feeAtoB}\n\tPrice: ${priceAtoB}`,
+      this.constructor.name
     );
-    const outputBtoC =
-      (outputAtoB * BigInt(10 ** tokenC.decimals)) / priceBtoC - feeBtoC;
-
-    // Step 3: Calculate the cost of swapping Token C for Token A and obtain the output amount
-    const lastPoolSqrtPriceX96CtoA =
-      swap3PoolContract.getLastPoolSqrtPriceX96();
-
-    if (!lastPoolSqrtPriceX96CtoA) {
-      logger.warn("Sqrt price of Token B to Token C swap contract, not initialized.")
+    if (netOutputB <= BigInt(0)) {
       return BigInt(0);
     }
 
-    const priceCtoA = convertSqrtPriceX96ToBigInt(
-      swap3PoolContract.getLastPoolSqrtPriceX96()
+    // Step 2: Token B to Token C
+    const sqrtPriceX96BtoC = swap2PoolContract.getLastPoolSqrtPriceX96();
+    if (!sqrtPriceX96BtoC) {
+      logger.warn(
+        "Last price value for Token B to Token C swap has not been initialized.",
+        this.constructor.name
+      );
+      return BigInt(0);
+    }
+
+    const priceBtoC = convertSqrtPriceX96ToBigInt(sqrtPriceX96BtoC);
+    const adjustedPriceBtoC =
+      (priceBtoC * BigInt(10 ** tokenC.decimals)) /
+      BigInt(10 ** tokenB.decimals);
+    const grossOutputC =
+      (netOutputB * adjustedPriceBtoC) / BigInt(10 ** tokenC.decimals);
+    const feeBtoC = swap2PoolContract.getPoolFee(grossOutputC);
+    const netOutputC = grossOutputC - feeBtoC;
+    logger.info(
+      `Net output for Token B to Token C swap is less than or equal to zero.\n\tNet output: ${netOutputC}\n\tGross output: ${grossOutputC}\n\tFee: ${feeBtoC}\n\tPrice: ${priceBtoC}`,
+      this.constructor.name
     );
-    const feeCtoA = swap3PoolContract.getPoolFee(outputBtoC);
-    const outputCtoA =
-      (outputBtoC * BigInt(10 ** tokenA.decimals)) / priceCtoA - feeCtoA;
+    if (netOutputC <= BigInt(0)) {
+      return BigInt(0);
+    }
 
-    // Step 4: Calculate profit
-    const profit = outputCtoA - inputAmount;
+    // Step 3: Token C to Token A
+    const sqrtPriceX96CtoA = swap3PoolContract.getLastPoolSqrtPriceX96();
+    if (!sqrtPriceX96CtoA) {
+      logger.warn(
+        "Last price value for Token C to Token A swap has not been initialized.",
+        this.constructor.name
+      );
+      return BigInt(0);
+    }
 
-    return profit;
+    const priceCtoA = convertSqrtPriceX96ToBigInt(sqrtPriceX96CtoA);
+    const adjustedPriceCtoA =
+      (priceCtoA * BigInt(10 ** tokenA.decimals)) /
+      BigInt(10 ** tokenC.decimals);
+    const grossOutputA =
+      (netOutputC * adjustedPriceCtoA) / BigInt(10 ** tokenA.decimals);
+    const feeCtoA = swap3PoolContract.getPoolFee(grossOutputA);
+    const netOutputA = grossOutputA - feeCtoA;
+    logger.info(
+      `Net output for Token C to Token A swap is less than or equal to zero.\n\tNet output: ${netOutputA}\n\tGross output: ${grossOutputA}\n\tFee: ${feeCtoA}\n\tPrice: ${priceCtoA}`,
+      this.constructor.name
+    );
+
+    if (netOutputA <= BigInt(0)) {
+      return BigInt(0);
+    }
+
+    // Calculate the expected profit
+    const expectedProfit = netOutputA - inputAmount;
+    return expectedProfit;
   }
 
   private getContracstsForTokens(
@@ -167,12 +196,14 @@ abstract class BaseDex {
         swap3PoolContract
       );
 
+      logger.info(`Profit: ${profit}`, this.constructor.name);
+
       if (profit > BigInt(0)) {
         profitMap.set(profit, tokenB);
       }
     }
 
-    const maxProfit: bigint = Array.from(profitMap.keys()).reduce(
+    const maxProfit = Array<bigint>(...profitMap.keys()).reduce(
       (a, b) => (a > b ? a : b),
       BigInt(0)
     );
@@ -200,7 +231,7 @@ abstract class BaseDex {
     profit: bigint
   ) {
     logger.info(
-      `Arbitrage opportunity found: ${tokenA.symbol} -> ${tokenB.symbol} -> ${tokenC.symbol}`,
+      `Arbitrage opportunity found: ${tokenA.symbol} -> ${tokenB.symbol} -> ${tokenC.symbol} -> ${tokenA.symbol}`,
       this.constructor.name
     );
     logger.info(`Expected profit: ${profit}`, this.constructor.name);

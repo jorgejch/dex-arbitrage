@@ -23,6 +23,14 @@ class PSv3Dex extends BaseDex {
     let contract: PoolContract | undefined;
     let inputTokens: Token[] | undefined;
 
+    if (lastPoolSqrtPriceX96 <= 0){
+      logger.warn(
+        `Invalid lastPoolSqrtPriceX96: ${lastPoolSqrtPriceX96}`,
+        this.constructor.name
+      );
+      return;
+    }
+
     try {
       contract = this.getContract(swap.contractAddress);
       inputTokens = contract?.getInputTokens();
@@ -40,12 +48,12 @@ class PSv3Dex extends BaseDex {
 
     swap.setTokens(inputTokens);
     const swapName = `${swap.getTokens()[0].symbol} -> ${swap.getTokens()[1].symbol}`;
-    logger.info(
+    logger.debug(
       `Processing swap: ${swapName}, amount0=${swap.amount0}, amount1=${swap.amount1}`,
       this.constructor.name
     );
     const priceImpact = swap.calculatePriceImpact(lastPoolSqrtPriceX96);
-    logger.info(
+    logger.debug(
       `Calculated price impact of ${priceImpact} for swap: ${swapName}`,
       this.constructor.name
     );
@@ -69,15 +77,22 @@ class PSv3Dex extends BaseDex {
       );
 
       if (candidateTokenBs.length === 0) {
-        logger.warn(
-          `No candidates for token B. No arbitrage opportunities found for swap: ${swapName}`,
+        logger.info(
+          `No candidates for token B found for opportunity.`,
           this.constructor.name
         );
         return;
       }
 
-      // Get TokenA amount on the swap
-      const inputAmount = swap.amount0 > 0 ? swap.amount0 : swap.amount1;
+      logger.info(
+        `Found ${candidateTokenBs.length} candidate token Bs`,
+        this.constructor.name
+      );
+
+      // Get TokenA amount to swap.
+      // We divide by 10 to avoid overflow.
+      const inputAmount =
+        (swap.amount0 > 0 ? swap.amount0 : swap.amount1) / 10n;
 
       if (!contract) {
         throw new Error("Contract not found");
@@ -94,9 +109,9 @@ class PSv3Dex extends BaseDex {
         contract
       );
 
-      if (!tokenB || !profit) {
-        logger.warn(
-          `No arbitrage opportunities found for swap: ${swapName}`,
+      if (tokenB == undefined || profit == undefined) {
+        logger.info(
+          `No profitable arbitrage opportunities found for swap: ${swapName}`,
           this.constructor.name
         );
         return;
