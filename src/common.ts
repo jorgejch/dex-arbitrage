@@ -1,5 +1,6 @@
 import poolAbi from "./abis/pancakeSwapv3PoolAbi.js";
 import aflabAbi from "./abis/flashLoanArbitrageAbi.js";
+import { Int } from "graffle/utilities-for-generated";
 
 /**
  * Mostly static configuration values
@@ -25,6 +26,17 @@ const config = {
 const getTGPancakeSwapUrl = (baseUrl: string, subgraphName: string) => {
   return `${baseUrl}/subgraphs/name/${subgraphName}`;
 };
+
+/**
+ * Get the number of hours since Unix epoch time minus 1h.
+ *
+ * @returns The number of hours since Unix epoch time minus 1
+ */
+function getHoursSinceUnixEpoch(): number {
+  const now = new Date();
+  const hoursSinceEpoch = Math.floor(now.getTime() / (3600 * 1000));
+  return hoursSinceEpoch - 1;
+}
 
 /**
  * Exponential backoff delay function.
@@ -84,6 +96,14 @@ class Logger {
     return `${prefix}${message}`;
   }
 
+  public setLogLevel(logLevel: string): void {
+    this.logLevel = logLevel.toUpperCase();
+  }
+
+  public getLogLevel(): string {
+    return this.logLevel;
+  }
+
   public debug(message: string, extraPrefix?: string): void {
     if (!["INFO", "WARN", "ERROR"].includes(this.logLevel)) {
       console.debug(this.formatMessage(`[DEBUG] ${message}`, extraPrefix));
@@ -91,7 +111,7 @@ class Logger {
   }
 
   public info(message: string, extraPrefix?: string): void {
-    if (!["WARN","ERROR"].includes(this.logLevel)) {
+    if (!["WARN", "ERROR"].includes(this.logLevel)) {
       console.log(this.formatMessage(`[INFO] ${message}`, extraPrefix));
     }
   }
@@ -114,5 +134,7 @@ export {
   exponentialBackoffDelay,
   isPriceImpactSignificant,
   convertSqrtPriceX96ToBigInt,
+  getHoursSinceUnixEpoch as getLastFullHourUnixTime,
   logger,
+  Logger,
 };
