@@ -21,12 +21,16 @@ class DexPoolSubgraph extends BaseSubgraph {
 
   protected customInit(): void {
     /* Define queries */
-
     this.addQuery(
       "pools",
       this.gql`
         query($size: Int!, $offset: Int!) {
-          liquidityPools(first: $size, skip: $offset, orderBy: totalValueLockedUSD, orderDirection: desc) {
+          liquidityPools(
+            first: $size
+            skip: $offset
+            orderBy: totalValueLockedUSD
+            orderDirection: desc
+          ) {
             id
             name
             symbol
@@ -39,11 +43,6 @@ class DexPoolSubgraph extends BaseSubgraph {
               name
               symbol
               decimals
-            }
-            hourlySnapshots(first: 3, orderBy: timestamp, orderDirection: desc) {
-              hourlySwapCount
-              hourlyVolumeUSD
-              timestamp
             }
           }
         }
@@ -60,9 +59,9 @@ class DexPoolSubgraph extends BaseSubgraph {
    * @returns A list of Pool objects.
    */
   public async getPools(
-    limit: number = 20,
-    numPagestoFetch: number = 2,
-    pageSize: number = 10
+    limit: number = 27,
+    numPagestoFetch: number = 1,
+    pageSize: number = 27
   ): Promise<Pool[]> {
     const allPools: Pool[] = [];
     const uniquePoolIds = new Set<string>();
@@ -89,8 +88,14 @@ class DexPoolSubgraph extends BaseSubgraph {
         );
       }
 
-      // Wait for all fetches to complete
-      const responses = await Promise.all(fetchPromises);
+      let responses;
+      try {
+        // Wait for all fetches to complete
+        responses = await Promise.all(fetchPromises);
+      } catch (error) {
+        logger.error(`Error fetching data: ${error}`, this.constructor.name);
+        throw error;
+      }
 
       // Process the responses
       let fetchedRecords = 0;
