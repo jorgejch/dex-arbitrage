@@ -30,6 +30,20 @@ abstract class BaseDex {
     this.pools = [];
   }
 
+  /**
+   * Calculates the net output amount of a token swap, considering the price and pool fees.
+   *
+   * @param inputAmount - The amount of the input token to swap.
+   * @param fromToken - The token being swapped from.
+   * @param toToken - The token being swapped to.
+   * @param poolContract - The pool contract providing price and fee information.
+   * @returns An object containing:
+   * - `price`: The exchange rate between the tokens.
+   * - `netOutput`: The amount of the output token received after fees.
+   * - `grossOutput`: The amount of the output token before fees.
+   * - `feePercentage`: The total fee percentage applied to the swap.
+   * - `fee`: The fee amount deducted from the gross output.
+   */
   private calculateNetOutput(
     inputAmount: Decimal,
     fromToken: Token,
@@ -78,16 +92,19 @@ abstract class BaseDex {
   }
 
   /**
-   * Calculate the expected profit for a triangular arbitrage opportunity.
+   * Calculates the expected profit from performing a three-step arbitrage cycle involving tokens A, B, and C.
+   * The method simulates swapping an initial amount of token A to token B, then token B to token C,
+   * and finally token C back to token A using the provided pool contracts.
+   * If any swap results in a zero net output, it returns a profit of zero.
    *
-   * @param tokenA The initial token to swap
-   * @param tokenB The intermediary token to swap
-   * @param tokenC The final token to swap
-   * @param inputAmount The amount of token A to swap
-   * @param swap1PoolContract The pool contract for the first swap
-   * @param swap2PoolContract The pool contract for the second swap
-   * @param swap3PoolContract The pool contract for the third swap
-   * @returns The expected profit
+   * @param tokenA - The initial token to start the arbitrage cycle.
+   * @param tokenB - The intermediary token in the arbitrage cycle.
+   * @param tokenC - The final token before swapping back to token A.
+   * @param inputAmount - The amount of token A to initiate the cycle.
+   * @param swap1PoolContract - The pool contract for swapping token A to token B.
+   * @param swap2PoolContract - The pool contract for swapping token B to token C.
+   * @param swap3PoolContract - The pool contract for swapping token C back to token A.
+   * @returns The expected profit as a `Decimal`, calculated as the net output from the final swap minus the initial input amount.
    */
   protected calculateExpectedProfit(
     tokenA: Token,
@@ -323,12 +340,12 @@ abstract class BaseDex {
 
     logger.info(
       `\n========== Arbitrage Opportunity ==========\n` +
-        `\t\tToken A: ${opportunity.tokenA.symbol}\n` +
-        `\t\tToken B: ${opportunity.tokenB.symbol}\n` +
-        `\t\tToken C: ${opportunity.tokenC.symbol}\n` +
-        `\t\tOriginal Swap Price Impact: ${opportunity.originalSwapPriceImpact}\n` +
-        `\t\tToken A In: ${opportunity.tokenAIn.toString()}\n` +
-        `\t\tExpected Profit: ${opportunity.expectedProfit.toString()}\n` +
+        `\tToken A: ${opportunity.tokenA.symbol}\n` +
+        `\tToken B: ${opportunity.tokenB.symbol}\n` +
+        `\tToken C: ${opportunity.tokenC.symbol}\n` +
+        `\tOriginal Swap Price Impact: ${opportunity.originalSwapPriceImpact}\n` +
+        `\tToken A In: ${opportunity.tokenAIn.toString()}\n` +
+        `\tExpected Profit: ${opportunity.expectedProfit.toString()}\n` +
         `==========================================`,
       this.constructor.name
     );
