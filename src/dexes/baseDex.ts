@@ -206,8 +206,6 @@ abstract class BaseDex {
         swap3PoolContract
       );
 
-      logger.info(`Profit: ${profit}`, this.constructor.name);
-
       if (profit > new Decimal(0)) {
         profitMap.set(profit, tokenB);
       }

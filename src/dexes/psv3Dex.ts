@@ -49,15 +49,27 @@ class PSv3Dex extends BaseDex {
     }
 
     swap.setTokens(inputTokens);
-    const swapName = `${swap.getTokens()[0].symbol} -> ${swap.getTokens()[1].symbol}`;
+
+    let tokenA, tokenC: Token | null;
+
+    [tokenA, tokenC] =
+      swap.amount0 > 0
+        ? [inputTokens[0], inputTokens[1]]
+        : [inputTokens[1], inputTokens[0]];
+
+    const swapName = `${tokenA.symbol} -> ${tokenC.symbol}`;
+    const [swapInputAmount, swapOutAmount] =
+      swap.amount0 > 0
+        ? [swap.amount0, swap.amount1]
+        : [swap.amount1, swap.amount0];
     logger.debug(
-      `Processing swap: ${swapName}, amount0=${swap.amount0}, amount1=${swap.amount1}`,
+      `Processing swap: ${swapName}, amountA=${swapInputAmount}, amountC=${swapOutAmount}`,
       this.constructor.name
     );
     const priceImpact: number = swap.calculatePriceImpact(
       lastPoolSqrtPriceX96,
-      inputTokens[0].decimals,
-      inputTokens[1].decimals
+      tokenA.decimals,
+      tokenC.decimals
     );
     logger.debug(
       `Calculated price impact of ${priceImpact} for swap: ${swapName}`,
@@ -66,16 +78,9 @@ class PSv3Dex extends BaseDex {
 
     if (isPriceImpactSignificant(priceImpact)) {
       logger.info(
-        `Significant price impact detected for swap: ${swapName}`,
+        `Significant price impact (${priceImpact}) detected for swap: ${swapName}`,
         this.constructor.name
       );
-
-      let tokenA, tokenC: Token | null;
-
-      [tokenA, tokenC] =
-        swap.amount0 > 0
-          ? [inputTokens[0], inputTokens[1]]
-          : [inputTokens[1], inputTokens[0]];
 
       const candidateTokenBs = this.getPossibleIntermediaryTokens(
         tokenA.symbol,
@@ -96,9 +101,8 @@ class PSv3Dex extends BaseDex {
       );
 
       // Get TokenA amount to swap.
-      // We divide by 10 to avoid overflow.
-      const inputAmount =
-        (swap.amount0 > 0 ? swap.amount0 : swap.amount1) / 10n;
+      // Divide by 10 to avoid overflow.
+      const inputAmount = swapInputAmount / 10n;
 
       if (!contract) {
         throw new Error("Contract not found");
