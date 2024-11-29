@@ -1,10 +1,11 @@
 import { WebSocketManager } from "../ws.js";
-import { Pool, Token } from "../types.js";
+import { Pool, Token, Opportunity } from "../types.js";
 import { PoolContract } from "../contracts/poolContract.js";
 import { BaseSwap } from "../swaps/baseSwap.js";
 import { DexPoolSubgraph } from "../subgraphs/dexPoolSubgraph.js";
 import { logger, sqrtPriceX96ToDecimal } from "../common.js";
 import { Decimal } from "decimal.js";
+
 /**
  * Abstract class representing a DEX.
  */
@@ -28,19 +29,54 @@ abstract class BaseDex {
     this.pools = [];
   }
 
-  /**
-   * Calculates the expected profit for a series of swaps.
-   *
-   * @param tokenA The initial token
-   * @param tokenB The intermediary token
-   * @param tokenC The final token
-   * @param inputAmount The input amount of tokenA
-   * @param swap1PoolContract The pool contract where the first swap occurs
-   * @param swap2PoolContract The pool contract where the second swap occurs
-   * @param swap3PoolContract The pool contract where the third swap occurs
-   * @returns The expected profit in terms of Token A
-   */
-  private calculateExpectedProfit(
+  private calculateNetOutput(
+    inputAmount: Decimal,
+    fromToken: Token,
+    toToken: Token,
+    poolContract: PoolContract
+  ): {
+    price: Decimal;
+    netOutput: Decimal;
+    grossOutput: Decimal;
+    feePercentage: Decimal;
+    fee: Decimal;
+  } {
+    const sqrtPriceX96 = poolContract.getLastPoolSqrtPriceX96();
+    if (!sqrtPriceX96) {
+      logger.warn(
+        `Last price value for ${fromToken.symbol} to ${toToken.symbol} swap has not been initialized.`,
+        this.constructor.name
+      );
+      return {
+        price: new Decimal(0),
+        netOutput: new Decimal(0),
+        grossOutput: new Decimal(0),
+        feePercentage: new Decimal(0),
+        fee: new Decimal(0),
+      };
+    }
+
+    const [token0, token1] = poolContract.getInputTokens();
+    const isToken0ToToken1 = fromToken.id === token0.id;
+
+    const price = sqrtPriceX96ToDecimal(
+      sqrtPriceX96,
+      token0.decimals,
+      token1.decimals
+    );
+
+    const grossOutput = isToken0ToToken1
+      ? inputAmount.mul(price)
+      : inputAmount.div(price);
+
+    const feePercentage = poolContract.getTotalPoolFees();
+    const fee = feePercentage.mul(grossOutput).div(100);
+    const netOutput = grossOutput.sub(fee);
+
+    return { price, netOutput, grossOutput, feePercentage, fee };
+  }
+
+  protected calculateExpectedProfit(
     tokenA: Token,
     tokenB: Token,
     tokenC: Token,
@@ -49,103 +85,74 @@ abstract class BaseDex {
     swap2PoolContract: PoolContract,
     swap3PoolContract: PoolContract
   ): Decimal {
-    // Step 1: Token A to Token B
-    const sqrtPriceX96AtoB = swap1PoolContract.getLastPoolSqrtPriceX96();
-    if (!sqrtPriceX96AtoB) {
-      logger.warn(
-        "Last price value for Token A to Token B swap has not been initialized.",
-        this.constructor.name
-      );
-      return new Decimal(0);
-    }
-
-    const priceAtoB: Decimal = sqrtPriceX96ToDecimal(
-      sqrtPriceX96AtoB,
-      tokenA.decimals,
-      tokenB.decimals
+    // Swap 1: Token A to Token B
+    const swap1Result = this.calculateNetOutput(
+      inputAmount,
+      tokenA,
+      tokenB,
+      swap1PoolContract
     );
-    const adjustedPriceAtoB: Decimal = priceAtoB.mul(
-      new Decimal(10)).pow(tokenA.decimals - tokenB.decimals);
-    const grossOutputB: Decimal = inputAmount.mul(adjustedPriceAtoB);
-    const feeAtoB: Decimal = swap1PoolContract.getPoolFee(grossOutputB);
-    const netOutputB = grossOutputB.sub(feeAtoB);
-    if (netOutputB.lte(new Decimal(0))) {
-      logger.info(
-        `Net output for Token A to Token B swap is less than or equal to zero.\n\tNet output: ${netOutputB}\n\tGross output: ${grossOutputB}\n\tFee: ${feeAtoB}\n\tPrice: ${priceAtoB}`,
-        this.constructor.name
-      );
-      return new Decimal(0);
-    }
+    if (swap1Result.netOutput.equals(0)) return new Decimal(0);
 
-    // Step 2: Token B to Token C
-    const sqrtPriceX96BtoC = swap2PoolContract.getLastPoolSqrtPriceX96();
-    if (!sqrtPriceX96BtoC) {
-      logger.warn(
-        "Last price value for Token B to Token C swap has not been initialized.",
-        this.constructor.name
-      );
-      return new Decimal(0);
-    }
-
-    const priceBtoC: Decimal = sqrtPriceX96ToDecimal(
-      sqrtPriceX96BtoC,
-      tokenB.decimals,
-      tokenC.decimals
+    // Swap 2: Token B to Token C
+    const swap2Result = this.calculateNetOutput(
+      swap1Result.netOutput,
+      tokenB,
+      tokenC,
+      swap2PoolContract
     );
-    const adjustedPriceBtoC: Decimal = priceBtoC.mul(
-      new Decimal(10).pow(tokenB.decimals - tokenC.decimals)
-    );
-    const grossOutputC: Decimal = netOutputB.mul(adjustedPriceBtoC);
-    const feeBtoC: Decimal = swap2PoolContract.getPoolFee(grossOutputC);
-    const netOutputC: Decimal = grossOutputC.sub(feeBtoC);
-    if (netOutputC.lte(new Decimal(0))) {
-      logger.info(
-        `Net output for Token B to Token C swap is less than or equal to zero.\n\tNet output: ${netOutputC}\n\tGross output: ${grossOutputC}\n\tFee: ${feeBtoC}\n\tPrice: ${priceBtoC}`,
-        this.constructor.name
-      );
-      return new Decimal(0);
-    }
+    if (swap2Result.netOutput.equals(0)) return new Decimal(0);
 
-    // Step 3: Token C to Token A
-    const sqrtPriceX96CtoA = swap3PoolContract.getLastPoolSqrtPriceX96();
-    if (!sqrtPriceX96CtoA) {
-      logger.warn(
-        "Last price value for Token C to Token A swap has not been initialized.",
-        this.constructor.name
-      );
-      return new Decimal(0);
-    }
-
-    const priceCtoA = sqrtPriceX96ToDecimal(
-      sqrtPriceX96CtoA,
-      tokenC.decimals,
-      tokenA.decimals
+    // Swap 3: Token C to Token A
+    const swap3Result = this.calculateNetOutput(
+      swap2Result.netOutput,
+      tokenC,
+      tokenA,
+      swap3PoolContract
     );
-    const adjustedPriceCtoA: Decimal = priceCtoA.mul(
-      new Decimal(10).pow(tokenA.decimals - tokenC.decimals)
-    );
-    const grossOutputA: Decimal = netOutputC.mul(adjustedPriceCtoA);
-    const feeCtoA: Decimal = swap3PoolContract.getPoolFee(grossOutputA);
-    const netOutputA: Decimal = grossOutputA.sub(feeCtoA);
-    if (netOutputA.lte(new Decimal(0))) {
-      logger.info(
-        `Net output for Token C to Token A swap is less than or equal to zero.\n\tNet output: ${netOutputA}\n\tGross output: ${grossOutputA}\n\tFee: ${feeCtoA}\n\tPrice: ${priceCtoA}`,
-        this.constructor.name
-      );
-      return new Decimal(0);
-    }
+    if (swap3Result.netOutput.equals(0)) return new Decimal(0);
 
-    // Calculate the expected profit
-    const expectedProfit: Decimal = netOutputA.sub(inputAmount);
+    const expectedProfit = swap3Result.netOutput.sub(inputAmount);
+
+    logger.debug(
+      `\n========== Expected Profit Calculation ==========\n` +
+        `\tInput Amount: ${inputAmount}\n` +
+        `\tSwap 1: ${tokenA.symbol} to ${tokenB.symbol}\n` +
+        `\t\tPrice: ${swap1Result.price}\n` +
+        `\t\tGross Output: ${swap1Result.grossOutput}\n` +
+        `\t\tNet Output: ${swap1Result.netOutput}\n` +
+        `\t\tFee Percentage: ${swap1Result.feePercentage}\n` +
+        `\t\tFee: ${swap1Result.fee}\n` +
+        `\tSwap 2: ${tokenB.symbol} to ${tokenC.symbol}\n` +
+        `\t\tPrice: ${swap2Result.price}\n` +
+        `\t\tGross Output: ${swap2Result.grossOutput}\n` +
+        `\t\tNet Output: ${swap2Result.netOutput}\n` +
+        `\t\tFee Percentage: ${swap2Result.feePercentage}\n` +
+        `\t\tFee: ${swap2Result.fee}\n` +
+        `\tSwap 3: ${tokenC.symbol} to ${tokenA.symbol}\n` +
+        `\t\tPrice: ${swap3Result.price}\n` +
+        `\t\tGross Output: ${swap3Result.grossOutput}\n` +
+        `\t\tNet Output: ${swap3Result.netOutput}\n` +
+        `\t\tFee Percentage: ${swap3Result.feePercentage}\n` +
+        `\t\tFee: ${swap3Result.fee}\n` +
+        `\tExpected Profit: ${expectedProfit}\n` +
+        `==================================================`,
+      this.constructor.name
+    );
+
     return expectedProfit;
   }
 
-  private getContracstsForTokens(
-    tokenA: Token,
-    tokenB: Token
-  ): PoolContract | undefined {
-    const poolsA = this.inputTokenSymbolIndex.get(tokenA.symbol);
-    const poolsB = this.inputTokenSymbolIndex.get(tokenB.symbol);
+  /**
+   * Get the pool contracts for a pair of tokens.
+   *
+   * @param tokenX
+   * @param tokenZ
+   * @returns
+   */
+  private getContracstsForTokens(tokenX: Token, tokenZ: Token): PoolContract[] {
+    const poolsA = this.inputTokenSymbolIndex.get(tokenX.symbol);
+    const poolsB = this.inputTokenSymbolIndex.get(tokenZ.symbol);
 
     if (poolsA === undefined || poolsB === undefined) {
       throw new Error("No pools found for tokens");
@@ -153,11 +160,9 @@ abstract class BaseDex {
 
     const commonPools = poolsA.filter((pool) => poolsB.includes(pool));
 
-    if (commonPools.length === 0) {
-      throw new Error("No common pools found for tokens");
-    }
-
-    return this.getContract(commonPools[0].id);
+    return commonPools
+      .map((pool) => this.getContract(pool.id))
+      .filter((contract): contract is PoolContract => contract !== undefined);
   }
 
   /**
@@ -166,6 +171,7 @@ abstract class BaseDex {
    * The arbitrage involves three swaps, each incurring fees. Profit is calculated as:
    * profit = outputCtoA - inputAmount
    *
+   * @param tokenA - The initial token to swap.
    * @param tokenC - The final token used to return to Token A.
    * @param possibleBs - The candidate tokens for the intermediary step.
    * @param inputAmount - The amount of token A to swap.
@@ -176,33 +182,44 @@ abstract class BaseDex {
     tokenA: Token,
     tokenC: Token,
     possibleBs: Token[],
-    inputAmount: bigint,
+    inputAmount: Decimal,
     swapPoolContract: PoolContract
-  ): [Token | undefined, Decimal | undefined] {
+  ): [Token, Decimal] {
     const profitMap = new Map<Decimal, Token>();
 
     if (!possibleBs) {
-      return [undefined, undefined];
+      throw new Error("No possible intermediary tokens found");
     }
 
-    const decimalInputAmount: Decimal = new Decimal(inputAmount.toString());
+    if (!swapPoolContract) {
+      throw new Error("No swap pool contract found");
+    }
 
     for (const tokenB of possibleBs) {
-      const swap1PoolContract = this.getContracstsForTokens(tokenA, tokenB);
-      const swap2PoolContract = this.getContracstsForTokens(tokenB, tokenC);
-      const swap3PoolContract = swapPoolContract;
+      const swap1PoolContractList: PoolContract[] = this.getContracstsForTokens(
+        tokenA,
+        tokenB
+      );
+      const swap2PoolContractList: PoolContract[] = this.getContracstsForTokens(
+        tokenB,
+        tokenC
+      );
+      const swap3PoolContract: PoolContract = swapPoolContract;
 
-      if (!swap1PoolContract || !swap2PoolContract || !swap3PoolContract) {
-        return [undefined, undefined];
+      if (
+        swap1PoolContractList.length === 0 ||
+        swap2PoolContractList.length === 0
+      ) {
+        throw new Error("No pool contracts found for swaps 1 and 2");
       }
 
       const profit: Decimal = this.calculateExpectedProfit(
         tokenA,
         tokenB,
         tokenC,
-        decimalInputAmount,
-        swap1PoolContract,
-        swap2PoolContract,
+        inputAmount,
+        swap1PoolContractList[0], // AFAIK, there is only one
+        swap2PoolContractList[0],
         swap3PoolContract
       );
 
@@ -212,7 +229,7 @@ abstract class BaseDex {
     }
 
     if (profitMap.size === 0) {
-      return [undefined, undefined];
+      throw new Error("No profitable arbitrage opportunities found");
     }
 
     let maxProfit = new Decimal(0);
@@ -221,29 +238,86 @@ abstract class BaseDex {
         maxProfit = profit;
       }
     }
-    return [profitMap.get(maxProfit), maxProfit];
+
+    if (maxProfit.lte(0)) {
+      throw new Error("No profitable arbitrage opportunities found");
+    }
+
+    const tokenB = profitMap.get(maxProfit);
+
+    if (!tokenB) {
+      logger.error("Token B not found", this.constructor.name);
+      throw new Error("Token B not found");
+    }
+
+    return [tokenB, maxProfit];
   }
 
-  protected async triggerSmartContract(
-    tokenA: Token,
-    tokenB: Token,
-    tokenC: Token,
-    profit: Decimal
-  ) {
+  protected async triggerSmartContract(opportunity: Opportunity) {
     // Logic to trigger smart contract execution
   }
 
-  protected logOpportunities(
-    tokenA: Token,
-    tokenB: Token,
-    tokenC: Token,
-    profit: Decimal
-  ) {
+  protected logOpportunity(opportunity: Opportunity): void {
+    if (!opportunity.tokenA) {
+      logger.warn(
+        "Token A is undefined for opportunity",
+        this.constructor.name
+      );
+      throw new Error("Token A is undefined for opportunity");
+    }
+
+    if (!opportunity.tokenB) {
+      logger.warn(
+        "Token B is undefined for opportunity",
+        this.constructor.name
+      );
+      throw new Error("Token B is undefined for opportunity");
+    }
+
+    if (!opportunity.tokenC) {
+      logger.warn(
+        "Token C is undefined for opportunity",
+        this.constructor.name
+      );
+      throw new Error("Token C is undefined for opportunity");
+    }
+
+    if (!opportunity.expectedProfit) {
+      logger.warn(
+        "Expected profit is undefined for opportunity",
+        this.constructor.name
+      );
+      throw new Error("Expected profit is undefined for opportunity");
+    }
+
+    if (opportunity.tokenAIn === undefined) {
+      logger.warn(
+        "Token A in is undefined for opportunity",
+        this.constructor.name
+      );
+      throw new Error("Token A amount in is undefined for opportunity");
+    }
+
+    if (opportunity.originalSwapPriceImpact === undefined) {
+      logger.warn(
+        "Original swap price impact is undefined for opportunity",
+        this.constructor.name
+      );
+      throw new Error(
+        "Original swap price impact is undefined for opportunity"
+      );
+    }
+
     logger.info(
-      `Arbitrage opportunity found: ${tokenA.symbol} -> ${tokenB.symbol} -> ${tokenC.symbol} -> ${tokenA.symbol}`,
+      `Opportunity details:\n` +
+        `Token A: ${opportunity.tokenA.symbol}\n` +
+        `Token B: ${opportunity.tokenB.symbol}\n` +
+        `Token C: ${opportunity.tokenC.symbol}\n` +
+        `Original Swap Price Impact: ${opportunity.originalSwapPriceImpact}\n` +
+        `Token A In: ${opportunity.tokenAIn.toString()}\n` +
+        `Expected Profit: ${opportunity.expectedProfit.toString()}`,
       this.constructor.name
     );
-    logger.info(`Expected profit: ${profit}`, this.constructor.name);
   }
 
   protected inferSwapDirection(
@@ -329,12 +403,13 @@ abstract class BaseDex {
    * @returns The pool contract
    * @throws An error if the contract is not found
    */
-  public getContract(address: string): PoolContract | undefined {
-    if (!this.contractsMap.has(address)) {
+  public getContract(address: string): PoolContract {
+    const contract = this.contractsMap.get(address);
+    if (contract === undefined) {
       logger.warn(`Contract not found: ${address}`, this.constructor.name);
       throw new Error(`Contract not found: ${address}`);
     }
-    return this.contractsMap.get(address);
+    return contract;
   }
 
   /**

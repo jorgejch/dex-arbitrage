@@ -1,7 +1,7 @@
 import { BaseDex } from "./baseDex.js";
 import { DexPoolSubgraph } from "../subgraphs/dexPoolSubgraph.js";
 import { PSv3Swap } from "../swaps/psv3Swap.js";
-import { Token } from "../types.js";
+import { Token, Opportunity } from "../types.js";
 import { logger, isPriceImpactSignificant } from "../common.js";
 import { WebSocketManager } from "../ws.js";
 import { PoolContract } from "../contracts/poolContract.js";
@@ -23,7 +23,6 @@ class PSv3Dex extends BaseDex {
 
   async processSwap(swap: PSv3Swap, lastPoolSqrtPriceX96: bigint) {
     let contract: PoolContract | undefined;
-    let inputTokens: Token[] | undefined;
 
     if (lastPoolSqrtPriceX96 <= 0) {
       logger.warn(
@@ -35,22 +34,19 @@ class PSv3Dex extends BaseDex {
 
     try {
       contract = this.getContract(swap.contractAddress);
-      inputTokens = contract?.getInputTokens();
     } catch (error) {
-      logger.error(
-        `Error fetching input tokens: ${error}`,
+      logger.warn(
+        `Error fetching contract: ${error}`,
         this.constructor.name
       );
-      throw error;
+      return;
     }
-
-    if (!inputTokens) {
-      throw new Error("Input tokens not found");
-    }
+      
+    const inputTokens: Token[] = contract.getInputTokens();
 
     swap.setTokens(inputTokens);
 
-    let tokenA, tokenC: Token | null;
+    let tokenA, tokenC: Token;
 
     [tokenA, tokenC] =
       swap.amount0 > 0
@@ -66,19 +62,33 @@ class PSv3Dex extends BaseDex {
       `Processing swap: ${swapName}, amountA=${swapInputAmount}, amountC=${swapOutAmount}`,
       this.constructor.name
     );
-    const priceImpact: number = swap.calculatePriceImpact(
-      lastPoolSqrtPriceX96,
-      tokenA.decimals,
-      tokenC.decimals
-    );
+
+    const opportunity: Opportunity = {
+      tokenA,
+      tokenC,
+      tokenAIn: new Decimal((swapInputAmount / 10n).toString()), // Divide by 10 to avoid overflow
+      lastPoolSqrtPriceX96: new Decimal(lastPoolSqrtPriceX96.toString()),
+      originalSwap: swap,
+      tokenB: undefined, // To be determined
+      expectedProfit: undefined, // To be calculated
+      originalSwapPriceImpact: undefined, // To be calculated
+    };
+
+    opportunity.originalSwapPriceImpact =
+      opportunity.originalSwap.calculatePriceImpact(
+        opportunity.lastPoolSqrtPriceX96,
+        opportunity.tokenA.decimals,
+        opportunity.tokenC.decimals
+      );
+
     logger.debug(
-      `Calculated price impact of ${priceImpact} for swap: ${swapName}`,
+      `Calculated price impact of ${opportunity.originalSwapPriceImpact} (bps) for swap: ${swapName}`,
       this.constructor.name
     );
 
-    if (isPriceImpactSignificant(priceImpact)) {
+    if (isPriceImpactSignificant(opportunity.originalSwapPriceImpact)) {
       logger.info(
-        `Significant price impact (${priceImpact}) detected for swap: ${swapName}`,
+        `Significant price impact (${opportunity.originalSwapPriceImpact}) detected for swap: ${swapName}`,
         this.constructor.name
       );
 
@@ -100,26 +110,19 @@ class PSv3Dex extends BaseDex {
         this.constructor.name
       );
 
-      // Get TokenA amount to swap.
-      // Divide by 10 to avoid overflow.
-      const inputAmount = swapInputAmount / 10n;
-
-      if (!contract) {
-        throw new Error("Contract not found");
-      }
-
       let tokenB: Token | undefined;
-      let profit: Decimal | undefined;
+      let expectedProfit: Decimal | undefined;
 
-      [tokenB, profit] = this.pickTokenB(
-        tokenA,
-        tokenC,
-        candidateTokenBs,
-        inputAmount,
-        contract
-      );
-
-      if (tokenB == undefined || profit == undefined) {
+      try {
+        [tokenB, expectedProfit] = this.pickTokenB(
+          tokenA,
+          tokenC,
+          candidateTokenBs,
+          opportunity.tokenAIn,
+          contract
+        );
+      } catch (error) {
+        logger.debug(`Unable to pick token B: ${error}`, this.constructor.name);
         logger.info(
           `No profitable arbitrage opportunities found for swap: ${swapName}`,
           this.constructor.name
@@ -127,16 +130,25 @@ class PSv3Dex extends BaseDex {
         return;
       }
 
-      this.logOpportunities(tokenA, tokenB, tokenC, profit);
+      opportunity.tokenB = tokenB;
+      opportunity.expectedProfit = expectedProfit;
+
+      try {
+        this.logOpportunity(opportunity);
+      } catch (error) {
+        logger.warn(`Invalid opportunity: ${error}`, this.constructor.name);
+        return;
+      }
 
       try {
         // Trigger smart contract execution
-        this.triggerSmartContract(tokenA, tokenB, tokenC, profit);
+        this.triggerSmartContract(opportunity);
       } catch (error) {
-        logger.error(
+        logger.warn(
           `Error triggering smart contract: ${error}`,
           this.constructor.name
         );
+        return;
       }
     }
   }
