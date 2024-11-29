@@ -1,10 +1,34 @@
 /**
+ * @fileoverview Typescript types for used in AFLAB
+ */
+
+import { BaseSwap } from "./swaps/baseSwap.js";
+
+import { Decimal } from "decimal.js";
+
+/**
+ * Opportunity object
+ * @typedef {Object} Opportunity
+ *
+ */
+type Opportunity = {
+  tokenA: Token;
+  tokenC: Token;
+  tokenAIn: Decimal;
+  lastPoolSqrtPriceX96: Decimal;
+  originalSwap: BaseSwap;
+  tokenB: Token | undefined;
+  expectedProfit: Decimal | undefined;
+  originalSwapPriceImpact: number | undefined;
+};
+
+/**
  * Contract type enum
  * @enum {string}
  */
 enum ContractType {
   TEST,
-  POOL
+  POOL,
 }
 
 /**
@@ -40,11 +64,11 @@ type Fee = {
  * @property {number} hourlyVolumeUSD The hourly volume in USD
  * @property {number} timestamp The timestamp of the hourly snapshot
  */
-type HourlySnapshot ={
+type HourlySnapshot = {
   hourlySwapCount: number;
   hourlyVolumeUSD: number;
   timestamp: number;
-}
+};
 
 /**
  * Pool object
@@ -64,4 +88,4 @@ type Pool = {
   fees: Fee[];
 };
 
-export { Pool, Token, Fee, ContractType };
+export { Pool, Token, Fee, ContractType, Opportunity };
