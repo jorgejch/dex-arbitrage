@@ -34,7 +34,7 @@ class WebSocketManager extends EventEmitter {
     this.keepAliveInterval = null;
     this.pingTimeout = null;
 
-    this.setMaxListeners(60);
+    this.setMaxListeners(200);
   }
 
   public getProvider() {
