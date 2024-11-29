@@ -4,6 +4,7 @@ import { WebSocketManager } from "../ws.js";
 import { BaseContract } from "./baseContract.js";
 import { logger } from "../common.js";
 import { PSv3Swap } from "../swaps/psv3Swap.js";
+import { Decimal }  from "decimal.js";
 
 /**
  * Represents a pool contract.
@@ -137,12 +138,12 @@ class PoolContract extends BaseContract {
    * @param amount The amount to calculate the fees for
    * @returns The pool fees
    */
-  public getPoolFee(amount: bigint): bigint {
-    // Sum all the Pools fees
+  public getPoolFee(amount: Decimal): Decimal {
+    /* Be conservative now, improve later */
     return this.pool.fees.reduce((acc, fee) => {
-      const scaledFeePercentage = BigInt(Math.round(fee.feePercentage * 1e6));
-      return acc + (amount * scaledFeePercentage) / BigInt(1e6);
-    }, BigInt(0));
+      const scaledFeePercentage: Decimal = new Decimal(fee.feePercentage * 1e6);
+      return acc.add(amount.mul(scaledFeePercentage).div(1e6));
+    }, new Decimal(0));
   }
 }
 

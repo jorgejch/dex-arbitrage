@@ -1,12 +1,12 @@
-import { describe, it, expect, vi } from "vitest";
 import {
   getHoursSinceUnixEpoch,
   getTGPancakeSwapUrl,
   exponentialBackoffDelay,
   isPriceImpactSignificant,
-  convertSqrtPriceX96ToBigInt,
-  logger
+  sqrtPriceX96ToDecimal,
 } from "../../src/common.js";
+
+import { describe, it, expect, vi } from "vitest";
 
 describe("getLastFullHourUnixTime", () => {
   it("should return the correct number of hours since Unix epoch minus 1", () => {
@@ -24,12 +24,13 @@ describe("getLastFullHourUnixTime", () => {
 
   it("should return the correct number of hours since Unix epoch minus 1 for now", () => {
     const date = new Date();
-    const expectedHoursSinceEpoch =
-      Math.floor((date.getTime() / (3600 * 1000)) - 1)
+    const expectedHoursSinceEpoch = Math.floor(
+      date.getTime() / (3600 * 1000) - 1
+    );
 
     const result = getHoursSinceUnixEpoch();
-    console.log(expectedHoursSinceEpoch)
-    console.log(result)
+    console.log(expectedHoursSinceEpoch);
+    console.log(result);
     expect(result).toBe(expectedHoursSinceEpoch);
 
     vi.useRealTimers();
@@ -78,25 +79,94 @@ describe("exponentialBackoffDelay", () => {
   });
 });
 
-describe("convertSqrtPriceX96ToBigInt", () => {
-  it("should convert Q64.96 fixed-point number to BigInt", () => {
-    const sqrtPriceX96 = BigInt("79228162514264337593543950336"); // 2^96
-    const expectedPrice = BigInt("79228162514264337593543950336"); // 2^96
+describe("sqrtPriceX96ToBig", () => {
+  it("should correctly calculate the price when token decimals are equal", () => {
+    const sqrtPriceX96 = BigInt("79228162514264337593543950336"); // 2^96, corresponds to price 1
+    const token0Decimals = 18;
+    const token1Decimals = 18;
+    const expectedPrice = 1;
 
-    const result = convertSqrtPriceX96ToBigInt(sqrtPriceX96);
-    expect(result).toBe(expectedPrice);
+    const result = sqrtPriceX96ToDecimal(
+      sqrtPriceX96,
+      token0Decimals,
+      token1Decimals
+    );
+    console.log(
+      `result: ${result.toString()}, expected: ${expectedPrice}`
+    );
+    expect(result.toNumber()).equal(expectedPrice);
+  });
+
+  it("should correctly calculate the price when token0 has more decimals than token1", () => {
+    const sqrtPriceX96 = BigInt("79228162514264337593543950336");
+    const token0Decimals = 20;
+    const token1Decimals = 18;
+    const expectedPrice = 100;
+
+    const result = sqrtPriceX96ToDecimal(
+      sqrtPriceX96,
+      token0Decimals,
+      token1Decimals
+    );
+    console.log(
+      `result: ${result.toString()}, expected: ${expectedPrice}`
+    );
+    expect(result.toNumber()).equal(expectedPrice);
+  });
+
+  it("should correctly calculate the price when token1 has more decimals than token0", () => {
+    const sqrtPriceX96 = BigInt("25054144837598984238623601279"); // Example price < 1
+    const token0Decimals = 18;
+    const token1Decimals = 20;
+
+    const result = sqrtPriceX96ToDecimal(
+      sqrtPriceX96,
+      token0Decimals,
+      token1Decimals
+    );
+    console.log(`result: ${result.toString()}`);
+    expect(result.toNumber()).greaterThan(0);
+  });
+
+  it("should return 0 when sqrtPriceX96 is 0", () => {
+    const sqrtPriceX96 = BigInt(0);
+    const token0Decimals = 18;
+    const token1Decimals = 18;
+    const expectedPrice = 0;
+
+    const result = sqrtPriceX96ToDecimal(
+      sqrtPriceX96,
+      token0Decimals,
+      token1Decimals
+    );
+    expect(result.toNumber()).equal(expectedPrice);
+  });
+
+  it("should handle large sqrtPriceX96 values", () => {
+    const sqrtPriceX96 = BigInt(
+      "1461501637330902918203684832716283019655932542976"
+    );
+    const token0Decimals = 18;
+    const token1Decimals = 18;
+
+    const result = sqrtPriceX96ToDecimal(
+      sqrtPriceX96,
+      token0Decimals,
+      token1Decimals
+    );
+    expect(result.toNumber()).greaterThan(0);
   });
 });
 
 describe("isPriceImpactSignificant", () => {
   it("should return true for significant price impact", () => {
-    const priceImpact = BigInt(5); // 5 bps
+    const priceImpact = 5; // 5 bps
     const result = isPriceImpactSignificant(priceImpact);
     expect(result).toBe(true);
   });
 
   it("should return false for insignificant price impact", () => {
-    const priceImpact = BigInt(2); // 2 bps
+    const priceImpact = 2; // 2 bps
     const result = isPriceImpactSignificant(priceImpact);
     expect(result).toBe(false);
   });
