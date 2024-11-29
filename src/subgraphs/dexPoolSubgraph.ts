@@ -62,8 +62,8 @@ class DexPoolSubgraph extends BaseSubgraph {
    * @returns A list of Pool objects.
    */
   public async getPools(
-    limit: number = 50,
-    numPagestoFetch: number = 5,
+    limit: number = 100,
+    numPagestoFetch: number = 10,
     pageSize: number = 10,
     hsUnixEpoch: number = getHoursSinceUnixEpoch()
   ): Promise<Pool[]> {
