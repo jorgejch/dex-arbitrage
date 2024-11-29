@@ -19,6 +19,7 @@ abstract class BaseDex {
 
   /**
    * @param wsManager WebSocket Manager
+   * @param subgraph The Graph Subgraph instance
    */
   constructor(wsManager: WebSocketManager, subgraph: DexPoolSubgraph) {
     this.subgraph = subgraph;
@@ -76,6 +77,18 @@ abstract class BaseDex {
     return { price, netOutput, grossOutput, feePercentage, fee };
   }
 
+  /**
+   * Calculate the expected profit for a triangular arbitrage opportunity.
+   * 
+   * @param tokenA The initial token to swap
+   * @param tokenB The intermediary token to swap
+   * @param tokenC The final token to swap
+   * @param inputAmount The amount of token A to swap
+   * @param swap1PoolContract The pool contract for the first swap
+   * @param swap2PoolContract The pool contract for the second swap
+   * @param swap3PoolContract The pool contract for the third swap
+   * @returns The expected profit 
+   */
   protected calculateExpectedProfit(
     tokenA: Token,
     tokenB: Token,
