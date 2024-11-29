@@ -1,5 +1,7 @@
 import { Token } from "../types.js";
-import { logger, convertSqrtPriceX96ToBigInt } from "../common.js";
+import { logger, sqrtPriceX96ToDecimal } from "../common.js";
+
+import { Decimal } from "decimal.js";
 
 /**
  * BaseSwap is an abstract class that represents a swap event.
@@ -74,27 +76,44 @@ abstract class BaseSwap {
    * @returns The price impact of the swap in basis points
    * @throws An error if the price before the swap is zero
    */
-  public calculatePriceImpact(lastPoolSqrtPriceX96: bigint): bigint {
-    if (lastPoolSqrtPriceX96 <= BigInt(0)) {
-      logger.warn(
-        `Invalid lastPoolSqrtPriceX96: ${lastPoolSqrtPriceX96}`,
-        this.constructor.name
-      );
-      return BigInt(0);
-    } 
-
-    // Calculate the price before the swap
-    const priceAfter: bigint = convertSqrtPriceX96ToBigInt(this.sqrtPriceX96);
-    const priceBefore: bigint = convertSqrtPriceX96ToBigInt(lastPoolSqrtPriceX96);
-
-    // Check for division by zero
-    if (priceBefore === BigInt(0)) {
+  public calculatePriceImpact(
+    lastPoolSqrtPriceX96: bigint,
+    token0Decimals: number,
+    token1Decimals: number
+  ): number {
+    if (lastPoolSqrtPriceX96 === BigInt(0)) {
       throw new Error("Division by zero error: priceBefore is zero");
     }
 
-    // Calculate the price impact
-    const priceImpact: bigint = (priceAfter - priceBefore) * BigInt(10000) / priceBefore;
-    return priceImpact;
+    // Calculate the price before the swap
+    const priceAfter: Decimal = sqrtPriceX96ToDecimal(
+      this.sqrtPriceX96,
+      token0Decimals,
+      token1Decimals
+    );
+    logger.debug(`Price after: ${priceAfter.toString()}`);
+
+    const priceBefore: Decimal = sqrtPriceX96ToDecimal(
+      lastPoolSqrtPriceX96,
+      token0Decimals,
+      token1Decimals
+    );
+    logger.debug(`Price before: ${priceBefore.toString()}`);
+
+    // Check for division by zero
+    if (priceBefore.eq(new Decimal(0))) {
+      throw new Error("Division by zero error: priceBefore is zero");
+    }
+
+    // Calculate the price impact in bps.
+    const priceImpact: Decimal = priceAfter
+      .sub(priceBefore)
+      .div(priceBefore)
+      .mul(10000); // Convert to basis points (bps)
+
+    const priceImpactNum = priceImpact.abs().round().toNumber();
+    logger.debug(`Price impact: ${priceImpactNum} bps`);
+    return priceImpactNum;
   }
 }
 
