@@ -13,7 +13,7 @@ import { Decimal } from "decimal.js";
  * @property {string} recipient - The address of the recipient receiving the swap.
  * @property {bigint} amount0 - The amount of token0 involved in the swap.
  * @property {bigint} amount1 - The amount of token1 involved in the swap.
- * @property {number} sqrtPriceX96 - The square root of the price after the swap times 2^96, used for precision in calculations.
+ * @property {Decimal} sqrtPriceX96 - The square root of the price after the swap times 2^96, used for precision in calculations.
  * @property {bigint} liquidity - The liquidity of the pool after the swap.
  * @property {string} poolContract - The address of the pool contract where the swap occurred.
  * @property {Token[]} [inputTokens] - Optional array of input tokens for the swap.
@@ -23,7 +23,7 @@ abstract class BaseSwap {
   recipient: string;
   amount0: bigint;
   amount1: bigint;
-  sqrtPriceX96: bigint;
+  sqrtPriceX96: Decimal;
   liquidity: bigint;
   poolContract: string;
   inputTokens?: Token[];
@@ -33,7 +33,7 @@ abstract class BaseSwap {
     recipient: string,
     amount0: bigint,
     amount1: bigint,
-    sqrtPriceX96: bigint,
+    sqrtPriceX96: Decimal,
     liquidity: bigint,
     poolContract: string
   ) {
@@ -77,11 +77,11 @@ abstract class BaseSwap {
    * @throws An error if the price before the swap is zero
    */
   public calculatePriceImpact(
-    lastPoolSqrtPriceX96: bigint,
+    lastPoolSqrtPriceX96: Decimal,
     token0Decimals: number,
     token1Decimals: number
   ): number {
-    if (lastPoolSqrtPriceX96 === BigInt(0)) {
+    if (lastPoolSqrtPriceX96 === new Decimal(0)) {
       throw new Error("Division by zero error: priceBefore is zero");
     }
 
@@ -91,14 +91,12 @@ abstract class BaseSwap {
       token0Decimals,
       token1Decimals
     );
-    logger.debug(`Price after: ${priceAfter.toString()}`);
 
     const priceBefore: Decimal = sqrtPriceX96ToDecimal(
       lastPoolSqrtPriceX96,
       token0Decimals,
       token1Decimals
     );
-    logger.debug(`Price before: ${priceBefore.toString()}`);
 
     // Check for division by zero
     if (priceBefore.eq(new Decimal(0))) {
@@ -112,7 +110,6 @@ abstract class BaseSwap {
       .mul(10000); // Convert to basis points (bps)
 
     const priceImpactNum = priceImpact.abs().round().toNumber();
-    logger.debug(`Price impact: ${priceImpactNum} bps`);
     return priceImpactNum;
   }
 }

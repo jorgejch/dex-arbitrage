@@ -1,5 +1,7 @@
 import { BaseSwap } from "./baseSwap.js";
 
+import { Decimal } from "decimal.js";
+
 /**
  * Represents a PSv3 swap.
  */
@@ -13,7 +15,7 @@ class PSv3Swap extends BaseSwap {
     recipient: string,
     amount0: bigint,
     amount1: bigint,
-    sqrtPriceX96: bigint,
+    sqrtPriceX96: Decimal,
     liquidity: bigint,
     protocolFeesToken0: bigint,
     protocolFeesToken1: bigint,
