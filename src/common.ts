@@ -4,7 +4,7 @@ import { Decimal } from "decimal.js";
 
 // Constants
 const constants = {
-  QI92: BigInt(6277101735386680763835789423207666416102355444464034512896n),
+  QI92: new Decimal(6277101735386680763835789423207666416102355444464034512896n.toString()),
 };
 
 /**
@@ -14,8 +14,8 @@ const config = {
   LOGGER_PREFIX: "FlashLoanArbitrage",
   POOL_ABI: poolAbi,
   AFLAB_ABI: aflabAbi,
-  LOG_LEVEL: "INFO",
-  // LOG_LEVEL: "DEBUG",
+  // LOG_LEVEL: "INFO",
+  LOG_LEVEL: "DEBUG",
   RECONNECT_INTERVAL_BASE: 1000, // Base interval for WSS reconnection attempts in milliseconds
   EXPECTED_PONG_BACK: 5000, // Time to wait for a pong response in milliseconds
   KEEP_ALIVE_CHECK_INTERVAL: 7500, // Interval for sending ping messages in milliseconds
@@ -74,17 +74,15 @@ function exponentialBackoffDelay(
  * @returns The price as a Decimal float
  */
 function sqrtPriceX96ToDecimal(
-  sqrtPriceX96: bigint,
+  sqrtPriceX96: Decimal,
   token0Decimals: number,
   token1Decimals: number
 ): Decimal {
-  const numDecimal = new Decimal((sqrtPriceX96 * sqrtPriceX96).toString());
-  const denomDecimal = new Decimal(constants.QI92.toString());
-  const priceDecimal = numDecimal
-    .div(denomDecimal)
+  const num = sqrtPriceX96.mul(sqrtPriceX96);
+  const priceAdjusted = num
+    .div(constants.QI92)
     .mul(new Decimal(10).pow(token0Decimals - token1Decimals));
-  logger.debug(`price: ${priceDecimal.toString()}`);
-  return priceDecimal;
+  return priceAdjusted;
 }
 
 /**
