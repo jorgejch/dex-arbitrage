@@ -35,13 +35,10 @@ class PSv3Dex extends BaseDex {
     try {
       contract = this.getContract(swap.contractAddress);
     } catch (error) {
-      logger.warn(
-        `Error fetching contract: ${error}`,
-        this.constructor.name
-      );
+      logger.warn(`Error fetching contract: ${error}`, this.constructor.name);
       return;
     }
-      
+
     const inputTokens: Token[] = contract.getInputTokens();
 
     swap.setTokens(inputTokens);

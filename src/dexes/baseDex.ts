@@ -79,7 +79,7 @@ abstract class BaseDex {
 
   /**
    * Calculate the expected profit for a triangular arbitrage opportunity.
-   * 
+   *
    * @param tokenA The initial token to swap
    * @param tokenB The intermediary token to swap
    * @param tokenC The final token to swap
@@ -87,7 +87,7 @@ abstract class BaseDex {
    * @param swap1PoolContract The pool contract for the first swap
    * @param swap2PoolContract The pool contract for the second swap
    * @param swap3PoolContract The pool contract for the third swap
-   * @returns The expected profit 
+   * @returns The expected profit
    */
   protected calculateExpectedProfit(
     tokenA: Token,
@@ -322,44 +322,16 @@ abstract class BaseDex {
     }
 
     logger.info(
-      `Opportunity details:\n` +
-        `Token A: ${opportunity.tokenA.symbol}\n` +
-        `Token B: ${opportunity.tokenB.symbol}\n` +
-        `Token C: ${opportunity.tokenC.symbol}\n` +
-        `Original Swap Price Impact: ${opportunity.originalSwapPriceImpact}\n` +
-        `Token A In: ${opportunity.tokenAIn.toString()}\n` +
-        `Expected Profit: ${opportunity.expectedProfit.toString()}`,
+      `\n========== Arbitrage Opportunity ==========\n` +
+        `\t\tToken A: ${opportunity.tokenA.symbol}\n` +
+        `\t\tToken B: ${opportunity.tokenB.symbol}\n` +
+        `\t\tToken C: ${opportunity.tokenC.symbol}\n` +
+        `\t\tOriginal Swap Price Impact: ${opportunity.originalSwapPriceImpact}\n` +
+        `\t\tToken A In: ${opportunity.tokenAIn.toString()}\n` +
+        `\t\tExpected Profit: ${opportunity.expectedProfit.toString()}\n` +
+        `==========================================`,
       this.constructor.name
     );
-  }
-
-  protected inferSwapDirection(
-    amount0: number,
-    amount1: number,
-    token0: Token,
-    token1: Token
-  ): Token[] {
-    if (amount0 > 0) {
-      return [token0, token1];
-    } else if (amount1 > 0) {
-      return [token1, token0];
-    } else {
-      throw new Error("Invalid swap amounts");
-    }
-  }
-
-  /**
-   * Check if the DEX is initialized.
-   */
-  public isInitialized(): boolean {
-    return this.initialized;
-  }
-
-  /**
-   * Get a list of pool contract addresses.
-   */
-  public getPoolAddresses(): string[] {
-    return this.pools.map((pool) => pool.id);
   }
 
   /**
