@@ -4,7 +4,7 @@ import { WebSocketManager } from "../ws.js";
 import { BaseContract } from "./baseContract.js";
 import { logger } from "../common.js";
 import { PSv3Swap } from "../swaps/psv3Swap.js";
-import { Decimal }  from "decimal.js";
+import { Decimal } from "decimal.js";
 
 /**
  * Represents a pool contract.
@@ -59,7 +59,7 @@ class PoolContract extends BaseContract {
         amount0,
         amount1,
         sqrtPriceX96,
-        liquidity,
+        liquidity, // skip the thick
         ,
         protocolFeesToken0,
         protocolFeesToken1,
@@ -70,7 +70,7 @@ class PoolContract extends BaseContract {
         recipient,
         amount0,
         amount1,
-        sqrtPriceX96,
+        new Decimal(sqrtPriceX96.toString()),
         liquidity,
         protocolFeesToken0,
         protocolFeesToken1,
@@ -81,8 +81,15 @@ class PoolContract extends BaseContract {
        * The first Swap caught is a sacrifice
        * in order to initialize lastPoolSqrtPriceX96
        */
-      if (this.getLastPoolSqrtPriceX96() > BigInt(0)) {
-        this.processSwap(swap, this.lastPoolSqrtPriceX96);
+      if (this.getLastPoolSqrtPriceX96() > new Decimal(0)) {
+        try {
+          this.processSwap(swap, this.lastPoolSqrtPriceX96);
+        } catch (error) {
+          logger.warn(
+            `Error processing swap event: ${error}`,
+            this.constructor.name
+          );
+        }
       }
 
       // Keep track of the last pool price
@@ -124,25 +131,23 @@ class PoolContract extends BaseContract {
     return this.pool;
   }
 
-  public getLastPoolSqrtPriceX96(): bigint {
-    return this.lastPoolSqrtPriceX96;
+  public getLastPoolSqrtPriceX96(): Decimal {
+    return new Decimal(this.lastPoolSqrtPriceX96.toString());
   }
 
   public getInputTokens(): Array<Token> {
-    return [this.pool.inputTokens[0], this.pool.inputTokens[1]];
+    return this.pool.inputTokens;
   }
 
   /**
-   * Get the pool fees.
+   * Get the total pool fees.
    *
-   * @param amount The amount to calculate the fees for
-   * @returns The pool fees
+   * @returns The total pool fees
    */
-  public getPoolFee(amount: Decimal): Decimal {
-    /* Be conservative now, improve later */
+  public getTotalPoolFees(): Decimal {
     return this.pool.fees.reduce((acc, fee) => {
-      const scaledFeePercentage: Decimal = new Decimal(fee.feePercentage * 1e6);
-      return acc.add(amount.mul(scaledFeePercentage).div(1e6));
+      const feePercentage: Decimal = new Decimal(fee.feePercentage);
+      return acc.add(feePercentage);
     }, new Decimal(0));
   }
 }
