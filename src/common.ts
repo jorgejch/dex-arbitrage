@@ -1,5 +1,11 @@
 import poolAbi from "./abis/pancakeSwapv3PoolAbi.js";
 import aflabAbi from "./abis/flashLoanArbitrageAbi.js";
+import { Decimal } from "decimal.js";
+
+// Constants
+const constants = {
+  QI92: BigInt(6277101735386680763835789423207666416102355444464034512896n),
+};
 
 /**
  * Mostly static configuration values
@@ -9,6 +15,7 @@ const config = {
   POOL_ABI: poolAbi,
   AFLAB_ABI: aflabAbi,
   LOG_LEVEL: "INFO",
+  // LOG_LEVEL: "DEBUG",
   RECONNECT_INTERVAL_BASE: 1000, // Base interval for WSS reconnection attempts in milliseconds
   EXPECTED_PONG_BACK: 5000, // Time to wait for a pong response in milliseconds
   KEEP_ALIVE_CHECK_INTERVAL: 7500, // Interval for sending ping messages in milliseconds
@@ -59,14 +66,25 @@ function exponentialBackoffDelay(
 }
 
 /**
- * Converts a Q64.96 fixed-point number to a BigInt representing the price.
+ * Converts a Q64.96 fixed-point number to a float representing the price.
  *
  * @param sqrtPriceX96 The Q64.96 fixed-point number representing the square root of the price
- * @returns The price as a BigInt
+ * @param token0Decimals The number of decimals for token0
+ * @param token1Decimals The number of decimals for token1
+ * @returns The price as a Decimal float
  */
-function convertSqrtPriceX96ToBigInt(sqrtPriceX96: bigint): bigint {
-  const priceBigInt = sqrtPriceX96 ** BigInt(2) / BigInt(2) ** BigInt(96);
-  return priceBigInt;
+function sqrtPriceX96ToDecimal(
+  sqrtPriceX96: bigint,
+  token0Decimals: number,
+  token1Decimals: number
+): Decimal {
+  const numDecimal = new Decimal((sqrtPriceX96 * sqrtPriceX96).toString());
+  const denomDecimal = new Decimal(constants.QI92.toString());
+  const priceDecimal = numDecimal
+    .div(denomDecimal)
+    .mul(new Decimal(10).pow(token0Decimals - token1Decimals));
+  logger.debug(`price: ${priceDecimal.toString()}`);
+  return priceDecimal;
 }
 
 /**
@@ -74,9 +92,9 @@ function convertSqrtPriceX96ToBigInt(sqrtPriceX96: bigint): bigint {
  *
  * @param priceImpact The price impact in bps
  */
-function isPriceImpactSignificant(priceImpact: bigint): boolean {
+function isPriceImpactSignificant(priceImpact: number): boolean {
   const threshold = config.PRICE_IMPACT_THRESHOLD;
-  return (priceImpact < BigInt(0) ? -priceImpact : priceImpact) >= threshold;
+  return (priceImpact < 0 ? -priceImpact : priceImpact) >= threshold;
 }
 
 /**
@@ -138,7 +156,7 @@ export {
   getTGPancakeSwapUrl,
   exponentialBackoffDelay,
   isPriceImpactSignificant,
-  convertSqrtPriceX96ToBigInt,
+  sqrtPriceX96ToDecimal,
   getHoursSinceUnixEpoch,
   logger,
   Logger,

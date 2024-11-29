@@ -36,16 +36,18 @@
     "@pancakeswap/v3-periphery": "^1.0.2",
     "@quicknode/sdk": "^2.3.0",
     "@types/node": "^20.17.6",
-    "@vitest/ui": "^2.1.5",
     "@vitest/coverage-v8": "^2.1.5",
-    "dotenv": "^16.4.5",
-    "ethers": "^6.13.4",
+    "@vitest/ui": "^2.1.5",
     "hardhat": "^2.22.15",
     "ts-node": "^10.9.2",
     "typescript": "^5.6.3",
     "vitest": "^2.1.5"
   },
   "dependencies": {
+    "bn.js": "^5.2.1",
+    "decimal.js": "^10.4.3",
+    "dotenv": "^16.4.5",
+    "ethers": "^6.13.4",
     "graffle": "^8.0.0-next.133",
     "graphql": "^16.9.0",
     "ws": "^8.18.0"
