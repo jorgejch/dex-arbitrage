@@ -14,13 +14,13 @@ const config = {
   LOGGER_PREFIX: "FlashLoanArbitrage",
   POOL_ABI: poolAbi,
   AFLAB_ABI: aflabAbi,
-  // LOG_LEVEL: "INFO",
-  LOG_LEVEL: "DEBUG",
+  LOG_LEVEL: "INFO",
+  // LOG_LEVEL: "DEBUG",
   RECONNECT_INTERVAL_BASE: 1000, // Base interval for WSS reconnection attempts in milliseconds
   EXPECTED_PONG_BACK: 5000, // Time to wait for a pong response in milliseconds
   KEEP_ALIVE_CHECK_INTERVAL: 7500, // Interval for sending ping messages in milliseconds
   SIMULATE_DISCONNECT_INTERVAL: 15000, // Interval to simulate disconnections in milliseconds
-  PRICE_IMPACT_THRESHOLD: 3, // Price impact threshold for arbitrage opportunities in bps
+  PRICE_IMPACT_THRESHOLD: 5, // Price impact threshold for arbitrage opportunities in bps
 };
 
 /**
