@@ -7,6 +7,8 @@ import { WebSocketManager } from "../ws.js";
 import { PoolContract } from "../contracts/poolContract.js";
 import abi from "../abis/pancakeSwapv3PoolAbi.js";
 
+import { Decimal } from "decimal.js";
+
 /**
  * Represents a PSv3 DEX.
  */
@@ -23,7 +25,7 @@ class PSv3Dex extends BaseDex {
     let contract: PoolContract | undefined;
     let inputTokens: Token[] | undefined;
 
-    if (lastPoolSqrtPriceX96 <= 0){
+    if (lastPoolSqrtPriceX96 <= 0) {
       logger.warn(
         `Invalid lastPoolSqrtPriceX96: ${lastPoolSqrtPriceX96}`,
         this.constructor.name
@@ -52,7 +54,11 @@ class PSv3Dex extends BaseDex {
       `Processing swap: ${swapName}, amount0=${swap.amount0}, amount1=${swap.amount1}`,
       this.constructor.name
     );
-    const priceImpact = swap.calculatePriceImpact(lastPoolSqrtPriceX96);
+    const priceImpact: number = swap.calculatePriceImpact(
+      lastPoolSqrtPriceX96,
+      inputTokens[0].decimals,
+      inputTokens[1].decimals
+    );
     logger.debug(
       `Calculated price impact of ${priceImpact} for swap: ${swapName}`,
       this.constructor.name
@@ -99,7 +105,7 @@ class PSv3Dex extends BaseDex {
       }
 
       let tokenB: Token | undefined;
-      let profit: bigint | undefined;
+      let profit: Decimal | undefined;
 
       [tokenB, profit] = this.pickTokenB(
         tokenA,

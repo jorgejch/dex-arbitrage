@@ -3,7 +3,8 @@ import { Pool, Token } from "../types.js";
 import { PoolContract } from "../contracts/poolContract.js";
 import { BaseSwap } from "../swaps/baseSwap.js";
 import { DexPoolSubgraph } from "../subgraphs/dexPoolSubgraph.js";
-import { logger, convertSqrtPriceX96ToBigInt } from "../common.js";
+import { logger, sqrtPriceX96ToDecimal } from "../common.js";
+import { Decimal } from "decimal.js";
 /**
  * Abstract class representing a DEX.
  */
@@ -43,11 +44,11 @@ abstract class BaseDex {
     tokenA: Token,
     tokenB: Token,
     tokenC: Token,
-    inputAmount: bigint,
+    inputAmount: Decimal,
     swap1PoolContract: PoolContract,
     swap2PoolContract: PoolContract,
     swap3PoolContract: PoolContract
-  ): bigint {
+  ): Decimal {
     // Step 1: Token A to Token B
     const sqrtPriceX96AtoB = swap1PoolContract.getLastPoolSqrtPriceX96();
     if (!sqrtPriceX96AtoB) {
@@ -55,23 +56,25 @@ abstract class BaseDex {
         "Last price value for Token A to Token B swap has not been initialized.",
         this.constructor.name
       );
-      return BigInt(0);
+      return new Decimal(0);
     }
 
-    const priceAtoB = convertSqrtPriceX96ToBigInt(sqrtPriceX96AtoB);
-    const adjustedPriceAtoB =
-      (priceAtoB * BigInt(10 ** tokenB.decimals)) /
-      BigInt(10 ** tokenA.decimals);
-    const grossOutputB =
-      (inputAmount * adjustedPriceAtoB) / BigInt(10 ** tokenB.decimals);
-    const feeAtoB = swap1PoolContract.getPoolFee(grossOutputB);
-    const netOutputB = grossOutputB - feeAtoB;
-    logger.info(
-      `Net output for Token A to Token B swap is less than or equal to zero.\n\tNet output: ${netOutputB}\n\tGross output: ${grossOutputB}\n\tFee: ${feeAtoB}\n\tPrice: ${priceAtoB}`,
-      this.constructor.name
+    const priceAtoB: Decimal = sqrtPriceX96ToDecimal(
+      sqrtPriceX96AtoB,
+      tokenA.decimals,
+      tokenB.decimals
     );
-    if (netOutputB <= BigInt(0)) {
-      return BigInt(0);
+    const adjustedPriceAtoB: Decimal = priceAtoB.mul(
+      new Decimal(10)).pow(tokenA.decimals - tokenB.decimals);
+    const grossOutputB: Decimal = inputAmount.mul(adjustedPriceAtoB);
+    const feeAtoB: Decimal = swap1PoolContract.getPoolFee(grossOutputB);
+    const netOutputB = grossOutputB.sub(feeAtoB);
+    if (netOutputB.lte(new Decimal(0))) {
+      logger.info(
+        `Net output for Token A to Token B swap is less than or equal to zero.\n\tNet output: ${netOutputB}\n\tGross output: ${grossOutputB}\n\tFee: ${feeAtoB}\n\tPrice: ${priceAtoB}`,
+        this.constructor.name
+      );
+      return new Decimal(0);
     }
 
     // Step 2: Token B to Token C
@@ -81,23 +84,26 @@ abstract class BaseDex {
         "Last price value for Token B to Token C swap has not been initialized.",
         this.constructor.name
       );
-      return BigInt(0);
+      return new Decimal(0);
     }
 
-    const priceBtoC = convertSqrtPriceX96ToBigInt(sqrtPriceX96BtoC);
-    const adjustedPriceBtoC =
-      (priceBtoC * BigInt(10 ** tokenC.decimals)) /
-      BigInt(10 ** tokenB.decimals);
-    const grossOutputC =
-      (netOutputB * adjustedPriceBtoC) / BigInt(10 ** tokenC.decimals);
-    const feeBtoC = swap2PoolContract.getPoolFee(grossOutputC);
-    const netOutputC = grossOutputC - feeBtoC;
-    logger.info(
-      `Net output for Token B to Token C swap is less than or equal to zero.\n\tNet output: ${netOutputC}\n\tGross output: ${grossOutputC}\n\tFee: ${feeBtoC}\n\tPrice: ${priceBtoC}`,
-      this.constructor.name
+    const priceBtoC: Decimal = sqrtPriceX96ToDecimal(
+      sqrtPriceX96BtoC,
+      tokenB.decimals,
+      tokenC.decimals
     );
-    if (netOutputC <= BigInt(0)) {
-      return BigInt(0);
+    const adjustedPriceBtoC: Decimal = priceBtoC.mul(
+      new Decimal(10).pow(tokenB.decimals - tokenC.decimals)
+    );
+    const grossOutputC: Decimal = netOutputB.mul(adjustedPriceBtoC);
+    const feeBtoC: Decimal = swap2PoolContract.getPoolFee(grossOutputC);
+    const netOutputC: Decimal = grossOutputC.sub(feeBtoC);
+    if (netOutputC.lte(new Decimal(0))) {
+      logger.info(
+        `Net output for Token B to Token C swap is less than or equal to zero.\n\tNet output: ${netOutputC}\n\tGross output: ${grossOutputC}\n\tFee: ${feeBtoC}\n\tPrice: ${priceBtoC}`,
+        this.constructor.name
+      );
+      return new Decimal(0);
     }
 
     // Step 3: Token C to Token A
@@ -107,28 +113,30 @@ abstract class BaseDex {
         "Last price value for Token C to Token A swap has not been initialized.",
         this.constructor.name
       );
-      return BigInt(0);
+      return new Decimal(0);
     }
 
-    const priceCtoA = convertSqrtPriceX96ToBigInt(sqrtPriceX96CtoA);
-    const adjustedPriceCtoA =
-      (priceCtoA * BigInt(10 ** tokenA.decimals)) /
-      BigInt(10 ** tokenC.decimals);
-    const grossOutputA =
-      (netOutputC * adjustedPriceCtoA) / BigInt(10 ** tokenA.decimals);
-    const feeCtoA = swap3PoolContract.getPoolFee(grossOutputA);
-    const netOutputA = grossOutputA - feeCtoA;
-    logger.info(
-      `Net output for Token C to Token A swap is less than or equal to zero.\n\tNet output: ${netOutputA}\n\tGross output: ${grossOutputA}\n\tFee: ${feeCtoA}\n\tPrice: ${priceCtoA}`,
-      this.constructor.name
+    const priceCtoA = sqrtPriceX96ToDecimal(
+      sqrtPriceX96CtoA,
+      tokenC.decimals,
+      tokenA.decimals
     );
-
-    if (netOutputA <= BigInt(0)) {
-      return BigInt(0);
+    const adjustedPriceCtoA: Decimal = priceCtoA.mul(
+      new Decimal(10).pow(tokenA.decimals - tokenC.decimals)
+    );
+    const grossOutputA: Decimal = netOutputC.mul(adjustedPriceCtoA);
+    const feeCtoA: Decimal = swap3PoolContract.getPoolFee(grossOutputA);
+    const netOutputA: Decimal = grossOutputA.sub(feeCtoA);
+    if (netOutputA.lte(new Decimal(0))) {
+      logger.info(
+        `Net output for Token C to Token A swap is less than or equal to zero.\n\tNet output: ${netOutputA}\n\tGross output: ${grossOutputA}\n\tFee: ${feeCtoA}\n\tPrice: ${priceCtoA}`,
+        this.constructor.name
+      );
+      return new Decimal(0);
     }
 
     // Calculate the expected profit
-    const expectedProfit = netOutputA - inputAmount;
+    const expectedProfit: Decimal = netOutputA.sub(inputAmount);
     return expectedProfit;
   }
 
@@ -170,12 +178,14 @@ abstract class BaseDex {
     possibleBs: Token[],
     inputAmount: bigint,
     swapPoolContract: PoolContract
-  ): [Token | undefined, bigint | undefined] {
-    const profitMap = new Map<bigint, Token>();
+  ): [Token | undefined, Decimal | undefined] {
+    const profitMap = new Map<Decimal, Token>();
 
     if (!possibleBs) {
       return [undefined, undefined];
     }
+
+    const decimalInputAmount: Decimal = new Decimal(inputAmount.toString());
 
     for (const tokenB of possibleBs) {
       const swap1PoolContract = this.getContracstsForTokens(tokenA, tokenB);
@@ -186,11 +196,11 @@ abstract class BaseDex {
         return [undefined, undefined];
       }
 
-      const profit: bigint = this.calculateExpectedProfit(
+      const profit: Decimal = this.calculateExpectedProfit(
         tokenA,
         tokenB,
         tokenC,
-        inputAmount,
+        decimalInputAmount,
         swap1PoolContract,
         swap2PoolContract,
         swap3PoolContract
@@ -198,20 +208,21 @@ abstract class BaseDex {
 
       logger.info(`Profit: ${profit}`, this.constructor.name);
 
-      if (profit > BigInt(0)) {
+      if (profit > new Decimal(0)) {
         profitMap.set(profit, tokenB);
       }
     }
-
-    const maxProfit = Array<bigint>(...profitMap.keys()).reduce(
-      (a, b) => (a > b ? a : b),
-      BigInt(0)
-    );
 
     if (profitMap.size === 0) {
       return [undefined, undefined];
     }
 
+    let maxProfit = new Decimal(0);
+    for (const profit of profitMap.keys()) {
+      if (profit.gt(maxProfit)) {
+        maxProfit = profit;
+      }
+    }
     return [profitMap.get(maxProfit), maxProfit];
   }
 
@@ -219,7 +230,7 @@ abstract class BaseDex {
     tokenA: Token,
     tokenB: Token,
     tokenC: Token,
-    profit: bigint
+    profit: Decimal
   ) {
     // Logic to trigger smart contract execution
   }
@@ -228,7 +239,7 @@ abstract class BaseDex {
     tokenA: Token,
     tokenB: Token,
     tokenC: Token,
-    profit: bigint
+    profit: Decimal
   ) {
     logger.info(
       `Arbitrage opportunity found: ${tokenA.symbol} -> ${tokenB.symbol} -> ${tokenC.symbol} -> ${tokenA.symbol}`,
