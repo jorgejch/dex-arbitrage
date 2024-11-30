@@ -15,10 +15,8 @@ class TestContract extends BaseContract {
     abi: any,
     contractType: ContractType
   ) {
-    super(address, wsManager, abi, contractType);
+    super(address, abi, contractType, wsManager);
   }
-
-  protected customInit(): void {}
 
   listenForEvents(contract: Contract): void {
     if (!contract) {
@@ -27,6 +25,15 @@ class TestContract extends BaseContract {
     contract.on("Swap", (event: any) => {
       console.log("Event received:", event);
     });
+  }
+
+  protected createContract(): Contract {
+    this.contract = vi.fn() as unknown as Contract;
+    return this.contract;
+  }
+
+  protected customInit(): void {
+    // Mock implementation
   }
 
   public getWsManager() {
@@ -52,7 +59,7 @@ describe("Base Contract Integration Tests", () => {
 
     try {
       testContract.initialize();
-    }catch(e){
+    } catch (e) {
       console.log(`Error initializing contract: ${e}`);
     }
   });
