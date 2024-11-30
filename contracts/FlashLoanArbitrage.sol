@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.20;
+pragma solidity 0.8.27;
 
 import "@aave/core-v3/contracts/flashloan/base/FlashLoanSimpleReceiverBase.sol";
 import "@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol";
@@ -13,11 +13,11 @@ import "@pancakeswap/v3-periphery/contracts/libraries/TransferHelper.sol";
  * @notice This is an arbitrage contract that uses AAVE v3 flash loans to make a profit on PancakeSwap v3.
  */
 contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
-    uint256 balanceReceived = 0;
-    uint32 executionCounter = 0;
-    address immutable addressThis = address(this);
-    ISwapRouter internal immutable router;
-    address internal immutable routerAddress;
+    uint256 private balanceReceived = 0;
+    uint32 private executionCounter = 0;
+    address internal immutable contractAddress = address(this);
+    ISwapRouter internal immutable swapRouter;
+    address internal immutable swapRouterAddress;
 
     /**
      * @dev Event emitted when the arbitrage is concluded, regardless of success or failure.
@@ -31,7 +31,6 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
      * @param swap3 The initial swap information for swap 3
      * @param swap3AmountOut Amount of the output token for swap 3
      * @param profit The profit made from the arbitrage
-     * @param success Whether the arbitrage was successful
      */
     event ArbitrageConcluded(
         uint32 id,
@@ -42,8 +41,7 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
         uint256 swap2AmountOut,
         SwapInfo swap3,
         uint256 swap3AmountOut,
-        uint256 profit,
-        bool success
+        uint256 profit
     );
 
     /**
@@ -70,18 +68,18 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
      * Constructor.
      *
      * @param addressProvider  The AAVE Pool Address Provider address.
-     * @param swapRouter       The PancakeSwap v3 router address.
+     * @param sRouter          The PancakeSwap v3 router address.
      */
     constructor(
         address addressProvider,
-        address swapRouter
+        address sRouter
     )
         payable
         FlashLoanSimpleReceiverBase(IPoolAddressesProvider(addressProvider))
         Ownable(msg.sender)
     {
-        routerAddress = swapRouter;
-        router = ISwapRouter(routerAddress);
+        swapRouterAddress = sRouter;
+        swapRouter = ISwapRouter(swapRouterAddress);
     }
 
     /**
@@ -97,7 +95,7 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
         // Approve the PancakeSwap router to spend the token
         TransferHelper.safeApprove(
             swapInfo.tokenIn,
-            routerAddress,
+            swapRouterAddress,
             amountIn
         );
 
@@ -107,25 +105,24 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
                 tokenIn: swapInfo.tokenIn,
                 tokenOut: swapInfo.tokenOut,
                 fee: swapInfo.poolFee,
-                recipient: addressThis,
+                recipient: contractAddress,
                 deadline: block.timestamp,
                 amountIn: amountIn,
                 amountOutMinimum: swapInfo.amountOutMinimum,
                 sqrtPriceLimitX96: 0 // No price limit
             });
 
-        amountOut = router.exactInputSingle(params);
+        amountOut = swapRouter.exactInputSingle(params);
     }
 
     /**
-     * Called by the lending pool when the flashloan is executed.
-     * It executes the swaps for the triangular arbitrage opportunity.
-     * Overridden from FlashLoanSimpleReceiverBase.
-     *
-     * @param asset     The asset address
-     * @param amount    The amount to borrow
-     * @param premium   The premium to pay
-     * @param params    The parameters
+     * @notice Executes the flash loan operation.
+     * @dev This function is called by the lending pool after receiving the flash loaned amount.
+     * @param asset The address of the asset being borrowed.
+     * @param amount The amount of the asset being borrowed.
+     * @param premium The fee to be paid for the flash loan.
+     * @param params Additional parameters passed to the function.
+     * @return isSuccess A boolean indicating whether the operation succeeded.
      */
     function executeOperation(
         address asset,
@@ -133,10 +130,10 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
         uint256 premium,
         address /* initiator */,
         bytes calldata params
-    ) external override returns (bool isSucess) {
+    ) external override returns (bool isSuccess) {
         require(msg.sender == address(POOL), "malicious callback");
         require(
-            amount <= IERC20(asset).balanceOf(addressThis),
+            amount <= IERC20(asset).balanceOf(contractAddress),
             "invalid balance"
         );
 
@@ -160,6 +157,9 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
         // Profit
         uint256 profit = swap3AmountOut - (amountOwed + decoded.extraCost);
 
+        // Check if the arbitrage is profitable
+        require(profit > 0, "not profitable");
+
         // Emit the arbitrage conclusion event
         emit ArbitrageConcluded(
             executionCounter,
@@ -170,31 +170,26 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
             swap2AmountOut,
             decoded.swap3,
             swap3AmountOut,
-            profit,
-            profit > 0
+            profit
         );
 
-        // Check if the arbitrage is profitable
-        require(profit > 0, "not profitable");
-
         // Authorize flash loan repayment
+        TransferHelper.safeApprove(asset, address(POOL), 0);
         TransferHelper.safeApprove(asset, address(POOL), amountOwed);
 
-        isSucess = true;
+        isSuccess = true;
     }
 
     /**
-     * Initiate a flash loan.
-     *
-     * @param data      The arbitrage information
-     * @param amount    The amount to borrow
+     * @notice Initiates a flash loan for arbitrage purposes.
+     * @dev This function starts the flash loan process by interacting with the lending protocol.
      */
     function initiateFlashLoan(
         ArbitInfo memory data,
         uint256 amount
     ) external payable onlyOwner {
         POOL.flashLoanSimple(
-            addressThis,
+            contractAddress,
             data.swap1.tokenIn,
             amount,
             abi.encode(data),
@@ -208,8 +203,8 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
      * @param token The token address
      */
     function withdraw(address token) external payable onlyOwner {
-        uint256 balance = IERC20(token).balanceOf(addressThis);
-        require(balance != 0, "no balance");
+        uint256 balance = IERC20(token).balanceOf(contractAddress);
+        require(balance > 0, "no balance");
         IERC20(token).transfer(owner(), balance);
     }
 
@@ -217,26 +212,38 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
      * Withdraw the BNB balance.
      */
     function withdrawBNB() external payable onlyOwner {
-        uint256 balance = addressThis.balance;
+        uint256 balance = contractAddress.balance;
         require(balance != 0, "no balance");
         payable(owner()).transfer(balance);
     }
 
     /**
-     * Get balance of the token.
+     * Get balance of the specified token.
      *
      * @param token The token address
      */
-    function getBalance(
-        address token
-    ) external payable onlyOwner returns (uint256) {
-        return IERC20(token).balanceOf(addressThis);
+    function getBalance(address token) external view returns (uint256) {
+        return IERC20(token).balanceOf(contractAddress);
+    }
+
+    /**
+     * Get the execution count.
+     */
+    function getExecutionCounter() external view returns (uint32) {
+        return executionCounter;
+    }
+
+    /**
+     * Get the total BNB received balance.
+     */
+    function getBalanceReceived() external view returns (uint256) {
+        return balanceReceived;
     }
 
     /**
      * Receive tokens.
      */
     receive() external payable {
-        balanceReceived = balanceReceived + msg.value;
+        balanceReceived += msg.value;
     }
 }
