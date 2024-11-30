@@ -7,17 +7,40 @@ import { BaseSwap } from "./swaps/baseSwap.js";
 import { Decimal } from "decimal.js";
 
 /**
- * Opportunity object
- * @typedef {Object} Opportunity
+ * Opportunity individual swap information.
+ */
+type SwapInfo = {
+  tokenIn: string;
+  tokenOut: string;
+  poolFee: number;
+  amountOutMinimum: number;
+};
+
+/**
+ * Triangular arbitrage information.
+ */
+type ArbitrageInfo = {
+  swap1: SwapInfo | undefined;
+  swap2: SwapInfo | undefined;
+  swap3: SwapInfo | undefined;
+  estimatedGasCost: number;
+};
+
+/**
+ * Represents an arbitrage opportunity.
  *
+ * @property {ArbitrageInfo} arbitInfo - Information about the arbitrage.
+ * @property {Decimal} tokenAIn - The amount of token A involved in the arbitrage.
+ * @property {Decimal} lastPoolSqrtPriceX96 - The last square root price of the pool in X96 format.
+ * @property {BaseSwap} originalSwap - The original swap details.
+ * @property {Decimal | undefined} expectedProfit - The expected profit from the arbitrage, if any.
+ * @property {number | undefined} originalSwapPriceImpact - The price impact of the original swap, if any.
  */
 type Opportunity = {
-  tokenA: Token;
-  tokenC: Token;
+  arbitInfo: ArbitrageInfo;
   tokenAIn: Decimal;
   lastPoolSqrtPriceX96: Decimal;
   originalSwap: BaseSwap;
-  tokenB: Token | undefined;
   expectedProfit: Decimal | undefined;
   originalSwapPriceImpact: number | undefined;
 };
@@ -29,6 +52,7 @@ type Opportunity = {
 enum ContractType {
   TEST,
   POOL,
+  AFLAB,
 }
 
 /**
@@ -88,4 +112,13 @@ type Pool = {
   fees: Fee[];
 };
 
-export { Pool, Token, Fee, ContractType, Opportunity };
+export {
+  Pool,
+  Token,
+  Fee,
+  ContractType,
+  Opportunity,
+  SwapInfo,
+  ArbitrageInfo,
+  HourlySnapshot,
+};
