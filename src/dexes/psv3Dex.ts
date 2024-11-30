@@ -191,6 +191,21 @@ class PSv3Dex extends BaseDex {
    * Initialize the DEX.
    */
   public async initialize(): Promise<void> {
+    if (this.initialized) {
+      logger.warn("Already initialized", this.constructor.name);
+      return;
+    }
+
+    try {
+      this.aflabContract.initialize();
+    } catch (error) {
+      logger.error(
+        `Error initializing AFLAB contract: ${error}`,
+        this.constructor.name
+      );
+      throw error;
+    }
+
     try {
       this.subgraph.initialize();
     } catch (error) {
