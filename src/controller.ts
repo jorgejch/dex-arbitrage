@@ -13,7 +13,6 @@ import { ethers } from "ethers";
  * DEX instances, and manages their lifecycle.
  *
  * @class Controller
- *
  * @param httpProviderUrl - The URL of the HTTP provider for Ethereum JSON-RPC.
  * @param wsProviderUrl - The URL of the WebSocket provider.
  * @param walletPrivateKey - The private key of the wallet used for signing transactions.
@@ -80,7 +79,7 @@ class Controller {
 
     logger.info(
       `Initialized Controller with arguments:
-      \tPSv3 AFLAB contract Address: ${aflabContractAddress}
+      \tPSv3 AFLAB contract Address: ${this.aflabContractAddress}
       \tThe Graph Base URL: ${theGraphBaseUrl}
       \tPS v3 Subgraph name: ${pancakeswapV3SubgraphName}
       \tWallet Address: ${this.wallet.address}
