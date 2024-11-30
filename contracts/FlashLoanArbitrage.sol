@@ -14,38 +14,42 @@ import "@pancakeswap/v3-periphery/contracts/libraries/TransferHelper.sol";
  */
 contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
     uint256 balanceReceived = 0;
+    uint32 executionCounter = 0;
     address immutable addressThis = address(this);
     ISwapRouter internal immutable router;
+    address internal immutable routerAddress;
 
     /**
-     * Event emitted when a swap is executed
+     * @dev Event emitted when the arbitrage is concluded, regardless of success or failure.
      *
-     * @param swapInfo An individual swap's information
-     * @param amountIn Amount of the input token
-     * @param amountOut Amount of the output token
+     * @param id The execution identifier number (counter)
+     * @param amountToBorrow The amount borrowed
+     * @param swap1 The initial swap information for swap 1
+     * @param swap1AmountOut Amount of the output token for swap 1
+     * @param swap2 The initial swap information for swap 2
+     * @param swap2AmountOut Amount of the output token for swap 2
+     * @param swap3 The initial swap information for swap 3
+     * @param swap3AmountOut Amount of the output token for swap 3
+     * @param profit The profit made from the arbitrage
+     * @param success Whether the arbitrage was successful
      */
-    event Swap(
-        SwapInfo indexed swapInfo,
-        uint256 indexed amountIn,
-        uint256 indexed amountOut
-    );
-
-    /**
-     * Event emitted when the arbitrage is started.
-     *
-     * @param data The arbitrage information
-     * @param amountToBorrow The amount to borrow
-     */
-    event ArbitrageStart(
-        ArbitInfo indexed data,
-        uint256 indexed amountToBorrow
+    event ArbitrageConcluded(
+        uint32 id,
+        uint256 amountToBorrow,
+        SwapInfo swap1,
+        uint256 swap1AmountOut,
+        SwapInfo swap2,
+        uint256 swap2AmountOut,
+        SwapInfo swap3,
+        uint256 swap3AmountOut,
+        uint256 profit,
+        bool success
     );
 
     /**
      * Individual swap information.
      */
     struct SwapInfo {
-        address router;
         address tokenIn;
         address tokenOut;
         uint24 poolFee;
@@ -59,7 +63,7 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
         SwapInfo swap1;
         SwapInfo swap2;
         SwapInfo swap3;
-        uint256 estimatedGasCost; // converted to the input token
+        uint256 extraCost; // in input token
     }
 
     /**
@@ -76,7 +80,8 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
         FlashLoanSimpleReceiverBase(IPoolAddressesProvider(addressProvider))
         Ownable(msg.sender)
     {
-        router = ISwapRouter(swapRouter);
+        routerAddress = swapRouter;
+        router = ISwapRouter(routerAddress);
     }
 
     /**
@@ -90,7 +95,11 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
         uint256 amountIn
     ) internal returns (uint256 amountOut) {
         // Approve the PancakeSwap router to spend the token
-        TransferHelper.safeApprove(swapInfo.tokenIn, address(router), amountIn);
+        TransferHelper.safeApprove(
+            swapInfo.tokenIn,
+            routerAddress,
+            amountIn
+        );
 
         // Create the swap parameters
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
@@ -106,8 +115,6 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
             });
 
         amountOut = router.exactInputSingle(params);
-
-        emit Swap(swapInfo, amountIn, amountOut);
     }
 
     /**
@@ -133,6 +140,8 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
             "invalid balance"
         );
 
+        executionCounter++;
+
         // Decode the arbitrage info
         ArbitInfo memory decoded = abi.decode(params, (ArbitInfo));
 
@@ -148,11 +157,25 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
         // Amount owed to the lending pool
         uint256 amountOwed = amount + premium;
 
-        // Check if the arbitrage is profitable after accounting for gas costs
-        require(
-            swap3AmountOut > amountOwed + decoded.estimatedGasCost,
-            "not profitable"
+        // Profit
+        uint256 profit = swap3AmountOut - (amountOwed + decoded.extraCost);
+
+        // Emit the arbitrage conclusion event
+        emit ArbitrageConcluded(
+            executionCounter,
+            amount,
+            decoded.swap1,
+            swap1AmountOut,
+            decoded.swap2,
+            swap2AmountOut,
+            decoded.swap3,
+            swap3AmountOut,
+            profit,
+            profit > 0
         );
+
+        // Check if the arbitrage is profitable
+        require(profit > 0, "not profitable");
 
         // Authorize flash loan repayment
         TransferHelper.safeApprove(asset, address(POOL), amountOwed);
@@ -170,8 +193,6 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
         ArbitInfo memory data,
         uint256 amount
     ) external payable onlyOwner {
-        emit ArbitrageStart(data, amount);
-
         POOL.flashLoanSimple(
             addressThis,
             data.swap1.tokenIn,
