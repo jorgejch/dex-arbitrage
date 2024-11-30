@@ -1,3 +1,4 @@
+
 import { WebSocketManager } from "../ws.js";
 import { Pool, Token, Opportunity } from "../types.js";
 import { PoolContract } from "../contracts/poolContract.js";
@@ -9,23 +10,59 @@ import { Decimal } from "decimal.js";
 import { ethers } from "ethers";
 
 /**
- * Abstract class representing a DEX.
+ * Abstract class representing a Uniswap V3-based Decentralized Exchange (DEX).
+ * 
+ * Provides a foundational structure for interacting with Uniswap V3-based dexes
+ * for the purpose of orchestrating arbitrage opportunities.
  */
 abstract class BaseDex {
+  /**
+   * Maps contract addresses to their corresponding PoolContract instances.
+   */
   protected readonly contractsMap: Map<string, PoolContract>;
+
+  /**
+   * Indexes pools by their input token symbols for efficient retrieval.
+   */
   protected inputTokenSymbolIndex: Map<string, Pool[]>;
-  protected initialized: boolean;
+
+  /**
+   * Indicates whether the DEX has been initialized.
+   * 
+   * @default false
+   */
+  protected initialized: boolean = false;
+
+  /**
+   * Manages WebSocket connections for real-time data streaming.
+   */
   protected wsManager: WebSocketManager;
-  protected pools: Pool[];
+
+  /**
+   * List of available liquidity pools within the DEX.
+   */
+  protected pools: Pool[] = [];
+
+  /**
+   * Signer instance used for signing transactions.
+   */
   protected signer: ethers.Signer;
+
+  /**
+   * Subgraph interface for querying DEX data from The Graph.
+   */
   protected subgraph: DexPoolSubgraph;
+
+  /**
+   * Interface for interacting with the AFLAB smart contract.
+   */
   protected aflabContract: AflabContract;
 
   /**
-   * @param wsManager WebSocket Manager
-   * @param signer The signer for transactions
-   * @param subgraph The Graph Subgraph instance
-   * @param aflabContract The AFLAB smart contract
+   * @param wsManager - Manages WebSocket connections for real-time updates.
+   * @param signer - Signer used to authorize and send transactions.
+   * @param subgraph - Interface to The Graph subgraph for querying on-chain data.
+   * @param aflabContract - Interface to the AFLAB smart contract for executing arbitrage.
    */
   constructor(
     wsManager: WebSocketManager,
@@ -33,75 +70,74 @@ abstract class BaseDex {
     subgraph: DexPoolSubgraph,
     aflabContract: AflabContract
   ) {
-    this.subgraph = subgraph;
-    this.inputTokenSymbolIndex = new Map<string, Pool[]>();
-    this.initialized = false;
     this.wsManager = wsManager;
-    this.contractsMap = new Map<string, PoolContract>();
-    this.pools = [];
     this.signer = signer;
+    this.subgraph = subgraph;
     this.aflabContract = aflabContract;
+    this.contractsMap = new Map<string, PoolContract>();
+    this.inputTokenSymbolIndex = new Map<string, Pool[]>();
   }
 
   /**
-   * Calculates the net output amount of a token swap, considering the price and pool fees.
-   *
-   * @param inputAmount - The amount of the input token to swap.
-   * @param fromToken - The token being swapped from.
-   * @param toToken - The token being swapped to.
-   * @param poolContract - The pool contract providing price and fee information.
-   * @returns An object containing:
-   * - `price`: The exchange rate between the tokens.
-   * - `netOutput`: The amount of the output token received after fees.
-   * - `grossOutput`: The amount of the output token before fees.
-   * - `feePercentage`: The total fee percentage applied to the swap.
-   * - `fee`: The fee amount deducted from the gross output.
+   * Get a pool contract by address.
+   * 
+   * @param address - The pool contract address.
+   * @returns The pool contract.
+   * @throws An error if the contract is not found.
    */
-  private calculateNetOutput(
-    inputAmount: Decimal,
-    fromToken: Token,
-    toToken: Token,
-    poolContract: PoolContract
-  ): {
-    price: Decimal;
-    netOutput: Decimal;
-    grossOutput: Decimal;
-    feePercentage: Decimal;
-    fee: Decimal;
-  } {
-    const sqrtPriceX96 = poolContract.getLastPoolSqrtPriceX96();
-    if (!sqrtPriceX96) {
-      logger.warn(
-        `Last price value for ${fromToken.symbol} to ${toToken.symbol} swap has not been initialized.`,
-        this.constructor.name
-      );
-      return {
-        price: new Decimal(0),
-        netOutput: new Decimal(0),
-        grossOutput: new Decimal(0),
-        feePercentage: new Decimal(0),
-        fee: new Decimal(0),
-      };
+  public getContract(address: string): PoolContract {
+    const contract = this.contractsMap.get(address);
+    if (contract === undefined) {
+      logger.warn(`Contract not found: ${address}`, this.constructor.name);
+      throw new Error(`Contract not found: ${address}`);
+    }
+    return contract;
+  }
+
+  /**
+   * Get the pool contracts for a pair of tokens.
+   *
+   * @param tokenX - The first token.
+   * @param tokenZ - The second token.
+   * @returns An array of pool contracts that include both tokens.
+   */
+  private getContracstsForTokens(tokenX: Token, tokenZ: Token): PoolContract[] {
+    const poolsA = this.inputTokenSymbolIndex.get(tokenX.symbol);
+    const poolsB = this.inputTokenSymbolIndex.get(tokenZ.symbol);
+
+    if (poolsA === undefined || poolsB === undefined) {
+      throw new Error("No pools found for tokens");
     }
 
-    const [token0, token1] = poolContract.getInputTokens();
-    const isToken0ToToken1 = fromToken.id === token0.id;
+    const commonPools = poolsA.filter((pool) => poolsB.includes(pool));
 
-    const price = sqrtPriceX96ToDecimal(
-      sqrtPriceX96,
-      token0.decimals,
-      token1.decimals
-    );
+    return commonPools
+      .map((pool) => this.getContract(pool.id))
+      .filter((contract): contract is PoolContract => contract !== undefined);
+  }
 
-    const grossOutput = isToken0ToToken1
-      ? inputAmount.mul(price)
-      : inputAmount.div(price);
-
-    const feePercentage = poolContract.getTotalPoolFees();
-    const fee = feePercentage.mul(grossOutput).div(100);
-    const netOutput = grossOutput.sub(fee);
-
-    return { price, netOutput, grossOutput, feePercentage, fee };
+  /**
+   * Finds possible intermediary tokens (B) that can be used in a swap from token A to token C.
+   *
+   * @param pools - An array of Pool objects to search through.
+   * @param tokenASymbol - The symbol of the starting token (A).
+   * @param tokenCSymbol - The symbol of the ending token (C).
+   * @returns A set of token symbols that can act as intermediary tokens (B) in the swap.
+   */
+  private findPossibleBs(
+    pools: Pool[],
+    tokenASymbol: string,
+    tokenCSymbol: string
+  ): Set<string> {
+    const possibleBs: Set<string> = new Set();
+    for (const pool of pools) {
+      for (const token of pool.inputTokens) {
+        if (token.symbol !== tokenASymbol && token.symbol !== tokenCSymbol) {
+          possibleBs.add(token.symbol);
+        }
+      }
+    }
+    return possibleBs;
   }
 
   /**
@@ -203,90 +239,101 @@ abstract class BaseDex {
   }
 
   /**
-   * Get the pool contracts for a pair of tokens.
+   * Calculates the net output of a swap, including fees.
    *
-   * @param tokenX
-   * @param tokenZ
-   * @returns
+   * @param inputAmount - The amount of the input token to swap.
+   * @param fromToken - The token being swapped from.
+   * @param toToken - The token being swapped to.
+   * @param poolContract - The pool contract providing price and fee information.
+   * @returns An object containing:
+   * - `price`: The exchange rate between the tokens.
+   * - `netOutput`: The amount of the output token received after fees.
+   * - `grossOutput`: The amount of the output token before fees.
+   * - `feePercentage`: The total fee percentage applied to the swap.
+   * - `fee`: The fee amount deducted from the gross output.
    */
-  private getContracstsForTokens(tokenX: Token, tokenZ: Token): PoolContract[] {
-    const poolsA = this.inputTokenSymbolIndex.get(tokenX.symbol);
-    const poolsB = this.inputTokenSymbolIndex.get(tokenZ.symbol);
-
-    if (poolsA === undefined || poolsB === undefined) {
-      throw new Error("No pools found for tokens");
+  private calculateNetOutput(
+    inputAmount: Decimal,
+    fromToken: Token,
+    toToken: Token,
+    poolContract: PoolContract
+  ): {
+    price: Decimal;
+    netOutput: Decimal;
+    grossOutput: Decimal;
+    feePercentage: Decimal;
+    fee: Decimal;
+  } {
+    const sqrtPriceX96 = poolContract.getLastPoolSqrtPriceX96();
+    if (!sqrtPriceX96) {
+      logger.warn(
+        `Last price value for ${fromToken.symbol} to ${toToken.symbol} swap has not been initialized.`,
+        this.constructor.name
+      );
+      return {
+        price: new Decimal(0),
+        netOutput: new Decimal(0),
+        grossOutput: new Decimal(0),
+        feePercentage: new Decimal(0),
+        fee: new Decimal(0),
+      };
     }
 
-    const commonPools = poolsA.filter((pool) => poolsB.includes(pool));
+    const [token0, token1] = poolContract.getInputTokens();
+    const isToken0ToToken1 = fromToken.id === token0.id;
 
-    return commonPools
-      .map((pool) => this.getContract(pool.id))
-      .filter((contract): contract is PoolContract => contract !== undefined);
+    const price = sqrtPriceX96ToDecimal(
+      sqrtPriceX96,
+      token0.decimals,
+      token1.decimals
+    );
+
+    const grossOutput = isToken0ToToken1
+      ? inputAmount.mul(price)
+      : inputAmount.div(price);
+
+    const feePercentage = poolContract.getTotalPoolFees();
+    const fee = feePercentage.mul(grossOutput).div(100);
+    const netOutput = grossOutput.sub(fee);
+
+    return { price, netOutput, grossOutput, feePercentage, fee };
   }
 
   /**
-   * Finds possible intermediary tokens (B) that can be used in a swap from token A to token C.
+   * Retrieves a list of possible intermediary tokens B (that are not A or C).
+   * Token B participates in pools with tokens A and token C.
    *
-   * @param pools - An array of Pool objects to search through.
-   * @param tokenASymbol - The symbol of the starting token (A).
-   * @param tokenCSymbol - The symbol of the ending token (C).
-   * @returns A set of token symbols that can act as intermediary tokens (B) in the swap.
+   * @param tokenASymbol - Symbol of token A.
+   * @param tokenCSymbol - Symbol of token C.
+   * @returns An array of tokens satisfying the criteria.
    */
-  private findPossibleBs(
-    pools: Pool[],
+  protected getPossibleIntermediaryTokens(
     tokenASymbol: string,
     tokenCSymbol: string
-  ): Set<string> {
-    const possibleBs: Set<string> = new Set();
-    for (const pool of pools) {
-      for (const token of pool.inputTokens) {
-        if (token.symbol !== tokenASymbol && token.symbol !== tokenCSymbol) {
-          possibleBs.add(token.symbol);
-        }
-      }
+  ): Token[] {
+    const poolsA = this.inputTokenSymbolIndex.get(tokenASymbol);
+    const poolsC = this.inputTokenSymbolIndex.get(tokenCSymbol);
+
+    if (!poolsA || !poolsC) {
+      return [];
     }
-    return possibleBs;
+
+    const commonPools = poolsA.filter(poolA => poolsC.some(poolC => poolA.inputTokens.some(tokenA => poolC.inputTokens.some(tokenC => tokenA.symbol === tokenC.symbol))));
+    const possibleBs = this.findPossibleBs(commonPools, tokenASymbol, tokenCSymbol);
+    return Array.from(possibleBs).map((symbol) => {
+      const pool = poolsA.find((p) => p.inputTokens.some((t) => t.symbol === symbol)) ||
+                   poolsC.find((p) => p.inputTokens.some((t) => t.symbol === symbol));
+      return pool ? pool.inputTokens.find((t) => t.symbol === symbol)! : undefined!;
+    }).filter((token): token is Token => token !== undefined);
   }
 
   /**
-   * Finds common tokens (Bs) between token A and token C from a list of pools.
+   * Picks the best intermediary token B for an arbitrage opportunity.
    *
-   * @param pools - An array of Pool objects to search through.
-   * @param tokenASymbol - The symbol of token A.
-   * @param tokenCSymbol - The symbol of token C.
-   * @param possibleBs - A set of possible token symbols that can be considered as common tokens.
-   * @returns An array of Token objects that are common between token A and token C.
-   */
-  private findCommonBs(
-    pools: Pool[],
-    tokenASymbol: string,
-    tokenCSymbol: string,
-    possibleBs: Set<string>
-  ): Token[] {
-    const result: Token[] = [];
-    for (const pool of pools) {
-      for (const token of pool.inputTokens) {
-        if (
-          token.symbol !== tokenASymbol &&
-          token.symbol !== tokenCSymbol &&
-          possibleBs.has(token.symbol)
-        ) {
-          result.push(token);
-        }
-      }
-    }
-    return result;
-  }
-  /**
-   * Selects the intermediary token (Token B) for a triangular arbitrage opportunity.
-   * Evaluates potential intermediary tokens by calculating the expected profit for each candidate token.
-   * The arbitrage involves three swaps, each incurring fees. Profit is calculated as:
-   * profit = outputCtoA - inputAmount
-   *
-   * @param tokenA - The initial token to swap.
-   * @param tokenC - The final token used to return to Token A.
-   * @param possibleBs - The candidate tokens for the intermediary step.
-   * @param inputAmount - The amount of token A to swap.
+   * @param tokenA - The initial token to start the arbitrage cycle.
+   * @param tokenC - The final token before swapping back to token A.
+   * @param possibleBs - An array of possible intermediary tokens B.
+   * @param inputAmount - The amount of token A to initiate the cycle.
    * @param swapPoolContract - The pool contract where the initial and final swap occurs.
    * @returns The token to use for the third leg of the arbitrage, or undefined if no arbitrage opportunity is identified.
    */
@@ -379,17 +426,11 @@ abstract class BaseDex {
     return maxProfitData;
   }
 
-  protected async triggerSmartContract(opportunity: Opportunity) {
-    try {
-      await this.aflabContract.executeOpportunity(opportunity);
-    } catch (error) {
-      logger.warn(
-        `Error triggering smart contract: ${error}`,
-        this.constructor.name
-      );
-    }
-  }
-
+  /**
+   * Logs an arbitrage opportunity.
+   *
+   * @param opportunity - The arbitrage opportunity to log.
+   */
   protected logOpportunity(opportunity: Opportunity): void {
     // Check if all the opportuniy's parameters are defined
     if (
@@ -419,41 +460,19 @@ abstract class BaseDex {
   }
 
   /**
-   * Retrieves a list of possible intermediary tokens B (that are not A or C).
-   * Token B participates in pools with tokens A and token C.
+   * Triggers the smart contract to execute an arbitrage opportunity.
    *
-   * @param tokenASymbol - Symbol of token A.
-   * @param tokenCSymbol - Symbol of token C.
-   * @returns An array of tokens satisfying the criteria.
+   * @param opportunity - The arbitrage opportunity to execute.
    */
-  protected getPossibleIntermediaryTokens(
-    tokenASymbol: string,
-    tokenCSymbol: string
-  ): Token[] {
-    const poolsA = this.inputTokenSymbolIndex.get(tokenASymbol);
-    const poolsC = this.inputTokenSymbolIndex.get(tokenCSymbol);
-
-    if (poolsA === undefined || poolsC === undefined) {
-      return [];
+  protected async triggerSmartContract(opportunity: Opportunity) {
+    try {
+      await this.aflabContract.executeOpportunity(opportunity);
+    } catch (error) {
+      logger.warn(
+        `Error triggering smart contract: ${error}`,
+        this.constructor.name
+      );
     }
-
-    const possibleBs = this.findPossibleBs(poolsA, tokenASymbol, tokenCSymbol);
-    return this.findCommonBs(poolsC, tokenASymbol, tokenCSymbol, possibleBs);
-  }
-
-  /**
-   * Get a pool contract by address.
-   * @param address The pool contract address
-   * @returns The pool contract
-   * @throws An error if the contract is not found
-   */
-  public getContract(address: string): PoolContract {
-    const contract = this.contractsMap.get(address);
-    if (contract === undefined) {
-      logger.warn(`Contract not found: ${address}`, this.constructor.name);
-      throw new Error(`Contract not found: ${address}`);
-    }
-    return contract;
   }
 
   /**
