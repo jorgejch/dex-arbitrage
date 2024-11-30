@@ -1,10 +1,12 @@
 import { WebSocketManager } from "../ws.js";
 import { Pool, Token, Opportunity } from "../types.js";
 import { PoolContract } from "../contracts/poolContract.js";
+import { AflabContract } from "../contracts/aflabContract.js";
 import { BaseSwap } from "../swaps/baseSwap.js";
 import { DexPoolSubgraph } from "../subgraphs/dexPoolSubgraph.js";
 import { logger, sqrtPriceX96ToDecimal } from "../common.js";
 import { Decimal } from "decimal.js";
+import { ethers } from "ethers";
 
 /**
  * Abstract class representing a DEX.
@@ -15,19 +17,30 @@ abstract class BaseDex {
   protected initialized: boolean;
   protected wsManager: WebSocketManager;
   protected pools: Pool[];
+  protected signer: ethers.Signer;
   protected subgraph: DexPoolSubgraph;
+  protected aflabContract: AflabContract;
 
   /**
    * @param wsManager WebSocket Manager
+   * @param signer The signer for transactions
    * @param subgraph The Graph Subgraph instance
+   * @param aflabContract The AFLAB smart contract
    */
-  constructor(wsManager: WebSocketManager, subgraph: DexPoolSubgraph) {
+  constructor(
+    wsManager: WebSocketManager,
+    signer: ethers.Signer,
+    subgraph: DexPoolSubgraph,
+    aflabContract: AflabContract
+  ) {
     this.subgraph = subgraph;
     this.inputTokenSymbolIndex = new Map<string, Pool[]>();
     this.initialized = false;
     this.wsManager = wsManager;
     this.contractsMap = new Map<string, PoolContract>();
     this.pools = [];
+    this.signer = signer;
+    this.aflabContract = aflabContract;
   }
 
   /**
@@ -114,7 +127,19 @@ abstract class BaseDex {
     swap1PoolContract: PoolContract,
     swap2PoolContract: PoolContract,
     swap3PoolContract: PoolContract
-  ): Decimal {
+  ): {
+    expectedProfit: Decimal;
+    swap1FeePercentage: Decimal;
+    swap2FeePercentage: Decimal;
+    swap3FeePercentage: Decimal;
+  } {
+    const returnPayload = {
+      expectedProfit: new Decimal(0),
+      swap1FeePercentage: new Decimal(0),
+      swap2FeePercentage: new Decimal(0),
+      swap3FeePercentage: new Decimal(0),
+    };
+
     // Swap 1: Token A to Token B
     const swap1Result = this.calculateNetOutput(
       inputAmount,
@@ -122,7 +147,8 @@ abstract class BaseDex {
       tokenB,
       swap1PoolContract
     );
-    if (swap1Result.netOutput.equals(0)) return new Decimal(0);
+    if (swap1Result.netOutput.equals(0)) return returnPayload;
+    returnPayload.swap1FeePercentage = swap1Result.feePercentage;
 
     // Swap 2: Token B to Token C
     const swap2Result = this.calculateNetOutput(
@@ -131,7 +157,8 @@ abstract class BaseDex {
       tokenC,
       swap2PoolContract
     );
-    if (swap2Result.netOutput.equals(0)) return new Decimal(0);
+    if (swap2Result.netOutput.equals(0)) return returnPayload;
+    returnPayload.swap2FeePercentage = swap2Result.feePercentage;
 
     // Swap 3: Token C to Token A
     const swap3Result = this.calculateNetOutput(
@@ -140,9 +167,11 @@ abstract class BaseDex {
       tokenA,
       swap3PoolContract
     );
-    if (swap3Result.netOutput.equals(0)) return new Decimal(0);
+    if (swap3Result.netOutput.equals(0)) return returnPayload;
+    returnPayload.swap3FeePercentage = swap3Result.feePercentage;
 
     const expectedProfit = swap3Result.netOutput.sub(inputAmount);
+    returnPayload.expectedProfit = expectedProfit;
 
     logger.debug(
       `\n========== Expected Profit Calculation ==========\n` +
@@ -170,7 +199,7 @@ abstract class BaseDex {
       this.constructor.name
     );
 
-    return expectedProfit;
+    return returnPayload;
   }
 
   /**
@@ -196,6 +225,59 @@ abstract class BaseDex {
   }
 
   /**
+   * Finds possible intermediary tokens (B) that can be used in a swap from token A to token C.
+   *
+   * @param pools - An array of Pool objects to search through.
+   * @param tokenASymbol - The symbol of the starting token (A).
+   * @param tokenCSymbol - The symbol of the ending token (C).
+   * @returns A set of token symbols that can act as intermediary tokens (B) in the swap.
+   */
+  private findPossibleBs(
+    pools: Pool[],
+    tokenASymbol: string,
+    tokenCSymbol: string
+  ): Set<string> {
+    const possibleBs: Set<string> = new Set();
+    for (const pool of pools) {
+      for (const token of pool.inputTokens) {
+        if (token.symbol !== tokenASymbol && token.symbol !== tokenCSymbol) {
+          possibleBs.add(token.symbol);
+        }
+      }
+    }
+    return possibleBs;
+  }
+
+  /**
+   * Finds common tokens (Bs) between token A and token C from a list of pools.
+   *
+   * @param pools - An array of Pool objects to search through.
+   * @param tokenASymbol - The symbol of token A.
+   * @param tokenCSymbol - The symbol of token C.
+   * @param possibleBs - A set of possible token symbols that can be considered as common tokens.
+   * @returns An array of Token objects that are common between token A and token C.
+   */
+  private findCommonBs(
+    pools: Pool[],
+    tokenASymbol: string,
+    tokenCSymbol: string,
+    possibleBs: Set<string>
+  ): Token[] {
+    const result: Token[] = [];
+    for (const pool of pools) {
+      for (const token of pool.inputTokens) {
+        if (
+          token.symbol !== tokenASymbol &&
+          token.symbol !== tokenCSymbol &&
+          possibleBs.has(token.symbol)
+        ) {
+          result.push(token);
+        }
+      }
+    }
+    return result;
+  }
+  /**
    * Selects the intermediary token (Token B) for a triangular arbitrage opportunity.
    * Evaluates potential intermediary tokens by calculating the expected profit for each candidate token.
    * The arbitrage involves three swaps, each incurring fees. Profit is calculated as:
@@ -214,8 +296,14 @@ abstract class BaseDex {
     possibleBs: Token[],
     inputAmount: Decimal,
     swapPoolContract: PoolContract
-  ): [Token, Decimal] {
-    const profitMap = new Map<Decimal, Token>();
+  ): {
+    tokenB: Token;
+    expectedProfit: Decimal;
+    swap1FeePercentage: Decimal;
+    swap2FeePercentage: Decimal;
+    swap3FeePercentage: Decimal;
+  } {
+    const profitMap = new Map<Decimal, object>();
 
     if (!possibleBs) {
       throw new Error("No possible intermediary tokens found");
@@ -243,7 +331,7 @@ abstract class BaseDex {
         throw new Error("No pool contracts found for swaps 1 and 2");
       }
 
-      const profit: Decimal = this.calculateExpectedProfit(
+      const expectProfitData = this.calculateExpectedProfit(
         tokenA,
         tokenB,
         tokenC,
@@ -253,8 +341,11 @@ abstract class BaseDex {
         swap3PoolContract
       );
 
-      if (profit > new Decimal(0)) {
-        profitMap.set(profit, tokenB);
+      if (expectProfitData.expectedProfit.gt(new Decimal(0))) {
+        profitMap.set(expectProfitData.expectedProfit, {
+          ...expectProfitData,
+          tokenB,
+        });
       }
     }
 
@@ -273,80 +364,56 @@ abstract class BaseDex {
       throw new Error("No profitable arbitrage opportunities found");
     }
 
-    const tokenB = profitMap.get(maxProfit);
+    const maxProfitData = profitMap.get(maxProfit) as {
+      tokenB: Token;
+      expectedProfit: Decimal;
+      swap1FeePercentage: Decimal;
+      swap2FeePercentage: Decimal;
+      swap3FeePercentage: Decimal;
+    };
 
-    if (!tokenB) {
-      logger.error("Token B not found", this.constructor.name);
+    if (maxProfitData.tokenB === undefined) {
       throw new Error("Token B not found");
     }
 
-    return [tokenB, maxProfit];
+    return maxProfitData;
   }
 
   protected async triggerSmartContract(opportunity: Opportunity) {
-    // Logic to trigger smart contract execution
+    try {
+      await this.aflabContract.executeOpportunity(opportunity);
+    } catch (error) {
+      logger.warn(
+        `Error triggering smart contract: ${error}`,
+        this.constructor.name
+      );
+    }
   }
 
   protected logOpportunity(opportunity: Opportunity): void {
-    if (!opportunity.tokenA) {
-      logger.warn(
-        "Token A is undefined for opportunity",
-        this.constructor.name
-      );
-      throw new Error("Token A is undefined for opportunity");
+    // Check if all the opportuniy's parameters are defined
+    if (
+      opportunity.arbitInfo.swap1 === undefined ||
+      opportunity.arbitInfo.swap2 === undefined ||
+      opportunity.arbitInfo.swap3 === undefined ||
+      opportunity.tokenAIn === undefined ||
+      opportunity.lastPoolSqrtPriceX96 === undefined ||
+      opportunity.originalSwap === undefined
+    ) {
+      throw new Error("Opportunity parameters are not defined");
     }
 
-    if (!opportunity.tokenB) {
-      logger.warn(
-        "Token B is undefined for opportunity",
-        this.constructor.name
-      );
-      throw new Error("Token B is undefined for opportunity");
-    }
-
-    if (!opportunity.tokenC) {
-      logger.warn(
-        "Token C is undefined for opportunity",
-        this.constructor.name
-      );
-      throw new Error("Token C is undefined for opportunity");
-    }
-
-    if (!opportunity.expectedProfit) {
-      logger.warn(
-        "Expected profit is undefined for opportunity",
-        this.constructor.name
-      );
-      throw new Error("Expected profit is undefined for opportunity");
-    }
-
-    if (opportunity.tokenAIn === undefined) {
-      logger.warn(
-        "Token A in is undefined for opportunity",
-        this.constructor.name
-      );
-      throw new Error("Token A amount in is undefined for opportunity");
-    }
-
-    if (opportunity.originalSwapPriceImpact === undefined) {
-      logger.warn(
-        "Original swap price impact is undefined for opportunity",
-        this.constructor.name
-      );
-      throw new Error(
-        "Original swap price impact is undefined for opportunity"
-      );
-    }
-
+    // Log the opportunity details
     logger.info(
       `\n========== Arbitrage Opportunity ==========\n` +
-        `\tToken A: ${opportunity.tokenA.symbol}\n` +
-        `\tToken B: ${opportunity.tokenB.symbol}\n` +
-        `\tToken C: ${opportunity.tokenC.symbol}\n` +
+        `\tToken A: ${opportunity.arbitInfo.swap1.tokenIn.symbol}\n` +
+        `\tToken B: ${opportunity.arbitInfo.swap2.tokenIn.symbol}\n` +
+        `\tToken C: ${opportunity.arbitInfo.swap3.tokenIn.symbol}\n` +
+        `\tInput Amount: ${opportunity.tokenAIn}\n` +
+        `\tExpected Profit: ${opportunity.expectedProfit}\n` +
         `\tOriginal Swap Price Impact: ${opportunity.originalSwapPriceImpact}\n` +
-        `\tToken A In: ${opportunity.tokenAIn.toString()}\n` +
-        `\tExpected Profit: ${opportunity.expectedProfit.toString()}\n` +
-        `==========================================`,
+        `\tEstimated Gas Cost: ${opportunity.arbitInfo.estimatedGasCost}\n` +
+        `===========================================`,
       this.constructor.name
     );
   }
@@ -359,7 +426,7 @@ abstract class BaseDex {
    * @param tokenCSymbol - Symbol of token C.
    * @returns An array of tokens satisfying the criteria.
    */
-  public getPossibleIntermediaryTokens(
+  protected getPossibleIntermediaryTokens(
     tokenASymbol: string,
     tokenCSymbol: string
   ): Token[] {
@@ -370,33 +437,8 @@ abstract class BaseDex {
       return [];
     }
 
-    const possibleBs: Set<string> = new Set();
-
-    // Find all possible token Bs that are not A or C in the pools paired with A
-    for (const pool of poolsA) {
-      for (const token of pool.inputTokens) {
-        if (token.symbol !== tokenASymbol && token.symbol !== tokenCSymbol) {
-          possibleBs.add(token.symbol);
-        }
-      }
-    }
-
-    const result: Token[] = [];
-
-    // Find all possible token Bs that are not A or C in the pools paired with C
-    for (const pool of poolsC) {
-      for (const token of pool.inputTokens) {
-        if (
-          token.symbol !== tokenASymbol &&
-          token.symbol !== tokenCSymbol &&
-          possibleBs.has(token.symbol)
-        ) {
-          result.push(token);
-        }
-      }
-    }
-
-    return result;
+    const possibleBs = this.findPossibleBs(poolsA, tokenASymbol, tokenCSymbol);
+    return this.findCommonBs(poolsC, tokenASymbol, tokenCSymbol, possibleBs);
   }
 
   /**

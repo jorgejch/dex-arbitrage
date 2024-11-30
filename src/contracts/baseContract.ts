@@ -4,15 +4,15 @@ import { WebSocketManager } from "../ws.js";
 import { Contract } from "ethers";
 
 /**
- * BaseContract is a class that provides methods to interact with a smart contract.
- * It includes methods to initialize the contract and listen for events.
+ * Abstract base class for managing smart contract interactions.
+ * This class handles WebSocket reconnections and contract reinitializations.
  */
 abstract class BaseContract {
   protected wsManager: WebSocketManager;
   protected address: string;
-  protected contract?: Contract; // This is an instance of the ethers.js Contract class
+  protected contract?: Contract; // ethers.js Contract
   protected contractType: ContractType;
-  private abi: any;
+  protected abi: any;
   private numReinitializations = 0;
 
   /**
@@ -23,14 +23,14 @@ abstract class BaseContract {
    */
   constructor(
     address: string,
-    wsManager: WebSocketManager,
     abi: any,
-    contractType: ContractType
+    contractType: ContractType,
+    wsManager: WebSocketManager
   ) {
     this.address = address;
-    this.wsManager = wsManager;
     this.abi = abi;
     this.contractType = contractType;
+    this.wsManager = wsManager;
 
     // Reinitialize when reconnected
     this.wsManager.on("reconnected", this.refresh.bind(this));
@@ -40,17 +40,7 @@ abstract class BaseContract {
    * Create or update the contract instance.
    * This is necessary to handle reconnections.
    */
-  private createContract() {
-    try {
-      this.contract = new Contract(
-        this.address,
-        this.abi,
-        this.wsManager.getProvider()
-      );
-    } catch (error) {
-      console.error(`Error creating contract: ${error}`);
-    }
-  }
+  protected abstract createContract(): void;
 
   /**
    * Listen for events emitted by the contract.

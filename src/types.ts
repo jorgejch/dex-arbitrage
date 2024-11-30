@@ -2,6 +2,7 @@
  * @fileoverview Typescript types for used in AFLAB
  */
 
+import { T } from "vitest/dist/chunks/environment.LoooBwUu.js";
 import { BaseSwap } from "./swaps/baseSwap.js";
 
 import { Decimal } from "decimal.js";
@@ -10,10 +11,10 @@ import { Decimal } from "decimal.js";
  * Opportunity individual swap information.
  */
 type SwapInfo = {
-  tokenIn: string;
-  tokenOut: string;
-  poolFee: number;
-  amountOutMinimum: number;
+  tokenIn: Token;
+  tokenOut: Token;
+  poolFee: Decimal;
+  amountOutMinimum: Decimal;
 };
 
 /**
@@ -23,7 +24,7 @@ type ArbitrageInfo = {
   swap1: SwapInfo | undefined;
   swap2: SwapInfo | undefined;
   swap3: SwapInfo | undefined;
-  estimatedGasCost: number;
+  estimatedGasCost: Decimal;
 };
 
 /**

@@ -1,10 +1,13 @@
 import { BaseDex } from "./baseDex.js";
 import { DexPoolSubgraph } from "../subgraphs/dexPoolSubgraph.js";
 import { PSv3Swap } from "../swaps/psv3Swap.js";
-import { Token, Opportunity } from "../types.js";
+import { Token, Opportunity, SwapInfo, ArbitrageInfo } from "../types.js";
 import { logger, isPriceImpactSignificant } from "../common.js";
 import { WebSocketManager } from "../ws.js";
 import { PoolContract } from "../contracts/poolContract.js";
+import { AflabContract } from "../contracts/aflabContract.js";
+
+import { Wallet } from "ethers";
 import abi from "../abis/pancakeSwapv3PoolAbi.js";
 
 import { Decimal } from "decimal.js";
@@ -17,8 +20,13 @@ class PSv3Dex extends BaseDex {
    * @param subgraph The Graph Subgraph instance
    * @param wsManager WebSocket Manager
    */
-  constructor(wsManager: WebSocketManager, subgraph: DexPoolSubgraph) {
-    super(wsManager, subgraph);
+  constructor(
+    wsManager: WebSocketManager,
+    wallet: Wallet,
+    subgraph: DexPoolSubgraph,
+    aflabContract: AflabContract
+  ) {
+    super(wsManager, wallet, subgraph, aflabContract);
   }
 
   async processSwap(swap: PSv3Swap, lastPoolSqrtPriceX96: bigint) {
@@ -43,7 +51,7 @@ class PSv3Dex extends BaseDex {
 
     swap.setTokens(inputTokens);
 
-    let tokenA, tokenC: Token;
+    let tokenA, tokenB, tokenC: Token;
 
     [tokenA, tokenC] =
       swap.amount0 > 0
@@ -61,22 +69,32 @@ class PSv3Dex extends BaseDex {
     );
 
     const opportunity: Opportunity = {
-      tokenA,
-      tokenC,
       tokenAIn: new Decimal((swapInputAmount / 10n).toString()), // Divide by 10 to avoid overflow
       lastPoolSqrtPriceX96: new Decimal(lastPoolSqrtPriceX96.toString()),
       originalSwap: swap,
-      tokenB: undefined, // To be determined
       expectedProfit: undefined, // To be calculated
-      originalSwapPriceImpact: undefined, // To be calculated
+      originalSwapPriceImpact: undefined,
+      arbitInfo: {
+        swap1: undefined,
+        swap2: undefined,
+        swap3: undefined,
+        estimatedGasCost: new Decimal(0),
+      },
     };
 
-    opportunity.originalSwapPriceImpact =
-      opportunity.originalSwap.calculatePriceImpact(
+    try {
+      opportunity.originalSwapPriceImpact = swap.calculatePriceImpact(
         opportunity.lastPoolSqrtPriceX96,
-        opportunity.tokenA.decimals,
-        opportunity.tokenC.decimals
+        tokenA.decimals,
+        tokenC.decimals
       );
+    } catch (error) {
+      logger.warn(
+        `Error calculating price impact: ${error}`,
+        this.constructor.name
+      );
+      return;
+    }
 
     logger.debug(
       `Calculated price impact of ${opportunity.originalSwapPriceImpact} (bps) for swap: ${swapName}`,
@@ -107,11 +125,10 @@ class PSv3Dex extends BaseDex {
         this.constructor.name
       );
 
-      let tokenB: Token | undefined;
-      let expectedProfit: Decimal | undefined;
+      let tokenBData;
 
       try {
-        [tokenB, expectedProfit] = this.pickTokenB(
+        tokenBData = this.pickTokenB(
           tokenA,
           tokenC,
           candidateTokenBs,
@@ -127,8 +144,28 @@ class PSv3Dex extends BaseDex {
         return;
       }
 
-      opportunity.tokenB = tokenB;
-      opportunity.expectedProfit = expectedProfit;
+      opportunity.expectedProfit = tokenBData.expectedProfit;
+
+      opportunity.arbitInfo.swap1 = {
+        tokenIn: tokenA,
+        tokenOut: tokenBData.tokenB,
+        poolFee: tokenBData.swap1FeePercentage,
+        amountOutMinimum: new Decimal(0),
+      };
+
+      opportunity.arbitInfo.swap2 = {
+        tokenIn: tokenBData.tokenB,
+        tokenOut: tokenC,
+        poolFee: tokenBData.swap2FeePercentage,
+        amountOutMinimum: new Decimal(0),
+      };
+
+      opportunity.arbitInfo.swap3 = {
+        tokenIn: tokenC,
+        tokenOut: tokenA,
+        poolFee: tokenBData.swap3FeePercentage,
+        amountOutMinimum: new Decimal(0),
+      };
 
       try {
         this.logOpportunity(opportunity);
@@ -139,7 +176,7 @@ class PSv3Dex extends BaseDex {
 
       try {
         // Trigger smart contract execution
-        this.triggerSmartContract(opportunity);
+        await this.triggerSmartContract(opportunity);
       } catch (error) {
         logger.warn(
           `Error triggering smart contract: ${error}`,

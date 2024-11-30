@@ -1,4 +1,4 @@
-import { ContractType, Pool, Token, Fee } from "../types.js";
+import { ContractType, Pool, Token } from "../types.js";
 import { Contract } from "ethers";
 import { WebSocketManager } from "../ws.js";
 import { BaseContract } from "./baseContract.js";
@@ -6,8 +6,20 @@ import { logger } from "../common.js";
 import { PSv3Swap } from "../swaps/psv3Swap.js";
 import { Decimal } from "decimal.js";
 
+
 /**
- * Represents a pool contract.
+ * A contract class representing a liquidity pool.
+ *
+ * Listens for Swap events emitted by the pool contract and processes them using the provided `processSwapFunction`.
+ * It maintains the last pool square root price and provides methods to access pool information such as input tokens and total pool fees.
+ *
+ * @extends BaseContract
+ *
+ * @param address - The pool contract address.
+ * @param wsManager - The WebSocket manager for managing connections.
+ * @param abi - The contract's ABI.
+ * @param pool - The pool instance associated with this contract.
+ * @param processSwapFunction - A function to process Swap events, receiving a `PSv3Swap` object and the last pool sqrt price.
  */
 class PoolContract extends BaseContract {
   private readonly pool: Pool;
@@ -33,7 +45,7 @@ class PoolContract extends BaseContract {
       lastPoolSqrtPriceX96: bigint
     ) => Promise<void>
   ) {
-    super(address, wsManager, abi, ContractType.POOL);
+    super(address, abi, ContractType.POOL, wsManager);
     this.processSwap = processSwapFunction;
     this.pool = pool;
     this.lastPoolSqrtPriceX96 = BigInt(0);
@@ -99,6 +111,22 @@ class PoolContract extends BaseContract {
         `Error processing swap event: ${error}`,
         this.constructor.name
       );
+    }
+  }
+
+  /**
+   * Create the contract instance.
+   * @throws An error if the contract cannot be created
+   */
+  protected createContract(): void {
+    try {
+      this.contract = new Contract(
+        this.address,
+        this.abi,
+        this.wsManager.getProvider()
+      );
+    } catch (error) {
+      logger.error(`Error creating contract: ${error}`, this.constructor.name);
     }
   }
 
