@@ -174,7 +174,6 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
         );
 
         // Authorize flash loan repayment
-        TransferHelper.safeApprove(asset, address(POOL), 0);
         TransferHelper.safeApprove(asset, address(POOL), amountOwed);
 
         isSuccess = true;
@@ -213,7 +212,7 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
      */
     function withdrawBNB() external payable onlyOwner {
         uint256 balance = contractAddress.balance;
-        require(balance != 0, "no balance");
+        require(balance > 0, "no balance");
         payable(owner()).transfer(balance);
     }
 
