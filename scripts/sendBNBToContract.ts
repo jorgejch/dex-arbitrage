@@ -40,7 +40,7 @@ async function sendBNBToContract(
   }
 }
 
-const providerUrl = process.env.QUICKNODE_HTTP_PROVIDER || "";
+const providerUrl = process.env.FAST_RPC_HTTP_ENDPOINT || "";
 const privateKey = process.env.WALLET_PRIVATE_KEY || "";
 const contractAddress = process.argv[2];
 const amount = process.argv[3];
