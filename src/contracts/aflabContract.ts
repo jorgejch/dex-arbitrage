@@ -94,7 +94,7 @@ class AflabContract extends BaseContract {
       // Call the initiateFlashLoan function from the contract's ABI
       const tx = await this.contract.initiateFlashLoan(
         ["tuple", "uint256"],
-        [data, opportunity.tokenAIn],
+        data,
         opportunity.tokenAIn
       );
 

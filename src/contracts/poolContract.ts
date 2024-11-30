@@ -6,7 +6,6 @@ import { logger } from "../common.js";
 import { PSv3Swap } from "../swaps/psv3Swap.js";
 import { Decimal } from "decimal.js";
 
-
 /**
  * A contract class representing a liquidity pool.
  *
@@ -22,19 +21,13 @@ import { Decimal } from "decimal.js";
  * @param processSwapFunction - A function to process Swap events, receiving a `PSv3Swap` object and the last pool sqrt price.
  */
 class PoolContract extends BaseContract {
-  private readonly pool: Pool;
   private readonly processSwap: (
     psv3Swap: PSv3Swap,
     lastPoolSqrtPriceX96: bigint
   ) => Promise<void>;
   private lastPoolSqrtPriceX96: bigint;
+  protected readonly pool: Pool;
 
-  /**
-   * @param address The pool contract address
-   * @param wsManager WebSocket Manager
-   * @param abi The contract ABI
-   * @param processSwapFunction Function to process Swap events
-   */
   constructor(
     address: string,
     wsManager: WebSocketManager,
@@ -114,6 +107,8 @@ class PoolContract extends BaseContract {
     }
   }
 
+  private totalPoolFeesCache: Decimal | null = null;
+
   /**
    * Create the contract instance.
    * @throws An error if the contract cannot be created
@@ -164,19 +159,36 @@ class PoolContract extends BaseContract {
   }
 
   public getInputTokens(): Array<Token> {
+    if (!this.pool || !this.pool.inputTokens) {
+      throw new Error("Input tokens are not defined");
+    }
     return this.pool.inputTokens;
   }
 
   /**
-   * Get the total pool fees.
-   *
-   * @returns The total pool fees
+   * Get the total pool fees as a decimal.
+   * The total pool fees are the sum of all fees in the pool.
+   * fee = feePercentage / 100
+   * @returns {Decimal} The total pool fees
    */
-  public getTotalPoolFees(): Decimal {
-    return this.pool.fees.reduce((acc, fee) => {
-      const feePercentage: Decimal = new Decimal(fee.feePercentage);
-      return acc.add(feePercentage);
-    }, new Decimal(0));
+  public getTotalPoolFeesDecimal(): Decimal {
+    if (this.totalPoolFeesCache === null) {
+      const totalFeePercentage = this.pool.fees.reduce((acc, fee) => {
+        const feePercentage: Decimal = new Decimal(fee.feePercentage);
+        return acc.add(feePercentage);
+      }, new Decimal(0));
+      this.totalPoolFeesCache = totalFeePercentage.div(100);
+    }
+    return this.totalPoolFeesCache;
+  }
+
+  /**
+   * Get the pool's address.
+   *
+   * @returns The pool's address
+   */
+  public getPoolId(): string {
+    return this.pool.id;
   }
 }
 
