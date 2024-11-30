@@ -4,7 +4,7 @@ import { WebSocketManager } from "../ws.js";
 import { Token, Opportunity, ContractType } from "../types.js";
 import { logger } from "../common.js";
 
-import { ethers, Wallet, AbiCoder } from "ethers";
+import { ethers, Wallet } from "ethers";
 import { Decimal } from "decimal.js";
 
 /**
