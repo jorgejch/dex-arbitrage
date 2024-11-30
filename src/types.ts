@@ -2,7 +2,6 @@
  * @fileoverview Typescript types for used in AFLAB
  */
 
-import { T } from "vitest/dist/chunks/environment.LoooBwUu.js";
 import { BaseSwap } from "./swaps/baseSwap.js";
 
 import { Decimal } from "decimal.js";
