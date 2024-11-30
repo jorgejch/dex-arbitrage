@@ -29,7 +29,7 @@ async function getContractBalance(
 }
 
 // Load the provider URL from the .env file
-const providerUrl = process.env.QUICKNODE_HTTP_PROVIDER || "";
+const providerUrl = process.env.FAST_RPC_HTTP_ENDPOINT || "";
 if (!providerUrl) {
   console.error(
     "No provider URL specified. Please set QUICKNODE_HTTP_PROVIDER in your .env file."
