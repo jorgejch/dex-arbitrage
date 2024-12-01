@@ -95,7 +95,7 @@ class AflabContract extends BaseContract {
       const tx = await this.contract.initiateFlashLoan(
         ["tuple", "uint256"],
         data,
-        opportunity.tokenAIn
+        BigInt(opportunity.tokenAIn.toFixed(0)),
       );
 
       logger.info(
