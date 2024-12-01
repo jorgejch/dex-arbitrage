@@ -301,7 +301,10 @@ abstract class BaseDex {
 
     // Alarm if fee percentage is too high
     if (feeDecimal > constants.MAX_FEE_DECIMAL) {
-      logger.warn(`Fee decimal is too high (${feeDecimal})`, this.constructor.name);
+      logger.warn(
+        `Fee decimal is too high (${feeDecimal})`,
+        this.constructor.name
+      );
     }
 
     const fee = grossOutput.mul(feeDecimal);
@@ -446,7 +449,7 @@ abstract class BaseDex {
 
     const maxProfitData = profitMap.get(maxProfit);
 
-    if (!maxProfitData || maxProfitData.tokenB === undefined) {
+    if (!maxProfitData?.tokenB) {
       throw new Error("No profitable arbitrage opportunities found");
     }
 

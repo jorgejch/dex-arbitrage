@@ -4,7 +4,9 @@ import { Decimal } from "decimal.js";
 
 // Constants
 const constants = {
-  QI92: new Decimal(6277101735386680763835789423207666416102355444464034512896n.toString()),
+  QI92: new Decimal(
+    6277101735386680763835789423207666416102355444464034512896n.toString()
+  ),
   MAX_FEE_DECIMAL: new Decimal(0.01),
 };
 
@@ -15,8 +17,8 @@ const config = {
   LOGGER_PREFIX: "FlashLoanArbitrage",
   POOL_ABI: poolAbi,
   AFLAB_ABI: aflabAbi,
-  // LOG_LEVEL: "INFO",
-  LOG_LEVEL: "DEBUG",
+  LOG_LEVEL: "INFO",
+  // LOG_LEVEL: "DEBUG",
   RECONNECT_INTERVAL_BASE: 1000, // Base interval for WSS reconnection attempts in milliseconds
   EXPECTED_PONG_BACK: 5000, // Time to wait for a pong response in milliseconds
   KEEP_ALIVE_CHECK_INTERVAL: 7500, // Interval for sending ping messages in milliseconds
@@ -152,12 +154,12 @@ const logger = new Logger(config.LOGGER_PREFIX, config.LOG_LEVEL);
 
 export {
   config,
+  constants,
+  logger,
   getTGPancakeSwapUrl,
   exponentialBackoffDelay,
   isPriceImpactSignificant,
   sqrtPriceX96ToDecimal,
   getHoursSinceUnixEpoch,
-  logger,
   Logger,
-  constants
 };

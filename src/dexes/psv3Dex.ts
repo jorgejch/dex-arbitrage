@@ -1,8 +1,8 @@
 import { BaseDex } from "./baseDex.js";
 import { DexPoolSubgraph } from "../subgraphs/dexPoolSubgraph.js";
 import { PSv3Swap } from "../swaps/psv3Swap.js";
-import { Token, Opportunity, SwapInfo, ArbitrageInfo } from "../types.js";
-import { logger, isPriceImpactSignificant, constants } from "../common.js";
+import { Token, Opportunity } from "../types.js";
+import { logger, isPriceImpactSignificant } from "../common.js";
 import { WebSocketManager } from "../ws.js";
 import { PoolContract } from "../contracts/poolContract.js";
 import { AflabContract } from "../contracts/aflabContract.js";

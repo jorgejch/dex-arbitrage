@@ -44,7 +44,7 @@ class PoolContract extends BaseContract {
     this.lastPoolSqrtPriceX96 = BigInt(0);
   }
 
-  private swapEventCallback(
+  private async swapEventCallback(
     ...args: [
       string,
       string,
@@ -88,7 +88,7 @@ class PoolContract extends BaseContract {
        */
       if (this.getLastPoolSqrtPriceX96() > new Decimal(0)) {
         try {
-          this.processSwap(swap, this.lastPoolSqrtPriceX96);
+          await this.processSwap(swap, this.lastPoolSqrtPriceX96);
         } catch (error) {
           logger.warn(
             `Error processing swap event: ${error}`,
@@ -128,7 +128,7 @@ class PoolContract extends BaseContract {
   /**
    * Custom initialization logic.
    */
-  protected customInit(): void {}
+  protected customInit(): void { /* TODO document why this method 'customInit' is empty */ }
 
   /**
    * Listen for Swap events emitted by the contract.
@@ -159,7 +159,7 @@ class PoolContract extends BaseContract {
   }
 
   public getInputTokens(): Array<Token> {
-    if (!this.pool || !this.pool.inputTokens) {
+    if (!this.pool?.inputTokens) {
       throw new Error("Input tokens are not defined");
     }
     return this.pool.inputTokens;

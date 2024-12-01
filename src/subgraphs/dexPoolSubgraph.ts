@@ -78,7 +78,7 @@ class DexPoolSubgraph extends BaseSubgraph {
       `Getting pools. Parameters: {limit: ${limit}, numOfPagesPerCall: ${numPagestoFetch}, pageSize: ${pageSize}, hoursSinceUnixEpoch: ${hsUnixEpoch}}`,
       this.constructor.name
     );
-   
+
     while (hasMore && totalRecords < limit) {
       // Create an array of promises to fetch multiple pages in parallel
       const fetchPromises = [];

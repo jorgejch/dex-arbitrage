@@ -169,5 +169,5 @@ export {
   HourlySnapshot,
   ExpectedProfitData,
   NetOutputData,
-  TokenBPickData
+  TokenBPickData,
 };
