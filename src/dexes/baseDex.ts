@@ -5,6 +5,7 @@ import {
   Opportunity,
   ExpectedProfitData,
   NetOutputData,
+  TokenBPickData,
 } from "../types.js";
 import { PoolContract } from "../contracts/poolContract.js";
 import { AflabContract } from "../contracts/aflabContract.js";
@@ -131,32 +132,6 @@ abstract class BaseDex {
   }
 
   /**
-   * Finds possible intermediary tokens (B) that can be used in a swap from token A to token C.
-   *
-   * @param pools - An array of Pool objects to search through.
-   * @param tokenASymbol - The symbol of the starting token (A).
-   * @param tokenCSymbol - The symbol of the ending token (C).
-   * @returns A set of token symbols that can act as intermediary tokens (B) in the swap.
-   */
-  private findPossibleBs(
-    pools: Pool[],
-    tokenASymbol: string,
-    tokenCSymbol: string
-  ): Set<Token> {
-    const possibleBs = new Map<string, Token>();
-    for (const pool of pools) {
-      for (const token of pool.inputTokens) {
-        if (token.symbol !== tokenASymbol && token.symbol !== tokenCSymbol) {
-          if (!possibleBs.has(token.symbol)) {
-            possibleBs.set(token.symbol, token);
-          }
-        }
-      }
-    }
-    return new Set(possibleBs.values());
-  }
-
-  /**
    * Calculates the expected profit from performing a three-step arbitrage cycle involving tokens A, B, and C.
    * The method simulates swapping an initial amount of token A to token B, then token B to token C,
    * and finally token C back to token A using the provided pool contracts.
@@ -169,7 +144,7 @@ abstract class BaseDex {
    * @param swap1PoolContract - The pool contract for swapping token A to token B.
    * @param swap2PoolContract - The pool contract for swapping token B to token C.
    * @param swap3PoolContract - The pool contract for swapping token C back to token A.
-   * @returns The expected profit as a `Decimal`, calculated as the net output from the final swap minus the initial input amount.
+   * @returns {ExpectedProfitData} The expected profit as a `Decimal`, calculated as the net output from the final swap minus the initial input amount.
    */
   protected calculateExpectedProfit(
     tokenA: Token,
@@ -297,10 +272,7 @@ abstract class BaseDex {
     poolContract: PoolContract
   ): NetOutputData {
     const sqrtPriceX96: Decimal = poolContract.getLastPoolSqrtPriceX96();
-    if (
-      sqrtPriceX96 === undefined ||
-      sqrtPriceX96.lessThanOrEqualTo(0)
-    ) {
+    if (sqrtPriceX96 === undefined || sqrtPriceX96.lessThanOrEqualTo(0)) {
       logger.debug(
         `Last price value for ${fromToken.symbol} to ${toToken.symbol} swap has not been initialized or is zero.`,
         this.constructor.name
@@ -329,7 +301,7 @@ abstract class BaseDex {
 
     // Alarm if fee percentage is too high
     if (feeDecimal > constants.MAX_FEE_DECIMAL) {
-      throw new Error("Fee percentage is too high");
+      logger.warn(`Fee decimal is too high (${feeDecimal})`, this.constructor.name);
     }
 
     const fee = grossOutput.mul(feeDecimal);
@@ -417,14 +389,8 @@ abstract class BaseDex {
     possibleBs: Token[],
     inputAmount: Decimal,
     swapPoolContract: PoolContract
-  ): {
-    tokenB: Token;
-    expectedProfit: Decimal;
-    swap1FeePercentage: Decimal;
-    swap2FeePercentage: Decimal;
-    swap3FeePercentage: Decimal;
-  } {
-    const profitMap = new Map<Decimal, object>();
+  ): TokenBPickData {
+    const profitMap = new Map<Decimal, TokenBPickData>();
 
     if (!possibleBs) {
       throw new Error("No possible intermediary tokens found");
@@ -450,19 +416,20 @@ abstract class BaseDex {
 
       for (const swap1PoolContract of swap1PoolContractList) {
         for (const swap2PoolContract of swap2PoolContractList) {
-          const expectProfitData = this.calculateExpectedProfit(
-            tokenA,
-            tokenB,
-            tokenC,
-            inputAmount,
-            swap1PoolContract,
-            swap2PoolContract,
-            swap3PoolContract
-          );
+          const expectedProfitData: ExpectedProfitData =
+            this.calculateExpectedProfit(
+              tokenA,
+              tokenB,
+              tokenC,
+              inputAmount,
+              swap1PoolContract,
+              swap2PoolContract,
+              swap3PoolContract
+            );
 
-          if (expectProfitData.expectedProfit.gt(0)) {
-            profitMap.set(expectProfitData.expectedProfit, {
-              ...expectProfitData,
+          if (expectedProfitData.expectedProfit.gt(0)) {
+            profitMap.set(expectedProfitData.expectedProfit, {
+              expectedProfitData,
               tokenB,
             });
           }
@@ -477,13 +444,7 @@ abstract class BaseDex {
       }
     }
 
-    const maxProfitData = profitMap.get(maxProfit) as {
-      tokenB: Token;
-      expectedProfit: Decimal;
-      swap1FeePercentage: Decimal;
-      swap2FeePercentage: Decimal;
-      swap3FeePercentage: Decimal;
-    };
+    const maxProfitData = profitMap.get(maxProfit);
 
     if (!maxProfitData || maxProfitData.tokenB === undefined) {
       throw new Error("No profitable arbitrage opportunities found");

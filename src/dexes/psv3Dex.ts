@@ -144,26 +144,26 @@ class PSv3Dex extends BaseDex {
         return;
       }
 
-      opportunity.expectedProfit = tokenBData.expectedProfit;
+      opportunity.expectedProfit = tokenBData.expectedProfitData.expectedProfit;
 
       opportunity.arbitInfo.swap1 = {
         tokenIn: tokenA,
         tokenOut: tokenBData.tokenB,
-        poolFee: tokenBData.swap1FeePercentage,
+        poolFee: tokenBData.expectedProfitData.swap1FeeDecimal,
         amountOutMinimum: new Decimal(0),
       };
 
       opportunity.arbitInfo.swap2 = {
         tokenIn: tokenBData.tokenB,
         tokenOut: tokenC,
-        poolFee: tokenBData.swap2FeePercentage,
+        poolFee: tokenBData.expectedProfitData.swap2FeeDecimal,
         amountOutMinimum: new Decimal(0),
       };
 
       opportunity.arbitInfo.swap3 = {
         tokenIn: tokenC,
         tokenOut: tokenA,
-        poolFee: tokenBData.swap3FeePercentage,
+        poolFee: tokenBData.expectedProfitData.swap3FeeDecimal,
         amountOutMinimum: new Decimal(0),
       };
 

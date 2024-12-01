@@ -71,10 +71,7 @@ class TestDex extends BaseDex {
     return this.contractsMap;
   }
 
-  public findIntermediaryTokensPublic(
-    tokenA: string,
-    tokenC: string
-  ): Token[] {
+  public findIntermediaryTokensPublic(tokenA: string, tokenC: string): Token[] {
     return this.findIntermediaryTokens(tokenA, tokenC);
   }
 
@@ -753,8 +750,13 @@ describe("BaseDex", () => {
       fail(e as Error);
     }
 
+    console.log(result);
     expect(result.tokenB).toBe(tokenB1);
-    expect(result.expectedProfit.toNumber()).toBeCloseTo(5.8559325641329645, 2);
+    expect(result.expectedProfitData).toBeDefined();
+    expect(result.expectedProfitData?.expectedProfit.toNumber()).toBeCloseTo(
+      5.86,
+      2
+    );
   });
 
   it("should throw error if no profitable arbitrage opportunities found", () => {

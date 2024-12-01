@@ -33,6 +33,17 @@ type ExpectedProfitData = {
 };
 
 /**
+ * Token B pick data.
+ * @typedef {Object} TokenBPickData
+ * @property {ExpectedProfitData} expectedProfitData The expected profit data
+ * @property {Token} tokenB The token B
+ */
+type TokenBPickData = {
+  expectedProfitData: ExpectedProfitData;
+  tokenB: Token;
+};
+
+/**
  * Net output data.
  *
  * @typedef {Object} NetOutputData
@@ -158,4 +169,5 @@ export {
   HourlySnapshot,
   ExpectedProfitData,
   NetOutputData,
+  TokenBPickData
 };
