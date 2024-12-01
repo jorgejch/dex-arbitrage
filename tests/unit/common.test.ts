@@ -5,6 +5,7 @@ import {
   exponentialBackoffDelay,
   isPriceImpactSignificant,
   sqrtPriceX96ToDecimal,
+  config,
 } from "../../src/common.js";
 
 import { describe, it, expect, vi } from "vitest";
@@ -161,13 +162,13 @@ describe("sqrtPriceX96ToBig", () => {
 
 describe("isPriceImpactSignificant", () => {
   it("should return true for significant price impact", () => {
-    const priceImpact = 5; // 5 bps
+    const priceImpact = config.PRICE_IMPACT_THRESHOLD;
     const result = isPriceImpactSignificant(priceImpact);
     expect(result).toBe(true);
   });
 
   it("should return false for insignificant price impact", () => {
-    const priceImpact = 2; // 2 bps
+    const priceImpact = config.PRICE_IMPACT_THRESHOLD - 1;
     const result = isPriceImpactSignificant(priceImpact);
     expect(result).toBe(false);
   });
