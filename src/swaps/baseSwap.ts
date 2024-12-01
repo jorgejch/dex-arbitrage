@@ -1,5 +1,5 @@
 import { Token } from "../types.js";
-import { logger, sqrtPriceX96ToDecimal, constants } from "../common.js";
+import { sqrtPriceX96ToDecimal } from "../common.js";
 
 import { Decimal } from "decimal.js";
 
