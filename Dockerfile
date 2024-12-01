@@ -28,5 +28,8 @@ RUN chown -R aflab:aflab "$HOME"
 # Switch to 'aflab' user for running the application
 USER aflab
 
+# Set the log level (overrided by .env file)
+ENV LOG_LEVEL=info
+
 # Define the command to run the application
 CMD ["node", "start.js"]
