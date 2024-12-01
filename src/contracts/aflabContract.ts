@@ -73,19 +73,22 @@ class AflabContract extends BaseContract {
             tokenIn: opportunity.arbitInfo.swap1?.tokenIn.id,
             tokenOut: opportunity.arbitInfo.swap1?.tokenOut.id,
             poolFee: opportunity.arbitInfo.swap1?.poolFee.toNumber(),
-            amountOutMinimum: opportunity.arbitInfo.swap1?.amountOutMinimum,
+            amountOutMinimum:
+              opportunity.arbitInfo.swap1?.amountOutMinimum.toNumber(),
           },
           swap2: {
             tokenIn: opportunity.arbitInfo.swap2?.tokenIn.id,
             tokenOut: opportunity.arbitInfo.swap2?.tokenOut.id,
             poolFee: opportunity.arbitInfo.swap2?.poolFee.toNumber(),
-            amountOutMinimum: opportunity.arbitInfo.swap2?.amountOutMinimum,
+            amountOutMinimum:
+              opportunity.arbitInfo.swap2?.amountOutMinimum.toNumber(),
           },
           swap3: {
             tokenIn: opportunity.arbitInfo.swap3?.tokenIn.id,
             tokenOut: opportunity.arbitInfo.swap3?.tokenOut.id,
             poolFee: opportunity.arbitInfo.swap3?.poolFee.toNumber(),
-            amountOutMinimum: opportunity.arbitInfo.swap3?.amountOutMinimum,
+            amountOutMinimum:
+              opportunity.arbitInfo.swap3?.amountOutMinimum.toNumber(),
           },
           estimatedGasCost: opportunity.arbitInfo.estimatedGasCost.toNumber(),
         },
@@ -95,7 +98,7 @@ class AflabContract extends BaseContract {
       const tx = await this.contract.initiateFlashLoan(
         ["tuple", "uint256"],
         data,
-        BigInt(opportunity.tokenAIn.toFixed(0)),
+        BigInt(opportunity.tokenAIn.toFixed(0))
       );
 
       logger.info(
