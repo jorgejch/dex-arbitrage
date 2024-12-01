@@ -4,7 +4,7 @@ import { DexPoolSubgraph } from "../../../src/subgraphs/dexPoolSubgraph.js";
 import { Pool, Token, Opportunity } from "../../../src/types.js";
 import { AflabContract } from "../../../src/contracts/aflabContract.js";
 import { PoolContract } from "../../../src/contracts/poolContract.js";
-import { config } from "../../../src/common.js";
+import { config, constants } from "../../../src/common.js";
 
 import { Signer, Provider, TransactionLike, TransactionResponse } from "ethers";
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
@@ -71,11 +71,11 @@ class TestDex extends BaseDex {
     return this.contractsMap;
   }
 
-  public getPossibleIntermediaryTokensPublic(
+  public findIntermediaryTokensPublic(
     tokenA: string,
     tokenC: string
   ): Token[] {
-    return this.getPossibleIntermediaryTokens(tokenA, tokenC);
+    return this.findIntermediaryTokens(tokenA, tokenC);
   }
 
   public getPoolContractsForTokensPublic(
@@ -366,7 +366,7 @@ describe("BaseDex", () => {
     );
     mockPoolContract.getLastPoolSqrtPriceX96 = vi
       .fn()
-      .mockReturnValue(undefined);
+      .mockReturnValue(new Decimal(0));
 
     try {
       expect(
@@ -376,9 +376,14 @@ describe("BaseDex", () => {
           toToken,
           mockPoolContract
         )
-      ).toThrow("Last price value not initialized");
+      );
     } catch (e) {
       console.log(e);
+      if (e instanceof Error) {
+        expect(e.message).toBe("Last price value not initialized or is zero");
+      } else {
+        fail("Error occurred");
+      }
     }
   });
 
@@ -508,6 +513,7 @@ describe("BaseDex", () => {
       .mockReturnValue(value1SqrPriceX96); // sqrtPriceX96 for price 1
 
     let result;
+
     try {
       result = dex.calculateExpectedProfitPublic(
         tokenA,
@@ -520,7 +526,7 @@ describe("BaseDex", () => {
       );
     } catch (e) {
       console.log(e);
-      fail("Error occurred");
+      fail(e as Error);
     }
 
     const expectedProfit = new Decimal(-0.27); // Expected loss due to fees
@@ -734,7 +740,6 @@ describe("BaseDex", () => {
     const inputAmount = new Decimal(100);
 
     let result;
-
     try {
       result = dex.pickTokenBPublic(
         tokenA,
@@ -745,8 +750,9 @@ describe("BaseDex", () => {
       );
     } catch (e) {
       console.log(e);
-      fail(e);
+      fail(e as Error);
     }
+
     expect(result.tokenB).toBe(tokenB1);
     expect(result.expectedProfit.toNumber()).toBeCloseTo(5.8559325641329645, 2);
   });

@@ -1,10 +1,16 @@
 import { WebSocketManager } from "../ws.js";
-import { Pool, Token, Opportunity } from "../types.js";
+import {
+  Pool,
+  Token,
+  Opportunity,
+  ExpectedProfitData,
+  NetOutputData,
+} from "../types.js";
 import { PoolContract } from "../contracts/poolContract.js";
 import { AflabContract } from "../contracts/aflabContract.js";
 import { BaseSwap } from "../swaps/baseSwap.js";
 import { DexPoolSubgraph } from "../subgraphs/dexPoolSubgraph.js";
-import { logger, sqrtPriceX96ToDecimal } from "../common.js";
+import { constants, logger, sqrtPriceX96ToDecimal } from "../common.js";
 import { Decimal } from "decimal.js";
 import { ethers } from "ethers";
 
@@ -136,16 +142,18 @@ abstract class BaseDex {
     pools: Pool[],
     tokenASymbol: string,
     tokenCSymbol: string
-  ): Set<string> {
-    const possibleBs: Set<string> = new Set();
+  ): Set<Token> {
+    const possibleBs = new Map<string, Token>();
     for (const pool of pools) {
       for (const token of pool.inputTokens) {
         if (token.symbol !== tokenASymbol && token.symbol !== tokenCSymbol) {
-          possibleBs.add(token.symbol);
+          if (!possibleBs.has(token.symbol)) {
+            possibleBs.set(token.symbol, token);
+          }
         }
       }
     }
-    return possibleBs;
+    return new Set(possibleBs.values());
   }
 
   /**
@@ -171,13 +179,8 @@ abstract class BaseDex {
     swap1PoolContract: PoolContract,
     swap2PoolContract: PoolContract,
     swap3PoolContract: PoolContract
-  ): {
-    expectedProfit: Decimal;
-    swap1FeeDecimal: Decimal;
-    swap2FeeDecimal: Decimal;
-    swap3FeeDecimal: Decimal;
-  } {
-    const returnPayload = {
+  ): ExpectedProfitData {
+    const returnPayload: ExpectedProfitData = {
       expectedProfit: new Decimal(0),
       swap1FeeDecimal: new Decimal(0),
       swap2FeeDecimal: new Decimal(0),
@@ -185,33 +188,64 @@ abstract class BaseDex {
     };
 
     // Swap 1: Token A to Token B
-    const swap1Result = this.calculateNetOutput(
-      inputAmount,
-      tokenA,
-      tokenB,
-      swap1PoolContract
-    );
+    let swap1Result: NetOutputData;
+
+    try {
+      swap1Result = this.calculateNetOutput(
+        inputAmount,
+        tokenA,
+        tokenB,
+        swap1PoolContract
+      );
+    } catch (error) {
+      logger.warn(
+        `Error calculating net output for swap 1: ${error}`,
+        this.constructor.name
+      );
+      return returnPayload;
+    }
 
     if (swap1Result.netOutput.lessThanOrEqualTo(0)) return returnPayload;
     returnPayload.swap1FeeDecimal = swap1Result.feeDecimal;
 
     // Swap 2: Token B to Token C
-    const swap2Result = this.calculateNetOutput(
-      swap1Result.netOutput,
-      tokenB,
-      tokenC,
-      swap2PoolContract
-    );
+    let swap2Result: NetOutputData;
+    try {
+      swap2Result = this.calculateNetOutput(
+        swap1Result.netOutput,
+        tokenB,
+        tokenC,
+        swap2PoolContract
+      );
+    } catch (error) {
+      logger.warn(
+        `Error calculating net output for swap 2: ${error}`,
+        this.constructor.name
+      );
+      return returnPayload;
+    }
+
     if (swap2Result.netOutput.lessThanOrEqualTo(0)) return returnPayload;
     returnPayload.swap2FeeDecimal = swap2Result.feeDecimal;
 
     // Swap 3: Token C to Token A
-    const swap3Result = this.calculateNetOutput(
-      swap2Result.netOutput,
-      tokenC,
-      tokenA,
-      swap3PoolContract
-    );
+
+    let swap3Result: NetOutputData;
+    try {
+      swap3Result = this.calculateNetOutput(
+        swap2Result.netOutput,
+        tokenC,
+        tokenA,
+        swap3PoolContract
+      );
+    } catch (error) {
+      logger.warn(
+        `Error calculating net output for swap 3: ${error}`,
+        this.constructor.name
+      );
+      return returnPayload;
+    }
+
     if (swap3Result.netOutput.lessThanOrEqualTo(0)) return returnPayload;
     returnPayload.swap3FeeDecimal = swap3Result.feeDecimal;
 
@@ -248,34 +282,26 @@ abstract class BaseDex {
   }
 
   /**
-   * Calculates the net output of a swap, including fees.
+   * Calculates the net output of a token swap after accounting for fees.
    *
-   * @param inputAmount - The amount of the input token to swap.
+   * @param inputAmount - The amount of the input token to be swapped.
    * @param fromToken - The token being swapped from.
    * @param toToken - The token being swapped to.
-   * @param poolContract - The pool contract providing price and fee information.
-   * @returns An object containing:
-   * - `price`: The exchange rate between the tokens.
-   * - `netOutput`: The amount of the output token received after fees.
-   * - `grossOutput`: The amount of the output token before fees.
-   * - `feePercentage`: The total fee percentage applied to the swap. Normal fees are <= 0.1%.
-   * - `fee`: The fee amount deducted from the gross output.
+   * @param poolContract - The pool contract providing pricing and fee details.
+   * @returns {NetOutputData} The net output data after the swap.
    */
   protected calculateNetOutput(
     inputAmount: Decimal,
     fromToken: Token,
     toToken: Token,
     poolContract: PoolContract
-  ): {
-    price: Decimal;
-    netOutput: Decimal;
-    grossOutput: Decimal;
-    feeDecimal: Decimal;
-    fee: Decimal;
-  } {
-    const sqrtPriceX96 = poolContract.getLastPoolSqrtPriceX96();
-    if (!sqrtPriceX96 || sqrtPriceX96.isZero()) {
-      logger.warn(
+  ): NetOutputData {
+    const sqrtPriceX96: Decimal = poolContract.getLastPoolSqrtPriceX96();
+    if (
+      sqrtPriceX96 === undefined ||
+      sqrtPriceX96.lessThanOrEqualTo(0)
+    ) {
+      logger.debug(
         `Last price value for ${fromToken.symbol} to ${toToken.symbol} swap has not been initialized or is zero.`,
         this.constructor.name
       );
@@ -302,26 +328,33 @@ abstract class BaseDex {
     const feeDecimal: Decimal = poolContract.getTotalPoolFeesDecimal();
 
     // Alarm if fee percentage is too high
-    // 1% is the maximum fee percentage allowed
-    if (feeDecimal > new Decimal(0.01)) {
+    if (feeDecimal > constants.MAX_FEE_DECIMAL) {
       throw new Error("Fee percentage is too high");
     }
 
     const fee = grossOutput.mul(feeDecimal);
     const netOutput = grossOutput.sub(fee);
 
-    return { price, netOutput, grossOutput, feeDecimal: feeDecimal, fee };
+    const returnPayload: NetOutputData = {
+      price,
+      netOutput,
+      grossOutput,
+      feeDecimal,
+      fee,
+    };
+
+    return returnPayload;
   }
 
   /**
    * Retrieves a list of possible intermediary tokens B (that are not A or C).
-   * Token B participates in pools with tokens A and token C.
+   * Token B participates in 1 or more pools with tokens A and token C.
    *
    * @param tokenASymbol - Symbol of token A.
    * @param tokenCSymbol - Symbol of token C.
-   * @returns An array of tokens satisfying the criteria.
+   * @returns {Token[]} An array of tokens satisfying the criteria.
    */
-  protected getPossibleIntermediaryTokens(
+  protected findIntermediaryTokens(
     tokenASymbol: string,
     tokenCSymbol: string
   ): Token[] {
@@ -332,35 +365,47 @@ abstract class BaseDex {
       return [];
     }
 
-    const commonPools = poolsA.filter((poolA) =>
-      poolsC.some((poolC) =>
-        poolA.inputTokens.some((tokenA) =>
-          poolC.inputTokens.some((tokenC) => tokenA.symbol === tokenC.symbol)
-        )
-      )
+    const tokensWithA = new Set<string>();
+    const tokensWithC = new Set<string>();
+    const tokenMap = new Map<string, Token>();
+
+    for (const pool of poolsA) {
+      for (const token of pool.inputTokens) {
+        if (token.symbol !== tokenASymbol) {
+          tokensWithA.add(token.symbol);
+          tokenMap.set(token.symbol, token);
+        }
+      }
+    }
+
+    for (const pool of poolsC) {
+      for (const token of pool.inputTokens) {
+        if (token.symbol !== tokenCSymbol) {
+          tokensWithC.add(token.symbol);
+          tokenMap.set(token.symbol, token);
+        }
+      }
+    }
+
+    const intermediaryTokenSymbols = new Set(
+      [...tokensWithA].filter((x) => tokensWithC.has(x))
     );
-    const possibleBs = this.findPossibleBs(
-      commonPools,
-      tokenASymbol,
-      tokenCSymbol
-    );
-    return Array.from(possibleBs)
-      .map((symbol) => {
-        const pool =
-          poolsA.find((p) => p.inputTokens.some((t) => t.symbol === symbol)) ||
-          poolsC.find((p) => p.inputTokens.some((t) => t.symbol === symbol));
-        return pool
-          ? pool.inputTokens.find((t) => t.symbol === symbol)!
-          : undefined!;
-      })
-      .filter((token): token is Token => token !== undefined);
+
+    return Array.from(intermediaryTokenSymbols).map((symbol) => {
+      const token = tokenMap.get(symbol);
+      if (!token) {
+        throw new Error("Token not found");
+      }
+      return token;
+    });
   }
 
   /**
    * Picks the best intermediary token B for an arbitrage opportunity.
    *
    * @param tokenA - The initial token to start the arbitrage cycle.
-   * @param tokenC - The final token before swapping back to token A.
+    // Convert the Set of tokens to an array to facilitate further processing
+    return Array.from(tokenSet);
    * @param possibleBs - An array of possible intermediary tokens B.
    * @param inputAmount - The amount of token A to initiate the cycle.
    * @param swapPoolContract - The pool contract where the initial and final swap occurs.
@@ -396,10 +441,6 @@ abstract class BaseDex {
         this.getPoolContractsForTokens(tokenB, tokenC);
       const swap3PoolContract: PoolContract = swapPoolContract;
 
-      if (!swap1PoolContractList.length || !swap2PoolContractList.length) {
-        continue;
-      }
-
       if (
         swap1PoolContractList.length === 0 ||
         swap2PoolContractList.length === 0
@@ -409,28 +450,24 @@ abstract class BaseDex {
 
       for (const swap1PoolContract of swap1PoolContractList) {
         for (const swap2PoolContract of swap2PoolContractList) {
-      const expectProfitData = this.calculateExpectedProfit(
-        tokenA,
-        tokenB,
-        tokenC,
-        inputAmount,
+          const expectProfitData = this.calculateExpectedProfit(
+            tokenA,
+            tokenB,
+            tokenC,
+            inputAmount,
             swap1PoolContract,
             swap2PoolContract,
-        swap3PoolContract
-      );
+            swap3PoolContract
+          );
 
-      if (expectProfitData.expectedProfit.gt(new Decimal(0))) {
-        profitMap.set(expectProfitData.expectedProfit, {
-          ...expectProfitData,
-          tokenB,
-        });
+          if (expectProfitData.expectedProfit.gt(0)) {
+            profitMap.set(expectProfitData.expectedProfit, {
+              ...expectProfitData,
+              tokenB,
+            });
           }
         }
       }
-    }
-
-    if (profitMap.size === 0) {
-      throw new Error("No profitable arbitrage opportunities found");
     }
 
     let maxProfit = new Decimal(0);
@@ -438,10 +475,6 @@ abstract class BaseDex {
       if (profit.gt(maxProfit)) {
         maxProfit = profit;
       }
-    }
-
-    if (maxProfit.lte(0)) {
-      throw new Error("No profitable arbitrage opportunities found");
     }
 
     const maxProfitData = profitMap.get(maxProfit) as {
@@ -452,8 +485,8 @@ abstract class BaseDex {
       swap3FeePercentage: Decimal;
     };
 
-    if (maxProfitData.tokenB === undefined) {
-      throw new Error("Token B not found");
+    if (!maxProfitData || maxProfitData.tokenB === undefined) {
+      throw new Error("No profitable arbitrage opportunities found");
     }
 
     return maxProfitData;
