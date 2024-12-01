@@ -1,5 +1,5 @@
 import { Token } from "../types.js";
-import { logger, sqrtPriceX96ToDecimal } from "../common.js";
+import { logger, sqrtPriceX96ToDecimal, constants } from "../common.js";
 
 import { Decimal } from "decimal.js";
 
@@ -81,7 +81,7 @@ abstract class BaseSwap {
     token0Decimals: number,
     token1Decimals: number
   ): number {
-    if (lastPoolSqrtPriceX96 === new Decimal(0)) {
+    if (lastPoolSqrtPriceX96.eq(0)) {
       throw new Error("Division by zero error: priceBefore is zero");
     }
 
@@ -97,11 +97,6 @@ abstract class BaseSwap {
       token0Decimals,
       token1Decimals
     );
-
-    // Check for division by zero
-    if (priceBefore.eq(new Decimal(0))) {
-      throw new Error("Division by zero error: priceBefore is zero");
-    }
 
     // Calculate the price impact in bps.
     const priceImpact: Decimal = priceAfter
