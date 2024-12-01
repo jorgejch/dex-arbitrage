@@ -1,10 +1,11 @@
-import { logger } from "./common.js";
+import { logger, config } from "./common.js";
 import { Controller } from "./controller.js";
 import dotenv from "dotenv";
 
 dotenv.config();
 
 // Load environment variables
+const LOG_LEVEL: string = process.env.LOG_LEVEL ?? config.LOG_LEVEL;
 const WSS_PROVIDER_URL: string = process.env.FAST_RPC_WSS_ENDPOINT ?? "";
 const HTTP_PROVIDER_URL: string = process.env.FAST_RPC_HTTP_ENDPOINT ?? "";
 const WALLET_PRIVATE_KEY: string = process.env.WALLET_PRIVATE_KEY ?? "";
@@ -43,6 +44,9 @@ async function main() {
   if (SIMULATE_DISCONNECT) {
     console.log("Simulating WebSocket disconnections");
   }
+
+  // Set the log level
+  logger.setLogLevel(LOG_LEVEL);
 
   controller = new Controller(
     HTTP_PROVIDER_URL,
