@@ -142,11 +142,7 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
             });
 
         // Approve the swap router to spend the input token
-        TransferHelper.safeApprove(
-            swapInfo.tokenIn,
-            _swapRouterAddress,
-            0
-        );
+        TransferHelper.safeApprove(swapInfo.tokenIn, _swapRouterAddress, 0);
         TransferHelper.safeApprove(
             swapInfo.tokenIn,
             _swapRouterAddress,
@@ -179,7 +175,7 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
     ) external override returns (bool isSuccess) {
         // require(msg.sender == _poolAddress, "malicious callback");
         require(
-            amount < IERC20(asset).balanceOf(_contractAddress),
+            amount <= IERC20(asset).balanceOf(_contractAddress),
             "invalid balance"
         );
 
