@@ -158,9 +158,7 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
         address /* initiator */,
         bytes calldata params
     ) external override returns (bool isSuccess) {
-        address poolAddress = _poolAddress;
-
-        require(msg.sender == poolAddress, "malicious callback");
+        require(msg.sender == _poolAddress, "malicious callback");
         require(
             amount < IERC20(asset).balanceOf(_contractAddress),
             "invalid balance"
@@ -184,7 +182,7 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
             profit
         );
 
-        TransferHelper.safeApprove(asset, poolAddress, amountOwed);
+        TransferHelper.safeApprove(asset, _poolAddress, amountOwed);
         isSuccess = true;
     }
 
@@ -227,7 +225,8 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
     function withdrawNative() external payable onlyOwner {
         uint256 balance = _contractAddress.balance;
         require(balance != 0, "insufficient balance");
-        payable(owner()).transfer(balance);
+        (bool success, ) = payable(owner()).call{value: balance}("");
+        require(success, "Transfer failed");
         emit NativeTokenWithdrawn(owner(), balance);
     }
 
