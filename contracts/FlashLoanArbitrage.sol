@@ -7,12 +7,17 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Ownable2Step, Ownable} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {ISwapRouter} from "@pancakeswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import {TransferHelper} from "@pancakeswap/v3-periphery/contracts/libraries/TransferHelper.sol";
+import {IPancakeV3SwapCallback} from "@pancakeswap/v3-core/contracts/interfaces/callback/IPancakeV3SwapCallback.sol";
 
 /**
  * @title Flash-Loan Arbitrage Contract
  * @notice This is an arbitrage contract that uses AAVE v3 flash loans to make a profit on PancakeSwap v3.
  */
-contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
+contract FlashLoanArbitrage is
+    IPancakeV3SwapCallback,
+    FlashLoanSimpleReceiverBase,
+    Ownable2Step
+{
     uint256 private _balanceReceived;
     uint32 private _executionCounter;
     address internal immutable _poolAddress = address(POOL);
@@ -23,7 +28,7 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
     /**
      * @dev Event emitted when the arbitrage is concluded, regardless of success or failure.
      *
-     * @param id The execution identifier number (counter)
+     * @param executionId The execution identifier number (counter)
      * @param inputAmount The amount borrowed
      * @param swap1AmountOut Amount of the output token for swap 1
      * @param swap2AmountOut Amount of the output token for swap 2
@@ -31,7 +36,7 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
      * @param profit The profit made from the arbitrage
      */
     event ArbitrageConcluded(
-        uint32 indexed id,
+        uint32 indexed executionId,
         uint256 inputAmount,
         uint256 swap1AmountOut,
         uint256 swap2AmountOut,
@@ -42,18 +47,34 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
     /**
      * @dev Event emitted when a flash loan error occurs.
      *
-     * @param id The execution identifier number (counter)
+     * @param executionId The execution identifier number (counter)
      * @param message The error message
      */
-    event FlashloanError(uint32 indexed id, string message);
+    event FlashloanError(uint32 indexed executionId, string message);
+
+    /**
+     * @dev Event emitted when a swap is executed.
+     * @param executionId The execution identifier number (counter)
+     * @param tokenIn The input token address
+     * @param tokenOut The output token address
+     * @param amount0Delta The amount of token0 that was sent (negative) or must be received (positive) by the pool by the end of the swap.
+     * @param amount1Delta The amount of token1 that was sent (negative) or must be received (positive) by the pool by the end of the swap.
+     */
+    event SwapExecuted(
+        uint32 indexed executionId,
+        address indexed tokenIn,
+        address indexed tokenOut,
+        uint256 amount0Delta,
+        uint256 amount1Delta
+    );
 
     /**
      * @dev Event emitted when a swap error occurs.
      *
-     * @param id The execution identifier number (counter)
+     * @param executionId The execution identifier number (counter)
      * @param message The error message
      */
-    event SwapError(uint32 indexed id, string message);
+    event SwapError(uint32 indexed executionId, string message);
 
     /**
      * @dev Event emitted when a token is withdrawn from the contract.
@@ -93,10 +114,7 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
      * @param addressProvider  The AAVE Pool Address Provider address.
      * @param sRouter          The PancakeSwap v3 router address.
      */
-    constructor(
-        address addressProvider,
-        address sRouter
-    )
+    constructor(address addressProvider, address sRouter)
         payable
         FlashLoanSimpleReceiverBase(IPoolAddressesProvider(addressProvider))
         Ownable(msg.sender)
@@ -109,17 +127,10 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
      * @param swapInfo  The swap information
      * @param amountIn  The amount of input tokens
      */
-    function _swapTokens(
-        SwapInfo memory swapInfo,
-        uint256 amountIn
-    ) internal returns (uint256 amountOut) {
-        // Approve the PancakeSwap router to spend the token
-        TransferHelper.safeApprove(
-            swapInfo.tokenIn,
-            _swapRouterAddress,
-            amountIn
-        );
-
+    function _swapTokens(SwapInfo memory swapInfo, uint256 amountIn)
+        internal
+        returns (uint256 amountOut)
+    {
         // Create the swap parameters
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
             .ExactInputSingleParams({
@@ -143,6 +154,53 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
     }
 
     /**
+     * @notice Callback function invoked by PancakeV3 during a swap operation.
+     * @param amount0Delta The change in the balance of token0.
+     * @param amount1Delta The change in the balance of token1.
+     * @param data Additional data passed along with the callback.
+     */
+    function pancakeV3SwapCallback(
+        int256 amount0Delta,
+        int256 amount1Delta,
+        bytes calldata data
+    ) external override {
+        require(msg.sender == _swapRouterAddress, "Unauthorized caller");
+
+        (
+            address tokenIn,
+            address tokenOut,
+            ,
+            address recipient,
+            ,
+            uint256 amountIn,
+            ,
+        ) = abi.decode(
+                data,
+                (
+                    address,
+                    address,
+                    uint24,
+                    address,
+                    uint256,
+                    uint256,
+                    uint256,
+                    uint160
+                )
+            );
+
+        require(_contractAddress == recipient, "invalid recipient"); // sanity check
+        TransferHelper.safeApprove(tokenIn, _swapRouterAddress, amountIn);
+
+        emit SwapExecuted(
+            _executionCounter,
+            tokenIn,
+            tokenOut,
+            uint256(amount0Delta),
+            uint256(amount1Delta)
+        );
+    }
+
+    /**
      * @notice Executes the flash loan operation.
      * @dev This function is called by the lending pool after receiving the flash loaned amount.
      * @param asset The address of the asset being borrowed.
@@ -155,7 +213,7 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
         address asset,
         uint256 amount,
         uint256 premium,
-        address /* initiator */,
+        address, /* initiator */
         bytes calldata params
     ) external override returns (bool isSuccess) {
         require(msg.sender == _poolAddress, "malicious callback");
@@ -195,10 +253,11 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
      * @param data The arbitrage information.
      * @param tokenAIn The amount of the input token to borrow.
      */
-    function initiateFlashLoan(
-        ArbitInfo memory data,
-        uint256 tokenAIn
-    ) public payable onlyOwner {
+    function initiateFlashLoan(ArbitInfo memory data, uint256 tokenAIn)
+        public
+        payable
+        onlyOwner
+    {
         _executionCounter++;
 
         try
