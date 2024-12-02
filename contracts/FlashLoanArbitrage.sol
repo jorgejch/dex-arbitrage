@@ -45,6 +45,22 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
     );
 
     /**
+     * @dev Event emitted when a flash loan error occurs.
+     *
+     * @param id The execution identifier number (counter)
+     * @param message The error message
+     */
+    event FlashloanError(uint32 id, string message);
+
+    /**
+     * @dev Event emitted when a swap error occurs.
+     *
+     * @param id The execution identifier number (counter)
+     * @param message The error message
+     */
+    event SwapError(uint32 id, string message);
+
+    /**
      * Individual swap information.
      */
     struct SwapInfo {
@@ -112,7 +128,13 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
                 sqrtPriceLimitX96: 0 // No price limit
             });
 
-        amountOut = swapRouter.exactInputSingle(params);
+        // Execute the swap
+        try swapRouter.exactInputSingle(params) returns (uint256 _amountOut) {
+            amountOut = _amountOut;
+        } catch Error(string memory reason) {
+            emit SwapError(executionCounter, reason);
+            revert();
+        }
     }
 
     /**
@@ -136,8 +158,6 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
             amount <= IERC20(asset).balanceOf(contractAddress),
             "invalid balance"
         );
-
-        executionCounter++;
 
         // Decode the arbitrage info
         ArbitInfo memory decoded = abi.decode(params, (ArbitInfo));
@@ -186,14 +206,20 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
     function initiateFlashLoan(
         ArbitInfo memory data,
         uint256 amount
-    ) external payable onlyOwner {
-        POOL.flashLoanSimple(
-            contractAddress,
-            data.swap1.tokenIn,
-            amount,
-            abi.encode(data),
-            0
-        );
+    ) public payable onlyOwner {
+        executionCounter++;
+        try
+            POOL.flashLoanSimple(
+                contractAddress, // The receiver address
+                data.swap1.tokenIn, // The asset to be borrowed
+                amount, // The amount to be borrowed
+                abi.encode(data), // The arbitrage data
+                0
+            )
+        {} catch Error(string memory reason) {
+            emit FlashloanError(executionCounter, reason);
+            revert();
+        }
     }
 
     /**
