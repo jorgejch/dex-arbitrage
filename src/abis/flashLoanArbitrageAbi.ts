@@ -1,4 +1,4 @@
-/* Address: 0x4A694F70f0012fBd44e90262DBf85BF2456B8aCD */
+/* Address: 0x045ae9806E367203f2C0556962b9e5B71cB39260 */
 export default [
   {
     inputs: [
@@ -21,28 +21,12 @@ export default [
   {
     anonymous: false,
     inputs: [
-      { indexed: false, internalType: "uint32", name: "id", type: "uint32" },
+      { indexed: true, internalType: "uint32", name: "id", type: "uint32" },
       {
         indexed: false,
         internalType: "uint256",
-        name: "amountToBorrow",
+        name: "inputAmount",
         type: "uint256",
-      },
-      {
-        components: [
-          { internalType: "address", name: "tokenIn", type: "address" },
-          { internalType: "address", name: "tokenOut", type: "address" },
-          { internalType: "uint24", name: "poolFee", type: "uint24" },
-          {
-            internalType: "uint256",
-            name: "amountOutMinimum",
-            type: "uint256",
-          },
-        ],
-        indexed: false,
-        internalType: "struct FlashLoanArbitrage.SwapInfo",
-        name: "swap1",
-        type: "tuple",
       },
       {
         indexed: false,
@@ -51,42 +35,10 @@ export default [
         type: "uint256",
       },
       {
-        components: [
-          { internalType: "address", name: "tokenIn", type: "address" },
-          { internalType: "address", name: "tokenOut", type: "address" },
-          { internalType: "uint24", name: "poolFee", type: "uint24" },
-          {
-            internalType: "uint256",
-            name: "amountOutMinimum",
-            type: "uint256",
-          },
-        ],
-        indexed: false,
-        internalType: "struct FlashLoanArbitrage.SwapInfo",
-        name: "swap2",
-        type: "tuple",
-      },
-      {
         indexed: false,
         internalType: "uint256",
         name: "swap2AmountOut",
         type: "uint256",
-      },
-      {
-        components: [
-          { internalType: "address", name: "tokenIn", type: "address" },
-          { internalType: "address", name: "tokenOut", type: "address" },
-          { internalType: "uint24", name: "poolFee", type: "uint24" },
-          {
-            internalType: "uint256",
-            name: "amountOutMinimum",
-            type: "uint256",
-          },
-        ],
-        indexed: false,
-        internalType: "struct FlashLoanArbitrage.SwapInfo",
-        name: "swap3",
-        type: "tuple",
       },
       {
         indexed: false,
@@ -102,6 +54,39 @@ export default [
       },
     ],
     name: "ArbitrageConcluded",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, internalType: "uint32", name: "id", type: "uint32" },
+      {
+        indexed: false,
+        internalType: "string",
+        name: "message",
+        type: "string",
+      },
+    ],
+    name: "FlashloanError",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: "address",
+        name: "toAccount",
+        type: "address",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "balance",
+        type: "uint256",
+      },
+    ],
+    name: "NativeTokenWithdrawn",
     type: "event",
   },
   {
@@ -140,6 +125,45 @@ export default [
       },
     ],
     name: "OwnershipTransferred",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, internalType: "uint32", name: "id", type: "uint32" },
+      {
+        indexed: false,
+        internalType: "string",
+        name: "message",
+        type: "string",
+      },
+    ],
+    name: "SwapError",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: "address",
+        name: "token",
+        type: "address",
+      },
+      {
+        indexed: true,
+        internalType: "address",
+        name: "toAccount",
+        type: "address",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "balance",
+        type: "uint256",
+      },
+    ],
+    name: "TokenWithdrawn",
     type: "event",
   },
   {
@@ -258,7 +282,7 @@ export default [
         name: "data",
         type: "tuple",
       },
-      { internalType: "uint256", name: "amount", type: "uint256" },
+      { internalType: "uint256", name: "tokenAIn", type: "uint256" },
     ],
     name: "initiateFlashLoan",
     outputs: [],
@@ -302,7 +326,7 @@ export default [
   },
   {
     inputs: [],
-    name: "withdrawBNB",
+    name: "withdrawNative",
     outputs: [],
     stateMutability: "payable",
     type: "function",
