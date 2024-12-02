@@ -20,8 +20,8 @@
     "compile": "npx hardhat compile",
     "deployMainnet": "npx hardhat ignition deploy ignition/modules/aflab_mainnet.ts --network bsc",
     "deployTestnet": "npx hardhat ignition deploy ignition/modules/aflab_testnet.ts --network sepolia",
-    "getContractBalance": "node dist/scripts/getContractBalance.js 0x4A694F70f0012fBd44e90262DBf85BF2456B8aCD",
-    "sendBNBToContract": "node dist/scripts/sendBNBToContract.js 0x4A694F70f0012fBd44e90262DBf85BF2456B8aCD 0.01"
+    "getContractBalance": "node dist/scripts/getContractBalance.js 0x94b7be4764c6db2ec36834665e84179680c74dd0",
+    "sendBNBToContract": "node dist/scripts/sendBNBToContract.js 0x94b7be4764c6db2ec36834665e84179680c74dd0 0.0005"
   },
   "author": "Jorge Haddad",
   "license": "MIT",
@@ -43,6 +43,7 @@
     "vitest": "^2.1.5"
   },
   "dependencies": {
+    "alchemy-sdk": "^3.5.0",
     "decimal.js": "^10.4.3",
     "dotenv": "^16.4.5",
     "ethers": "^6.13.4",

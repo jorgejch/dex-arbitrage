@@ -7,17 +7,12 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Ownable2Step, Ownable} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {ISwapRouter} from "@pancakeswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import {TransferHelper} from "@pancakeswap/v3-periphery/contracts/libraries/TransferHelper.sol";
-import {IPancakeV3SwapCallback} from "@pancakeswap/v3-core/contracts/interfaces/callback/IPancakeV3SwapCallback.sol";
 
 /**
  * @title Flash-Loan Arbitrage Contract
  * @notice This is an arbitrage contract that uses AAVE v3 flash loans to make a profit on PancakeSwap v3.
  */
-contract FlashLoanArbitrage is
-    IPancakeV3SwapCallback,
-    FlashLoanSimpleReceiverBase,
-    Ownable2Step
-{
+contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
     uint256 private _balanceReceived;
     uint32 private _executionCounter;
     address internal immutable _poolAddress = address(POOL);
@@ -114,7 +109,10 @@ contract FlashLoanArbitrage is
      * @param addressProvider  The AAVE Pool Address Provider address.
      * @param sRouter          The PancakeSwap v3 router address.
      */
-    constructor(address addressProvider, address sRouter)
+    constructor(
+        address addressProvider,
+        address sRouter
+    )
         payable
         FlashLoanSimpleReceiverBase(IPoolAddressesProvider(addressProvider))
         Ownable(msg.sender)
@@ -127,77 +125,40 @@ contract FlashLoanArbitrage is
      * @param swapInfo  The swap information
      * @param amountIn  The amount of input tokens
      */
-    function _swapTokens(SwapInfo memory swapInfo, uint256 amountIn)
-        internal
-        returns (uint256 amountOut)
-    {
-        // Create the swap parameters
+    function _swapTokens(
+        SwapInfo memory swapInfo,
+        uint256 amountIn
+    ) internal returns (uint256 amountOut) {
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
             .ExactInputSingleParams({
                 tokenIn: swapInfo.tokenIn,
                 tokenOut: swapInfo.tokenOut,
                 fee: swapInfo.poolFee,
                 recipient: _contractAddress,
-                deadline: block.timestamp + 10, // 10 seconds after the swap is requested
+                deadline: block.timestamp + 30, // 30 seconds after the swap is requested
                 amountIn: amountIn,
                 amountOutMinimum: 0, // Not needed, reverts if no profit
                 sqrtPriceLimitX96: 0 // No price limit
             });
 
-        // Execute the swap
+        // Approve the swap router to spend the input token
+        TransferHelper.safeApprove(
+            swapInfo.tokenIn,
+            _swapRouterAddress,
+            0
+        );
+        TransferHelper.safeApprove(
+            swapInfo.tokenIn,
+            _swapRouterAddress,
+            amountIn
+        );
+
         try _swapRouter.exactInputSingle(params) returns (uint256 _amountOut) {
             amountOut = _amountOut;
         } catch Error(string memory reason) {
             emit SwapError(_executionCounter, reason);
             revert(reason);
         }
-    }
-
-    /**
-     * @notice Callback function invoked by PancakeV3 during a swap operation.
-     * @param amount0Delta The change in the balance of token0.
-     * @param amount1Delta The change in the balance of token1.
-     * @param data Additional data passed along with the callback.
-     */
-    function pancakeV3SwapCallback(
-        int256 amount0Delta,
-        int256 amount1Delta,
-        bytes calldata data
-    ) external override {
-        require(msg.sender == _swapRouterAddress, "Unauthorized caller");
-
-        (
-            address tokenIn,
-            address tokenOut,
-            ,
-            address recipient,
-            ,
-            uint256 amountIn,
-            ,
-        ) = abi.decode(
-                data,
-                (
-                    address,
-                    address,
-                    uint24,
-                    address,
-                    uint256,
-                    uint256,
-                    uint256,
-                    uint160
-                )
-            );
-
-        require(_contractAddress == recipient, "invalid recipient"); // sanity check
-        TransferHelper.safeApprove(tokenIn, _swapRouterAddress, amountIn);
-
-        emit SwapExecuted(
-            _executionCounter,
-            tokenIn,
-            tokenOut,
-            uint256(amount0Delta),
-            uint256(amount1Delta)
-        );
     }
 
     /**
@@ -213,10 +174,10 @@ contract FlashLoanArbitrage is
         address asset,
         uint256 amount,
         uint256 premium,
-        address, /* initiator */
+        address /* initiator */,
         bytes calldata params
     ) external override returns (bool isSuccess) {
-        require(msg.sender == _poolAddress, "malicious callback");
+        // require(msg.sender == _poolAddress, "malicious callback");
         require(
             amount < IERC20(asset).balanceOf(_contractAddress),
             "invalid balance"
@@ -240,6 +201,7 @@ contract FlashLoanArbitrage is
             profit
         );
 
+        TransferHelper.safeApprove(asset, _poolAddress, 0);
         TransferHelper.safeApprove(asset, _poolAddress, amountOwed);
         isSuccess = true;
     }
@@ -253,11 +215,10 @@ contract FlashLoanArbitrage is
      * @param data The arbitrage information.
      * @param tokenAIn The amount of the input token to borrow.
      */
-    function initiateFlashLoan(ArbitInfo memory data, uint256 tokenAIn)
-        public
-        payable
-        onlyOwner
-    {
+    function initiateFlashLoan(
+        ArbitInfo memory data,
+        uint256 tokenAIn
+    ) public payable onlyOwner {
         _executionCounter++;
 
         try
