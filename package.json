@@ -17,11 +17,7 @@
     "test:ui": "vitest --ui",
     "createAccount": "ts-node scripts/createAccount.ts",
     "runNode": "npx hardhat node",
-    "compile": "npx hardhat compile",
-    "deployMainnet": "npx hardhat ignition deploy ignition/modules/aflab_mainnet.ts --network bsc",
-    "deployTestnet": "npx hardhat ignition deploy ignition/modules/aflab_testnet.ts --network sepolia",
-    "getContractBalance": "node dist/scripts/getContractBalance.js 0x54e14ab63213642e79db10999dba7b5f2ec70e9f",
-    "sendBNBToContract": "node dist/scripts/sendBNBToContract.js 0x54e14ab63213642e79db10999dba7b5f2ec70e9f 0.002"
+    "compile": "npx hardhat compile"
   },
   "author": "Jorge Haddad",
   "license": "MIT",
