@@ -38,9 +38,9 @@ class Controller {
       this.uniswapV3SubgraphName = uniswapV3SubgraphName;
       this.alchemy = new Alchemy({
         apiKey: alchemyApiKey,
-        network: Network.BNB_MAINNET,
-        maxRetries: 5,
-        requestTimeout: 300000,
+        network: Network.MATIC_MAINNET,
+        maxRetries: 3,
+        requestTimeout: 30000,
       });
       this.wallet = new Wallet(walletPrivateKey, this.alchemy);
       this.aflabContractAddress = aflabContractAddress;
