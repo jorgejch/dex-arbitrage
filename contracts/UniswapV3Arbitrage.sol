@@ -5,14 +5,14 @@ import {FlashLoanSimpleReceiverBase} from "@aave/core-v3/contracts/flashloan/bas
 import {IPoolAddressesProvider} from "@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Ownable2Step, Ownable} from "@openzeppelin/contracts/access/Ownable2Step.sol";
-import {ISwapRouter} from "@pancakeswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
-import {TransferHelper} from "@pancakeswap/v3-periphery/contracts/libraries/TransferHelper.sol";
+import {ISwapRouter} from "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
+import {TransferHelper} from "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
 
 /**
  * @title Flash-Loan Arbitrage Contract
- * @notice This is an arbitrage contract that uses AAVE v3 flash loans to make a profit on PancakeSwap v3.
+ * @notice This is an arbitrage contract that uses AAVE v3 flash loans to make a profit on Uniswap v3.
  */
-contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
+contract UniswapV3Arbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
     uint256 private _balanceReceived;
     uint32 private _executionCounter;
     address internal immutable _poolAddress = address(POOL);
@@ -107,7 +107,7 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
 
     /**
      * @param addressProvider  The AAVE Pool Address Provider address.
-     * @param sRouter          The PancakeSwap v3 router address.
+     * @param sRouter          The Uniswap v3 router address.
      */
     constructor(
         address addressProvider,
