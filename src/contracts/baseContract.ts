@@ -1,23 +1,24 @@
 import { logger } from "../common.js";
 import { ContractType } from "../types.js";
-import { WebSocketManager } from "../ws.js";
-import { Contract } from "ethers";
+import { Contract, Alchemy } from "alchemy-sdk";
 
 /**
  * Abstract base class for managing smart contract interactions.
  * This class handles WebSocket reconnections and contract reinitializations.
  */
 abstract class BaseContract {
-  protected wsManager: WebSocketManager;
+  protected alchemy: Alchemy;
   protected address: string;
   protected contract?: Contract; // ethers.js Contract
   protected contractType: ContractType;
   protected abi: any;
+  protected network: number;
   private numReinitializations = 0;
+  private initialized = false;
 
   /**
-   * @param address The contract address
-   * @param wsManager The WebSocket Manager
+   * @param address The contract addres>
+   * @param alchemy The WebSocket Manager
    * @param abi The contract ABI
    * @param contractType One of the ContractType enum values
    */
@@ -25,45 +26,38 @@ abstract class BaseContract {
     address: string,
     abi: any,
     contractType: ContractType,
-    wsManager: WebSocketManager
+    alchemy: Alchemy,
+    network: number
   ) {
     this.address = address;
     this.abi = abi;
     this.contractType = contractType;
-    this.wsManager = wsManager;
-
-    // Reinitialize when reconnected
-    this.wsManager.on("reconnected", this.refresh.bind(this));
+    this.alchemy = alchemy;
+    this.network = network;
   }
 
   /**
    * Create or update the contract instance.
    * This is necessary to handle reconnections.
    */
-  protected abstract createContract(): void;
+  protected abstract createContract(): Promise<void>;
 
   /**
    * Listen for events emitted by the contract.
    * Must be implemented by the subclass.
    *
-   * @param contract The ethers.js contract instance
+   * @param contract The contract instance
    */
-  protected abstract listenForEvents(contract: Contract): void;
-
-  /**
-   * Custom initialization logic.
-   * Must be implemented by the subclass.
-   * This method is called after the contract instance is created.
-   */
-  protected abstract customInit(): void;
+  protected abstract listenForEvents(contract: Contract): Promise<void>;
 
   /**
    * Initialize the contract.
    * Should be called before interacting with the contract.
    * Should be called only once.
    */
-  public initialize(): void {
-    this.refresh();
+  public async initialize(): Promise<void> {
+    await this.refresh();
+    this.initialized = true;
   }
 
   /**
@@ -71,13 +65,18 @@ abstract class BaseContract {
    * Must be called before interacting with the contract.
    * Has to be kinda idenpotent.
    */
-  public refresh(...args: any[]): void {
+  public async refresh(...args: any[]): Promise<void> {
     logger.debug(
       `Contract ${this.address} initialization # ${this.numReinitializations}`,
       this.constructor.name
     );
-    this.createContract();
-    this.listenForEvents(this.contract as Contract);
+    await this.createContract();
+
+    if (!this.contract) {
+      throw new Error("Contract is not defined");
+    }
+
+    await this.listenForEvents(this.contract);
     logger.info(
       args
         ? `Initialized contract ${this.address}`
@@ -92,6 +91,13 @@ abstract class BaseContract {
    */
   public getContractType(): ContractType {
     return this.contractType;
+  }
+
+  /**
+   * Check if the contract is initialized.
+   */
+  public isInitialized(): boolean {
+    return this.initialized;
   }
 }
 

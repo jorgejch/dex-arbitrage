@@ -15,7 +15,7 @@ import { Decimal } from "decimal.js";
  * @property {bigint} amount1 - The amount of token1 involved in the swap.
  * @property {Decimal} sqrtPriceX96 - The square root of the price after the swap times 2^96, used for precision in calculations.
  * @property {bigint} liquidity - The liquidity of the pool after the swap.
- * @property {string} poolContract - The address of the pool contract where the swap occurred.
+ * @property {string} poolContractAddress - The address of the pool contract where the swap occurred.
  * @property {Token[]} [inputTokens] - Optional array of input tokens for the swap.
  */
 abstract class BaseSwap {
@@ -25,7 +25,7 @@ abstract class BaseSwap {
   amount1: bigint;
   sqrtPriceX96: Decimal;
   liquidity: bigint;
-  poolContract: string;
+  poolContractAddress: string;
   inputTokens?: Token[];
 
   constructor(
@@ -35,7 +35,7 @@ abstract class BaseSwap {
     amount1: bigint,
     sqrtPriceX96: Decimal,
     liquidity: bigint,
-    poolContract: string
+    poolContractAddress: string
   ) {
     this.sender = sender;
     this.recipient = recipient;
@@ -43,7 +43,7 @@ abstract class BaseSwap {
     this.amount1 = amount1;
     this.sqrtPriceX96 = sqrtPriceX96;
     this.liquidity = liquidity;
-    this.poolContract = poolContract;
+    this.poolContractAddress = poolContractAddress;
   }
 
   /**
@@ -106,6 +106,10 @@ abstract class BaseSwap {
 
     const priceImpactNum = priceImpact.abs().round().toNumber();
     return priceImpactNum;
+  }
+
+  public getContractAddress(): string {
+    return this.poolContractAddress;
   }
 }
 

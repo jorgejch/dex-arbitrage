@@ -1,10 +1,10 @@
 import { ContractType, Pool, Token } from "../types.js";
-import { Contract } from "ethers";
-import { WebSocketManager } from "../ws.js";
 import { BaseContract } from "./baseContract.js";
 import { logger } from "../common.js";
-import { PSv3Swap } from "../swaps/psv3Swap.js";
+import { UniswapV3Swap } from "../swaps/uniswapV3Swap.js";
+
 import { Decimal } from "decimal.js";
+import { Alchemy, Contract } from "alchemy-sdk";
 
 /**
  * A contract class representing a liquidity pool.
@@ -19,10 +19,11 @@ import { Decimal } from "decimal.js";
  * @param abi - The contract's ABI.
  * @param pool - The pool instance associated with this contract.
  * @param processSwapFunction - A function to process Swap events, receiving a `PSv3Swap` object and the last pool sqrt price.
+ * @param network - The network ID.
  */
 class PoolContract extends BaseContract {
   private readonly processSwap: (
-    psv3Swap: PSv3Swap,
+    psv3Swap: UniswapV3Swap,
     lastPoolSqrtPriceX96: bigint
   ) => Promise<void>;
   private lastPoolSqrtPriceX96: bigint;
@@ -30,15 +31,16 @@ class PoolContract extends BaseContract {
 
   constructor(
     address: string,
-    wsManager: WebSocketManager,
+    alchemy: Alchemy,
     abi: any,
     pool: Pool,
     processSwapFunction: (
-      psv3Swap: PSv3Swap,
+      psv3Swap: UniswapV3Swap,
       lastPoolSqrtPriceX96: bigint
-    ) => Promise<void>
+    ) => Promise<void>,
+    network: number
   ) {
-    super(address, abi, ContractType.POOL, wsManager);
+    super(address, abi, ContractType.POOL, alchemy, network);
     this.processSwap = processSwapFunction;
     this.pool = pool;
     this.lastPoolSqrtPriceX96 = BigInt(0);
@@ -70,15 +72,13 @@ class PoolContract extends BaseContract {
         protocolFeesToken1,
       ] = args;
       const poolContractAddress = this.address;
-      const swap = new PSv3Swap(
+      const swap = new UniswapV3Swap(
         sender,
         recipient,
         amount0,
         amount1,
         new Decimal(sqrtPriceX96.toString()),
         liquidity,
-        protocolFeesToken0,
-        protocolFeesToken1,
         poolContractAddress
       );
 
@@ -94,6 +94,10 @@ class PoolContract extends BaseContract {
             `Error processing swap event: ${error}`,
             this.constructor.name
           );
+          // Print stack trace
+          if (error instanceof Error && error.stack) {
+            logger.warn(error.stack, this.constructor.name);
+          }
         }
       }
 
@@ -113,12 +117,12 @@ class PoolContract extends BaseContract {
    * Create the contract instance.
    * @throws An error if the contract cannot be created
    */
-  protected createContract(): void {
+  protected async createContract(): Promise<void> {
     try {
       this.contract = new Contract(
         this.address,
         this.abi,
-        this.wsManager.getProvider()
+        await this.alchemy.config.getWebSocketProvider()
       );
     } catch (error) {
       logger.error(`Error creating contract: ${error}`, this.constructor.name);
@@ -126,16 +130,11 @@ class PoolContract extends BaseContract {
   }
 
   /**
-   * Custom initialization logic.
-   */
-  protected customInit(): void { /* TODO document why this method 'customInit' is empty */ }
-
-  /**
    * Listen for Swap events emitted by the contract.
    *
    * @param contract The ethers.js contract instance
    */
-  listenForEvents(contract: Contract): void {
+  async listenForEvents(contract: Contract): Promise<void> {
     // Listen for Swap events (https://tinyurl.com/4nh7pcpj)
     if (!this.processSwap) {
       throw new Error("processSwap function is not defined");

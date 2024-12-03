@@ -1,7 +1,7 @@
 import { Decimal } from "decimal.js";
 import {
   getHoursSinceUnixEpoch,
-  getTGPancakeSwapUrl,
+  getTGUrl,
   exponentialBackoffDelay,
   isPriceImpactSignificant,
   sqrtPriceX96ToDecimal,
@@ -52,14 +52,14 @@ describe("getLastFullHourUnixTime", () => {
   });
 });
 
-describe("getTGPancakeSwapUrl", () => {
+describe("getTGPUrl", () => {
   it("should return the correct URL", () => {
     const baseUrl = "https://api.thegraph.com";
     const subgraphName = "pancakeswap";
     const apiKey = "api-key";
     const expectedUrl = `${baseUrl}/api/${apiKey}/subgraphs/id/${subgraphName}`;
 
-    const result = getTGPancakeSwapUrl(baseUrl, subgraphName, apiKey);
+    const result = getTGUrl(baseUrl, subgraphName, apiKey);
     expect(result).toBe(expectedUrl);
   });
 });

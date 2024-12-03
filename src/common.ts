@@ -1,5 +1,5 @@
-import poolAbi from "./abis/pancakeSwapv3PoolAbi.js";
-import aflabAbi from "./abis/flashLoanArbitrageAbi.js";
+import poolAbi from "./abis/uniswapV3PoolAbi.js";
+import aflabAbi from "./abis/aflabUniswapV3Abi.js";
 import { Decimal } from "decimal.js";
 
 // Constants
@@ -34,7 +34,7 @@ const config = {
  * @param apiKey The API key
  * @returns The The Graph PancakeSwap v3 subgraph URL
  */
-const getTGPancakeSwapUrl = (
+const getTGUrl = (
   baseUrl: string,
   subgraphName: string,
   apiKey: string
@@ -156,7 +156,7 @@ export {
   config,
   constants,
   logger,
-  getTGPancakeSwapUrl,
+  getTGUrl,
   exponentialBackoffDelay,
   isPriceImpactSignificant,
   sqrtPriceX96ToDecimal,

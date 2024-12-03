@@ -1,4 +1,3 @@
-import { WebSocketManager } from "../ws.js";
 import {
   Pool,
   Token,
@@ -13,7 +12,7 @@ import { BaseSwap } from "../swaps/baseSwap.js";
 import { DexPoolSubgraph } from "../subgraphs/dexPoolSubgraph.js";
 import { constants, logger, sqrtPriceX96ToDecimal } from "../common.js";
 import { Decimal } from "decimal.js";
-import { ethers } from "ethers";
+import { Wallet, Alchemy } from "alchemy-sdk";
 
 /**
  * Abstract class representing a Uniswap V3-based Decentralized Exchange (DEX).
@@ -22,6 +21,11 @@ import { ethers } from "ethers";
  * for the purpose of orchestrating arbitrage opportunities.
  */
 abstract class BaseDex {
+  /**
+   * The network ID.
+   */
+  protected network: number;
+
   /**
    * Maps contract addresses to their corresponding PoolContract instances.
    */
@@ -40,11 +44,6 @@ abstract class BaseDex {
   protected initialized: boolean = false;
 
   /**
-   * Manages WebSocket connections for real-time data streaming.
-   */
-  protected wsManager: WebSocketManager;
-
-  /**
    * List of available liquidity pools within the DEX.
    */
   protected pools: Pool[] = [];
@@ -52,7 +51,7 @@ abstract class BaseDex {
   /**
    * Signer instance used for signing transactions.
    */
-  protected signer: ethers.Signer;
+  protected wallet: Wallet;
 
   /**
    * Subgraph interface for querying DEX data from The Graph.
@@ -65,21 +64,29 @@ abstract class BaseDex {
   protected aflabContract: AflabContract;
 
   /**
-   * @param wsManager - Manages WebSocket connections for real-time updates.
-   * @param signer - Signer used to authorize and send transactions.
+   * The Alchemy SDK instance.
+   */
+  protected alchemy: Alchemy;
+
+  /**
+   * @param alchemy - The Alchemy SDK instance.
+   * @param wallet - Signer used to authorize and send transactions.
    * @param subgraph - Interface to The Graph subgraph for querying on-chain data.
    * @param aflabContract - Interface to the AFLAB smart contract for executing arbitrage.
+   * @param network - The network ID.
    */
   constructor(
-    wsManager: WebSocketManager,
-    signer: ethers.Signer,
+    alchemy: Alchemy,
+    wallet: Wallet,
     subgraph: DexPoolSubgraph,
-    aflabContract: AflabContract
+    aflabContract: AflabContract,
+    network: number
   ) {
-    this.wsManager = wsManager;
-    this.signer = signer;
+    this.alchemy = alchemy;
+    this.wallet = wallet;
     this.subgraph = subgraph;
     this.aflabContract = aflabContract;
+    this.network = network;
     this.contractsMap = new Map<string, PoolContract>();
     this.inputTokenSymbolIndex = new Map<string, Pool[]>();
   }
@@ -502,6 +509,10 @@ abstract class BaseDex {
         `Error triggering smart contract: ${error}`,
         this.constructor.name
       );
+      // Print stack trace
+      if (error instanceof Error && error.stack) {
+        logger.warn(error.stack, this.constructor.name);
+      }
     }
   }
 
