@@ -1,35 +1,37 @@
 import { BaseDex } from "./baseDex.js";
 import { DexPoolSubgraph } from "../subgraphs/dexPoolSubgraph.js";
-import { PSv3Swap } from "../swaps/psv3Swap.js";
+import { UniswapV3Swap } from "../swaps/uniswapV3Swap.js";
 import { Token, Opportunity } from "../types.js";
 import { logger, isPriceImpactSignificant } from "../common.js";
-import { WebSocketManager } from "../ws.js";
 import { PoolContract } from "../contracts/poolContract.js";
 import { AflabContract } from "../contracts/aflabContract.js";
+import abi from "../abis/uniswapV3PoolAbi.js";
 
-import { Wallet } from "ethers";
-import abi from "../abis/pancakeSwapv3PoolAbi.js";
-
+import { Wallet, Alchemy } from "alchemy-sdk";
 import { Decimal } from "decimal.js";
 
 /**
- * Represents a PSv3 DEX.
+ * Represents the Uniswap V3 DEX.
  */
-class PSv3Dex extends BaseDex {
+class UniswapV3Dex extends BaseDex {
   /**
-   * @param subgraph The Graph Subgraph instance
-   * @param wsManager WebSocket Manager
+   * @param alchemy The Alchemy SDK instance
+   * @param wallet The wallet instance
+   * @param subgraph The DEX pool subgraph instance
+   * @param aflabContract The AFLAB contract instance
+   * @param networkId The network ID
    */
   constructor(
-    wsManager: WebSocketManager,
+    alchemy: Alchemy,
     wallet: Wallet,
     subgraph: DexPoolSubgraph,
-    aflabContract: AflabContract
+    aflabContract: AflabContract,
+    networkId: number
   ) {
-    super(wsManager, wallet, subgraph, aflabContract);
+    super(alchemy, wallet, subgraph, aflabContract, networkId);
   }
 
-  async processSwap(swap: PSv3Swap, lastPoolSqrtPriceX96: bigint) {
+  async processSwap(swap: UniswapV3Swap, lastPoolSqrtPriceX96: bigint) {
     let contract: PoolContract | undefined;
 
     if (lastPoolSqrtPriceX96 <= 0) {
@@ -41,7 +43,7 @@ class PSv3Dex extends BaseDex {
     }
 
     try {
-      contract = this.getContract(swap.contractAddress);
+      contract = this.getContract(swap.getContractAddress());
     } catch (error) {
       logger.warn(`Error fetching contract: ${error}`, this.constructor.name);
       return;
@@ -51,7 +53,7 @@ class PSv3Dex extends BaseDex {
 
     swap.setTokens(inputTokens);
 
-    let tokenA, tokenB, tokenC: Token;
+    let tokenA, tokenC: Token;
 
     [tokenA, tokenC] =
       swap.amount0 > 0
@@ -69,7 +71,7 @@ class PSv3Dex extends BaseDex {
     );
 
     const opportunity: Opportunity = {
-      tokenAIn: new Decimal((swapInputAmount / 10n).toString()), // Divide by 10 to avoid overflow
+      tokenAIn: new Decimal(swapInputAmount.toString()).div(10), // Divide by 10 to avoid overflow
       lastPoolSqrtPriceX96: new Decimal(lastPoolSqrtPriceX96.toString()),
       originalSwap: swap,
       expectedProfit: undefined, // To be calculated
@@ -101,7 +103,7 @@ class PSv3Dex extends BaseDex {
       this.constructor.name
     );
 
-    if (isPriceImpactSignificant(opportunity.originalSwapPriceImpact)) {
+    if (isPriceImpactSignificant(opportunity.originalSwapPriceImpact!)) {
       logger.info(
         `Significant price impact (${opportunity.originalSwapPriceImpact}) detected for swap: ${swapName}`,
         this.constructor.name
@@ -126,7 +128,6 @@ class PSv3Dex extends BaseDex {
       );
 
       let tokenBData;
-
       try {
         tokenBData = this.pickTokenB(
           tokenA,
@@ -145,21 +146,18 @@ class PSv3Dex extends BaseDex {
       }
 
       opportunity.expectedProfit = tokenBData.expectedProfitData.expectedProfit;
-
       opportunity.arbitInfo.swap1 = {
         tokenIn: tokenA,
         tokenOut: tokenBData.tokenB,
         poolFee: tokenBData.expectedProfitData.swap1FeeDecimal,
         amountOutMinimum: new Decimal(0),
       };
-
       opportunity.arbitInfo.swap2 = {
         tokenIn: tokenBData.tokenB,
         tokenOut: tokenC,
         poolFee: tokenBData.expectedProfitData.swap2FeeDecimal,
         amountOutMinimum: new Decimal(0),
       };
-
       opportunity.arbitInfo.swap3 = {
         tokenIn: tokenC,
         tokenOut: tokenA,
@@ -222,21 +220,20 @@ class PSv3Dex extends BaseDex {
       logger.error(`Error fetching pools: ${error}`, this.constructor.name);
       throw error;
     }
-
     logger.info(`Fetched ${this.pools.length} pools`, this.constructor.name);
 
     let poolCount = 0;
-
     for (const pool of this.pools) {
       logger.debug(`Creating pool # ${++poolCount}`, this.constructor.name);
 
       // Create and store a PoolContract instance for each pool
       const poolContract = new PoolContract(
         pool.id,
-        this.wsManager,
+        this.alchemy,
         abi,
         pool,
-        this.processSwap.bind(this)
+        this.processSwap.bind(this),
+        this.network
       );
       this.contractsMap.set(pool.id, poolContract);
 
@@ -250,7 +247,6 @@ class PSv3Dex extends BaseDex {
         );
         throw error;
       }
-
       logger.info(
         `Initialized pool for contract: ${pool.id}`,
         this.constructor.name
@@ -270,4 +266,4 @@ class PSv3Dex extends BaseDex {
   }
 }
 
-export { PSv3Dex };
+export { UniswapV3Dex };

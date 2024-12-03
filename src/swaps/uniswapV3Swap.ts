@@ -3,13 +3,9 @@ import { BaseSwap } from "./baseSwap.js";
 import { Decimal } from "decimal.js";
 
 /**
- * Represents a PSv3 swap.
+ * Represents a Uniswap v3 swap.
  */
-class PSv3Swap extends BaseSwap {
-  protocolFeesToken0: bigint;
-  protocolFeesToken1: bigint;
-  contractAddress: string;
-
+class UniswapV3Swap extends BaseSwap {
   constructor(
     sender: string,
     recipient: string,
@@ -17,8 +13,6 @@ class PSv3Swap extends BaseSwap {
     amount1: bigint,
     sqrtPriceX96: Decimal,
     liquidity: bigint,
-    protocolFeesToken0: bigint,
-    protocolFeesToken1: bigint,
     contractAddress: string
   ) {
     super(
@@ -30,10 +24,7 @@ class PSv3Swap extends BaseSwap {
       liquidity,
       contractAddress
     );
-    this.protocolFeesToken0 = protocolFeesToken0;
-    this.protocolFeesToken1 = protocolFeesToken1;
-    this.contractAddress = contractAddress;
   }
 }
 
-export { PSv3Swap };
+export { UniswapV3Swap };
