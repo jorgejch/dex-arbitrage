@@ -14,7 +14,7 @@ diagram.node(
 )
 diagram.node(
     "FetchPrices",
-    "Fetch Token Prices\nfrom PancakeSwap API",
+    "Fetch Token Prices\nfrom Uniswap API",
     shape="box",
     style="filled",
     fillcolor="lightblue",
@@ -35,21 +35,21 @@ diagram.node(
 )
 diagram.node(
     "FirstSwap",
-    "Swap Token A to Token B\non PancakeSwap",
+    "Swap Token A to Token B\non Uniswap",
     shape="box",
     style="filled",
     fillcolor="lightblue",
 )
 diagram.node(
     "SecondSwap",
-    "Swap Token B to Token C\non PancakeSwap",
+    "Swap Token B to Token C\non Uniswap",
     shape="box",
     style="filled",
     fillcolor="lightblue",
 )
 diagram.node(
     "ThirdSwap",
-    "Swap Token C to Token A\non PancakeSwap",
+    "Swap Token C to Token A\non Uniswap",
     shape="box",
     style="filled",
     fillcolor="lightblue",

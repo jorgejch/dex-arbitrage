@@ -17,9 +17,9 @@
 <!-- FetchPrices -->
 <g id="node2" class="node">
 <title>FetchPrices</title>
-<polygon fill="lightblue" stroke="black" points="226.62,-638.5 80.12,-638.5 80.12,-597.5 226.62,-597.5 226.62,-638.5"/>
+<polygon fill="lightblue" stroke="black" points="213.5,-638.5 93.25,-638.5 93.25,-597.5 213.5,-597.5 213.5,-638.5"/>
 <text text-anchor="middle" x="153.38" y="-621.2" font-family="Times,serif" font-size="14.00">Fetch Token Prices</text>
-<text text-anchor="middle" x="153.38" y="-604.7" font-family="Times,serif" font-size="14.00">from PancakeSwap API</text>
+<text text-anchor="middle" x="153.38" y="-604.7" font-family="Times,serif" font-size="14.00">from Uniswap API</text>
 </g>
 <!-- Start&#45;&gt;FetchPrices -->
 <g id="edge1" class="edge">
@@ -72,7 +72,7 @@
 <title>FirstSwap</title>
 <polygon fill="lightblue" stroke="black" points="166,-348 6.75,-348 6.75,-307 166,-307 166,-348"/>
 <text text-anchor="middle" x="86.38" y="-330.7" font-family="Times,serif" font-size="14.00">Swap Token A to Token B</text>
-<text text-anchor="middle" x="86.38" y="-314.2" font-family="Times,serif" font-size="14.00">on PancakeSwap</text>
+<text text-anchor="middle" x="86.38" y="-314.2" font-family="Times,serif" font-size="14.00">on Uniswap</text>
 </g>
 <!-- InitiateFlashLoan&#45;&gt;FirstSwap -->
 <g id="edge5" class="edge">
@@ -85,7 +85,7 @@
 <title>SecondSwap</title>
 <polygon fill="lightblue" stroke="black" points="160.75,-270 0,-270 0,-229 160.75,-229 160.75,-270"/>
 <text text-anchor="middle" x="80.38" y="-252.7" font-family="Times,serif" font-size="14.00">Swap Token B to Token C</text>
-<text text-anchor="middle" x="80.38" y="-236.2" font-family="Times,serif" font-size="14.00">on PancakeSwap</text>
+<text text-anchor="middle" x="80.38" y="-236.2" font-family="Times,serif" font-size="14.00">on Uniswap</text>
 </g>
 <!-- FirstSwap&#45;&gt;SecondSwap -->
 <g id="edge6" class="edge">
@@ -98,7 +98,7 @@
 <title>ThirdSwap</title>
 <polygon fill="lightblue" stroke="black" points="166.75,-192 6,-192 6,-151 166.75,-151 166.75,-192"/>
 <text text-anchor="middle" x="86.38" y="-174.7" font-family="Times,serif" font-size="14.00">Swap Token C to Token A</text>
-<text text-anchor="middle" x="86.38" y="-158.2" font-family="Times,serif" font-size="14.00">on PancakeSwap</text>
+<text text-anchor="middle" x="86.38" y="-158.2" font-family="Times,serif" font-size="14.00">on Uniswap</text>
 </g>
 <!-- SecondSwap&#45;&gt;ThirdSwap -->
 <g id="edge7" class="edge">
