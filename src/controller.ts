@@ -1,74 +1,49 @@
-import { WebSocketManager } from "./ws.js";
 import { BaseDex } from "./dexes/baseDex.js";
-import { PSv3Dex } from "./dexes/psv3Dex.js";
+import { UniswapV3Dex } from "./dexes/uniswapV3Dex.js";
 import { DexPoolSubgraph } from "./subgraphs/dexPoolSubgraph.js";
-import { getTGPancakeSwapUrl, logger, config } from "./common.js";
+import { getTGUrl, logger, config } from "./common.js";
 import { AflabContract } from "./contracts/aflabContract.js";
+import { Network, Alchemy, Wallet } from "alchemy-sdk";
 
-import { ethers } from "ethers";
-
-/**
- * The `Controller` class orchestrates the initialization and management of decentralized exchanges (DEXes),
- * WebSocket connections, and interactions with smart contracts. It handles the setup of providers, wallets,
- * DEX instances, and manages their lifecycle.
- *
- * @class Controller
- * @param httpProviderUrl - The URL of the HTTP provider for Ethereum JSON-RPC.
- * @param wsProviderUrl - The URL of the WebSocket provider.
- * @param walletPrivateKey - The private key of the wallet used for signing transactions.
- * @param aflabContractAddress - The address of the AFLAB smart contract.
- * @param theGraphBaseUrl - The base URL for The Graph API.
- * @param theGraphApiKey - The API key for The Graph.
- * @param pancakeswapV3SubgraphName - The subgraph name for PancakeSwap V3 on The Graph.
- * @param simulateDisconnect - A boolean flag to simulate WebSocket disconnections (default is `false`).
- *
- * @method start - Initializes the Controller and starts the DEXes.
- * @method stop - Stops the WebSocket manager.
- *
- * @returns An instance of the `Controller` class.
- */
 class Controller {
-  private readonly httpProvider: ethers.JsonRpcProvider;
-  private readonly wallet: ethers.Wallet;
+  private readonly wallet: Wallet;
   private readonly aflabContractAddress: string;
-  private readonly dexes: BaseDex[];
-  private readonly wsManager: WebSocketManager;
+  private readonly alchemy: Alchemy;
+  private readonly theGraphBaseUrl: string;
+  private readonly theGraphApiKey: string;
+  private readonly uniswapV3SubgraphName: string;
+  private dexes?: BaseDex[];
 
+  /**
+   * @param walletPrivateKey - The private key of the wallet.
+   * @param aflabContractAddress - The address of the Aflab contract.
+   * @param theGraphBaseUrl - The base URL for The Graph API.
+   * @param theGraphApiKey - The API key for The Graph.
+   * @param uniswapV3SubgraphName - The name of the Uniswap V3 subgraph.
+   * @param alchemyApiKey - The API key for Alchemy.
+   *
+   * @throws Will throw an error if initialization fails.
+   */
   constructor(
-    httpProviderUrl: string,
-    wsProviderUrl: string,
     walletPrivateKey: string,
     aflabContractAddress: string,
     theGraphBaseUrl: string,
     theGraphApiKey: string,
-    pancakeswapV3SubgraphName: string,
-    simulateDisconnect: boolean = false
+    uniswapV3SubgraphName: string,
+    alchemyApiKey: string
   ) {
     try {
-      this.httpProvider = new ethers.JsonRpcProvider(httpProviderUrl);
-      this.wsManager = new WebSocketManager(wsProviderUrl, simulateDisconnect);
-      this.wallet = new ethers.Wallet(walletPrivateKey, this.httpProvider);
+      this.theGraphBaseUrl = theGraphBaseUrl;
+      this.theGraphApiKey = theGraphApiKey;
+      this.uniswapV3SubgraphName = uniswapV3SubgraphName;
+      this.alchemy = new Alchemy({
+        apiKey: alchemyApiKey,
+        network: Network.BNB_MAINNET,
+        maxRetries: 5,
+        requestTimeout: 300000,
+      });
+      this.wallet = new Wallet(walletPrivateKey, this.alchemy);
       this.aflabContractAddress = aflabContractAddress;
-      this.dexes = [
-        new PSv3Dex(
-          this.wsManager,
-          this.wallet,
-          new DexPoolSubgraph(
-            getTGPancakeSwapUrl(
-              theGraphBaseUrl,
-              pancakeswapV3SubgraphName,
-              theGraphApiKey
-            )
-          ),
-          new AflabContract(
-            this.aflabContractAddress,
-            config.AFLAB_ABI,
-            this.wsManager,
-            this.httpProvider,
-            this.wallet
-          )
-        ),
-      ];
     } catch (error) {
       logger.error(
         `Error initializing Controller: ${error}`,
@@ -76,16 +51,30 @@ class Controller {
       );
       throw error;
     }
+  }
 
-    logger.info(
-      `Initialized Controller with arguments:
-      \tPSv3 AFLAB contract Address: ${this.aflabContractAddress}
-      \tThe Graph Base URL: ${theGraphBaseUrl}
-      \tPS v3 Subgraph name: ${pancakeswapV3SubgraphName}
-      \tWallet Address: ${this.wallet.address}
-      \tSimulate disconnect: ${simulateDisconnect}`,
-      this.constructor.name
-    );
+  private async initializeDexes() {
+    this.dexes = [
+      new UniswapV3Dex(
+        this.alchemy,
+        this.wallet,
+        new DexPoolSubgraph(
+          getTGUrl(
+            this.theGraphBaseUrl,
+            this.uniswapV3SubgraphName,
+            this.theGraphApiKey
+          )
+        ),
+        new AflabContract(
+          this.aflabContractAddress,
+          config.AFLAB_ABI,
+          this.alchemy,
+          this.wallet,
+          137
+        ),
+        137
+      ),
+    ];
   }
 
   /**
@@ -93,20 +82,32 @@ class Controller {
    */
   public async start() {
     try {
-      this.wsManager.refresh();
+      await this.initializeDexes();
     } catch (error) {
-      logger.error(
-        `Error initializing WebSocketManager: ${error}`,
-        this.constructor.name
-      );
-      throw error;
+      logger.error(`Error initializing DEXes: ${error}`, this.constructor.name);
+      return;
     }
 
-    const dexInitPromises: Promise<void>[] = this.dexes.map(
-      async (dex: BaseDex) => {
+    if (!this.dexes) {
+      logger.error(
+        "Error initializing DEXes: DEXes not defined",
+        this.constructor.name
+      );
+      return;
+    }
+
+    let dexInitPromises: Promise<void>[];
+    try {
+      dexInitPromises = this.dexes.map(async (dex: BaseDex) => {
         dex.initialize();
-      }
-    );
+      });
+    } catch (error) {
+      logger.error(
+        `Error getting DEXes initialization Promises: ${error}`,
+        this.constructor.name
+      );
+      return;
+    }
 
     try {
       await Promise.all(dexInitPromises);
@@ -114,13 +115,20 @@ class Controller {
       logger.error(`Error initializing DEXes: ${error}`, this.constructor.name);
       return;
     }
+
+    logger.info(
+      `Initialized Controller with arguments:
+      \tPSv3 AFLAB contract Address: ${this.aflabContractAddress}
+      \tWallet Address: ${await this.wallet.getAddress()}`,
+      this.constructor.name
+    );
   }
 
   /**
    * Stops the Controller.
    */
   public stop() {
-    this.wsManager.stop();
+    this.alchemy.ws.removeAllListeners();
   }
 }
 export { Controller };
