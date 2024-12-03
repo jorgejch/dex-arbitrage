@@ -4,9 +4,9 @@
 
 Another Flash-loan arbitrage system that:
 
-- is low cost, works on Binance Smart Chain (BSC);
+- is low cost, works on Polygon;
 - uses AAVE for flash loans;
-- it uses PancakeSwap v3 for the DEX;
+- it uses Uniswap v3 for the DEX;
 - makes use of established patterns when they exist;
 - prefers open-source tools but does not shy away from freemium services.
 
@@ -27,7 +27,7 @@ Key features of this system include:
 - [Hardhat](https://hardhat.org) - Ethereum development environment.
 - [QuickNode](https://www.quicknode.com) - Ethereum node provider.
 - [Solidity](https://soliditylang.org) - A programming language for writing smart contracts.
-- [PancakeSwap v3](https://pancakeswap.finance) - Decentralized exchange on Binance Smart Chain.
+- [Uniswap v3](https://app.uniswap.org/) - Decentralized exchange on Binance Smart Chain.
 
 ## Outline
 
