@@ -35,7 +35,7 @@ Key features of this system include:
 
 ## Resources
 
-- Uniswap v2 router-based [smart contract](https://github.com/jamesbachini/DEX-Arbitrage/blob/main/contracts/Arb.sol).
+- [Uniswap V3 Polygon Deployed Contracts](https://docs.uniswap.org/contracts/v3/reference/deployments/polygon-deployments)
 
 ## Getting Started
 
