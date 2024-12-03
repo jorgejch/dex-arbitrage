@@ -36,6 +36,7 @@ Key features of this system include:
 ## Resources
 
 - [Uniswap V3 Polygon Deployed Contracts](https://docs.uniswap.org/contracts/v3/reference/deployments/polygon-deployments)
+- [AAVE Resources and Addresses](https://aave.com/docs/resources/addresses)
 
 ## Getting Started
 
