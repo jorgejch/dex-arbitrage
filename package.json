@@ -20,8 +20,8 @@
     "compile": "npx hardhat compile",
     "deployMainnet": "npx hardhat ignition deploy ignition/modules/aflab_mainnet.ts --network bsc",
     "deployTestnet": "npx hardhat ignition deploy ignition/modules/aflab_testnet.ts --network sepolia",
-    "getContractBalance": "node dist/scripts/getContractBalance.js 0x94b7be4764c6db2ec36834665e84179680c74dd0",
-    "sendBNBToContract": "node dist/scripts/sendBNBToContract.js 0x94b7be4764c6db2ec36834665e84179680c74dd0 0.0005"
+    "getContractBalance": "node dist/scripts/getContractBalance.js 0x54e14ab63213642e79db10999dba7b5f2ec70e9f",
+    "sendBNBToContract": "node dist/scripts/sendBNBToContract.js 0x54e14ab63213642e79db10999dba7b5f2ec70e9f 0.002"
   },
   "author": "Jorge Haddad",
   "license": "MIT",
@@ -31,9 +31,8 @@
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "@nomicfoundation/hardhat-verify": "^2.0.12",
     "@openzeppelin/contracts": "5.1.0",
-    "@pancakeswap/v3-core": "^1.0.2",
-    "@pancakeswap/v3-periphery": "^1.0.2",
-    "@quicknode/sdk": "^2.3.0",
+    "@uniswap/v3-core": "^1.0.1",
+    "@uniswap/v3-periphery": "^1.4.4",
     "@types/node": "^20.17.6",
     "@vitest/coverage-v8": "^2.1.5",
     "@vitest/ui": "^2.1.5",
