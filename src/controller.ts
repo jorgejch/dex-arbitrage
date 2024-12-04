@@ -115,13 +115,6 @@ class Controller {
       logger.error(`Error initializing DEXes: ${error}`, this.constructor.name);
       return;
     }
-
-    logger.info(
-      `Initialized Controller with arguments:
-      \tPSv3 AFLAB contract Address: ${this.aflabContractAddress}
-      \tWallet Address: ${await this.wallet.getAddress()}`,
-      this.constructor.name
-    );
   }
 
   /**
