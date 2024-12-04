@@ -153,7 +153,6 @@ contract UniswapV3Arbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
             amountOut = _amountOut;
         } catch Error(string memory reason) {
             emit SwapError(_executionCounter, reason);
-            revert(reason);
         }
     }
 
@@ -227,7 +226,6 @@ contract UniswapV3Arbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
             )
         {} catch Error(string memory reason) {
             emit FlashloanError(_executionCounter, reason);
-            revert(reason);
         }
     }
 
