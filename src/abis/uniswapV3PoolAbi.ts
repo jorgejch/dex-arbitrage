@@ -256,43 +256,30 @@ export default [
 		"inputs": [
 			{
 				"indexed": false,
-				"internalType": "uint32",
+				"internalType": "uint8",
 				"name": "feeProtocol0Old",
-				"type": "uint32"
+				"type": "uint8"
 			},
 			{
 				"indexed": false,
-				"internalType": "uint32",
+				"internalType": "uint8",
 				"name": "feeProtocol1Old",
-				"type": "uint32"
+				"type": "uint8"
 			},
 			{
 				"indexed": false,
-				"internalType": "uint32",
+				"internalType": "uint8",
 				"name": "feeProtocol0New",
-				"type": "uint32"
+				"type": "uint8"
 			},
 			{
 				"indexed": false,
-				"internalType": "uint32",
+				"internalType": "uint8",
 				"name": "feeProtocol1New",
-				"type": "uint32"
+				"type": "uint8"
 			}
 		],
 		"name": "SetFeeProtocol",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": false,
-				"internalType": "address",
-				"name": "addr",
-				"type": "address"
-			}
-		],
-		"name": "SetLmPoolEvent",
 		"type": "event"
 	},
 	{
@@ -339,18 +326,6 @@ export default [
 				"internalType": "int24",
 				"name": "tick",
 				"type": "int24"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint128",
-				"name": "protocolFeesToken0",
-				"type": "uint128"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint128",
-				"name": "protocolFeesToken1",
-				"type": "uint128"
 			}
 		],
 		"name": "Swap",
@@ -589,19 +564,6 @@ export default [
 	},
 	{
 		"inputs": [],
-		"name": "lmPool",
-		"outputs": [
-			{
-				"internalType": "contract IPancakeV3LmPool",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
 		"name": "maxLiquidityPerTick",
 		"outputs": [
 			{
@@ -775,30 +737,17 @@ export default [
 	{
 		"inputs": [
 			{
-				"internalType": "uint32",
+				"internalType": "uint8",
 				"name": "feeProtocol0",
-				"type": "uint32"
+				"type": "uint8"
 			},
 			{
-				"internalType": "uint32",
+				"internalType": "uint8",
 				"name": "feeProtocol1",
-				"type": "uint32"
+				"type": "uint8"
 			}
 		],
 		"name": "setFeeProtocol",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "_lmPool",
-				"type": "address"
-			}
-		],
-		"name": "setLmPool",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -833,9 +782,9 @@ export default [
 				"type": "uint16"
 			},
 			{
-				"internalType": "uint32",
+				"internalType": "uint8",
 				"name": "feeProtocol",
-				"type": "uint32"
+				"type": "uint8"
 			},
 			{
 				"internalType": "bool",
