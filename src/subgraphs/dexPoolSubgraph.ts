@@ -25,29 +25,29 @@ class DexPoolSubgraph extends BaseSubgraph {
       "pools",
       this.gql`
       query ($hoursSinceUnixEpoch: Int!, $size: Int!, $offset: Int!) {
-        liquidityPoolHourlySnapshots(
+      liquidityPoolHourlySnapshots(
         first: $size,
         skip: $offset,
-        orderBy: totalValueLockedUSD,
+        orderBy: hourlySwapCount,
         orderDirection: desc,
         where: { hour: $hoursSinceUnixEpoch }
-        ) {
+      ) {
         pool {
-          id
-          name
-          symbol
-          fees {
+        id
+        name
+        symbol
+        fees {
           feePercentage
           feeType
-          }
-          inputTokens {
+        }
+        inputTokens {
           id
           name
           symbol
           decimals
-          }
         }
         }
+      }
       }
       `
     );
