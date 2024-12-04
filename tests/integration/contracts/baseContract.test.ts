@@ -43,7 +43,7 @@ describe("Base Contract Integration Tests", () => {
     testContract = new TestContract(
       new Alchemy({
         apiKey: process.env.ALCHEMY_API_KEY,
-        network: Network.BNB_MAINNET,
+        network: Network.MATIC_MAINNET,
       }),
       "0x1234",
       config.POOL_ABI,

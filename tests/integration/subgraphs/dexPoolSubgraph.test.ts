@@ -1,16 +1,16 @@
-import { test, expect, describe, beforeEach } from "vitest";
 import { DexPoolSubgraph } from "../../../src/subgraphs/dexPoolSubgraph.js";
-import dotenv from "dotenv";
 import { getTGUrl } from "../../../src/common.js";
+import dotenv from "dotenv";
+import { test, expect, describe, beforeEach } from "vitest";
 
 dotenv.config();
 
-describe("PSv3Subgraph", {}, () => {
+describe("UniswapV3Subgraph", {}, () => {
   let subgraph: DexPoolSubgraph;
 
   beforeEach(() => {
     const baseUrl = process.env.THE_GRAPH_BASE_URL ?? "";
-    const subgraphName = process.env.THE_GRAPH_PANCAKESWAP_V3_SUBGRAPH_ID ?? "";
+    const subgraphName = process.env.THE_GRAPH_UNISWAP_V3_SUBGRAPH_ID ?? "";
     const apiKey = process.env.THE_GRAPH_API_KEY ?? "";
 
     if (!baseUrl) {
@@ -25,10 +25,8 @@ describe("PSv3Subgraph", {}, () => {
       throw new Error("THE_GRAPH_API_KEY is not set");
     }
 
-    console.log(  getTGUrl(baseUrl, subgraphName, apiKey) );
-    subgraph = new DexPoolSubgraph(
-      getTGUrl(baseUrl, subgraphName, apiKey)
-    );
+    console.log(getTGUrl(baseUrl, subgraphName, apiKey));
+    subgraph = new DexPoolSubgraph(getTGUrl(baseUrl, subgraphName, apiKey));
     subgraph.initialize();
   });
 

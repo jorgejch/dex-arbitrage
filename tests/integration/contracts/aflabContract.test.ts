@@ -10,10 +10,9 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const address = process.env.CONTRACT_ADDRESS ?? "";
+const address = process.env.UNISWPV3_CONTRACT_ADDRESS ?? "";
 const walletPrivKey = process.env.WALLET_PRIVATE_KEY ?? "";
-const wsUrl = process.env.FAST_RPC_WSS_ENDPOINT ?? "";
-const httpUrl = process.env.FAST_RPC_HTTP_ENDPOINT ?? "";
+const alchemyApiKey = process.env.ALCHEMY_API_KEY ?? "";
 
 describe("AflabContract Integration Tests", () => {
   let aflabContract: AflabContract;
@@ -21,8 +20,8 @@ describe("AflabContract Integration Tests", () => {
   beforeAll(async () => {
     logger.setLogLevel("debug");
     const alchemy = new Alchemy({
-      apiKey: process.env.ALCHEMY_API_KEY ?? "",
-      network: Network.BNB_MAINNET,
+      apiKey: alchemyApiKey,
+      network: Network.MATIC_MAINNET,
     });
     const wallet = new Wallet(walletPrivKey, alchemy);
     aflabContract = new AflabContract(
@@ -42,8 +41,6 @@ describe("AflabContract Integration Tests", () => {
   test("should have sourced the environment variables correctly", async () => {
     expect(address).not.toBe("");
     expect(walletPrivKey).not.toBe("");
-    expect(wsUrl).not.toBe("");
-    expect(httpUrl).not.toBe("");
   });
 
   test("should initialize correctly", async () => {
