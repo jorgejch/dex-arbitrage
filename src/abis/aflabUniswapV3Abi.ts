@@ -1,157 +1,5 @@
 export default [
   {
-    inputs: [],
-    name: "acceptOwnership",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "address",
-        name: "asset",
-        type: "address",
-      },
-      {
-        internalType: "uint256",
-        name: "amount",
-        type: "uint256",
-      },
-      {
-        internalType: "uint256",
-        name: "premium",
-        type: "uint256",
-      },
-      {
-        internalType: "address",
-        name: "",
-        type: "address",
-      },
-      {
-        internalType: "bytes",
-        name: "params",
-        type: "bytes",
-      },
-    ],
-    name: "executeOperation",
-    outputs: [
-      {
-        internalType: "bool",
-        name: "isSuccess",
-        type: "bool",
-      },
-    ],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        components: [
-          {
-            components: [
-              {
-                internalType: "address",
-                name: "tokenIn",
-                type: "address",
-              },
-              {
-                internalType: "address",
-                name: "tokenOut",
-                type: "address",
-              },
-              {
-                internalType: "uint24",
-                name: "poolFee",
-                type: "uint24",
-              },
-              {
-                internalType: "uint256",
-                name: "amountOutMinimum",
-                type: "uint256",
-              },
-            ],
-            internalType: "struct UniswapV3Arbitrage.SwapInfo",
-            name: "swap1",
-            type: "tuple",
-          },
-          {
-            components: [
-              {
-                internalType: "address",
-                name: "tokenIn",
-                type: "address",
-              },
-              {
-                internalType: "address",
-                name: "tokenOut",
-                type: "address",
-              },
-              {
-                internalType: "uint24",
-                name: "poolFee",
-                type: "uint24",
-              },
-              {
-                internalType: "uint256",
-                name: "amountOutMinimum",
-                type: "uint256",
-              },
-            ],
-            internalType: "struct UniswapV3Arbitrage.SwapInfo",
-            name: "swap2",
-            type: "tuple",
-          },
-          {
-            components: [
-              {
-                internalType: "address",
-                name: "tokenIn",
-                type: "address",
-              },
-              {
-                internalType: "address",
-                name: "tokenOut",
-                type: "address",
-              },
-              {
-                internalType: "uint24",
-                name: "poolFee",
-                type: "uint24",
-              },
-              {
-                internalType: "uint256",
-                name: "amountOutMinimum",
-                type: "uint256",
-              },
-            ],
-            internalType: "struct UniswapV3Arbitrage.SwapInfo",
-            name: "swap3",
-            type: "tuple",
-          },
-          {
-            internalType: "uint256",
-            name: "extraCost",
-            type: "uint256",
-          },
-        ],
-        internalType: "struct UniswapV3Arbitrage.ArbitInfo",
-        name: "data",
-        type: "tuple",
-      },
-      {
-        internalType: "uint256",
-        name: "tokenAIn",
-        type: "uint256",
-      },
-    ],
-    name: "initiateFlashLoan",
-    outputs: [],
-    stateMutability: "payable",
-    type: "function",
-  },
-  {
     inputs: [
       {
         internalType: "address",
@@ -309,13 +157,6 @@ export default [
     type: "event",
   },
   {
-    inputs: [],
-    name: "renounceOwnership",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
     anonymous: false,
     inputs: [
       {
@@ -397,43 +238,6 @@ export default [
     type: "event",
   },
   {
-    inputs: [
-      {
-        internalType: "address",
-        name: "newOwner",
-        type: "address",
-      },
-    ],
-    name: "transferOwnership",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "address",
-        name: "token",
-        type: "address",
-      },
-    ],
-    name: "withdraw",
-    outputs: [],
-    stateMutability: "payable",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "withdrawNative",
-    outputs: [],
-    stateMutability: "payable",
-    type: "function",
-  },
-  {
-    stateMutability: "payable",
-    type: "receive",
-  },
-  {
     inputs: [],
     name: "ADDRESSES_PROVIDER",
     outputs: [
@@ -444,6 +248,65 @@ export default [
       },
     ],
     stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "POOL",
+    outputs: [
+      {
+        internalType: "contract IPool",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "acceptOwnership",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "asset",
+        type: "address",
+      },
+      {
+        internalType: "uint256",
+        name: "amount",
+        type: "uint256",
+      },
+      {
+        internalType: "uint256",
+        name: "premium",
+        type: "uint256",
+      },
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+      {
+        internalType: "bytes",
+        name: "params",
+        type: "bytes",
+      },
+    ],
+    name: "executeOperation",
+    outputs: [
+      {
+        internalType: "bool",
+        name: "isSuccess",
+        type: "bool",
+      },
+    ],
+    stateMutability: "nonpayable",
     type: "function",
   },
   {
@@ -492,6 +355,112 @@ export default [
     type: "function",
   },
   {
+    inputs: [
+      {
+        components: [
+          {
+            components: [
+              {
+                internalType: "address",
+                name: "tokenIn",
+                type: "address",
+              },
+              {
+                internalType: "address",
+                name: "tokenOut",
+                type: "address",
+              },
+              {
+                internalType: "uint24",
+                name: "poolFee",
+                type: "uint24",
+              },
+              {
+                internalType: "uint256",
+                name: "amountOutMinimum",
+                type: "uint256",
+              },
+            ],
+            internalType: "struct UniswapV3Arbitrage.SwapInfo",
+            name: "swap1",
+            type: "tuple",
+          },
+          {
+            components: [
+              {
+                internalType: "address",
+                name: "tokenIn",
+                type: "address",
+              },
+              {
+                internalType: "address",
+                name: "tokenOut",
+                type: "address",
+              },
+              {
+                internalType: "uint24",
+                name: "poolFee",
+                type: "uint24",
+              },
+              {
+                internalType: "uint256",
+                name: "amountOutMinimum",
+                type: "uint256",
+              },
+            ],
+            internalType: "struct UniswapV3Arbitrage.SwapInfo",
+            name: "swap2",
+            type: "tuple",
+          },
+          {
+            components: [
+              {
+                internalType: "address",
+                name: "tokenIn",
+                type: "address",
+              },
+              {
+                internalType: "address",
+                name: "tokenOut",
+                type: "address",
+              },
+              {
+                internalType: "uint24",
+                name: "poolFee",
+                type: "uint24",
+              },
+              {
+                internalType: "uint256",
+                name: "amountOutMinimum",
+                type: "uint256",
+              },
+            ],
+            internalType: "struct UniswapV3Arbitrage.SwapInfo",
+            name: "swap3",
+            type: "tuple",
+          },
+          {
+            internalType: "uint256",
+            name: "extraCost",
+            type: "uint256",
+          },
+        ],
+        internalType: "struct UniswapV3Arbitrage.ArbitInfo",
+        name: "data",
+        type: "tuple",
+      },
+      {
+        internalType: "uint256",
+        name: "tokenAIn",
+        type: "uint256",
+      },
+    ],
+    name: "initiateFlashLoan",
+    outputs: [],
+    stateMutability: "payable",
+    type: "function",
+  },
+  {
     inputs: [],
     name: "owner",
     outputs: [
@@ -519,15 +488,46 @@ export default [
   },
   {
     inputs: [],
-    name: "POOL",
-    outputs: [
+    name: "renounceOwnership",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
       {
-        internalType: "contract IPool",
-        name: "",
+        internalType: "address",
+        name: "newOwner",
         type: "address",
       },
     ],
-    stateMutability: "view",
+    name: "transferOwnership",
+    outputs: [],
+    stateMutability: "nonpayable",
     type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "token",
+        type: "address",
+      },
+    ],
+    name: "withdraw",
+    outputs: [],
+    stateMutability: "payable",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "withdrawNative",
+    outputs: [],
+    stateMutability: "payable",
+    type: "function",
+  },
+  {
+    stateMutability: "payable",
+    type: "receive",
   },
 ];
