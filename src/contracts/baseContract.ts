@@ -13,7 +13,6 @@ abstract class BaseContract {
   protected contractType: ContractType;
   protected abi: any;
   protected network: number;
-  private numReinitializations = 0;
   private initialized = false;
 
   /**
@@ -52,24 +51,8 @@ abstract class BaseContract {
 
   /**
    * Initialize the contract.
-   * Should be called before interacting with the contract.
-   * Should be called only once.
    */
   public async initialize(): Promise<void> {
-    await this.refresh();
-    this.initialized = true;
-  }
-
-  /**
-   * Refresh the contract.
-   * Must be called before interacting with the contract.
-   * Has to be kinda idenpotent.
-   */
-  public async refresh(...args: any[]): Promise<void> {
-    logger.debug(
-      `Contract ${this.address} initialization # ${this.numReinitializations}`,
-      this.constructor.name
-    );
     await this.createContract();
 
     if (!this.contract) {
@@ -77,13 +60,8 @@ abstract class BaseContract {
     }
 
     await this.listenForEvents(this.contract);
-    logger.info(
-      args
-        ? `Initialized contract ${this.address}`
-        : `Reinitialized contract ${this.address} after reconnection number ${this.numReinitializations}. Args: ${args}`,
-      this.constructor.name
-    );
-    this.numReinitializations++;
+    this.initialized = true;
+    logger.info(`Initialized contract ${this.address}`, this.constructor.name);
   }
 
   /**

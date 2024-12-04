@@ -7,7 +7,8 @@ import {
   Contract,
   Wallet,
   TransactionRequest,
-  TransactionResponse
+  TransactionResponse,
+  BigNumber,
 } from "alchemy-sdk";
 
 const INITIATE_FLASHLOAN_SIG = "initiateFlashLoan";
@@ -27,7 +28,13 @@ class AflabContract extends BaseContract {
    * @param wallet The provider instance
    * @param network The network ID
    */
-  constructor(address: string, abi: any, alchemy: Alchemy, wallet: Wallet, network: number) {
+  constructor(
+    address: string,
+    abi: any,
+    alchemy: Alchemy,
+    wallet: Wallet,
+    network: number
+  ) {
     super(address, abi, ContractType.AFLAB, alchemy, network);
     this.wallet = wallet;
   }
@@ -36,7 +43,7 @@ class AflabContract extends BaseContract {
     this.contract = new Contract(
       this.address,
       this.abi,
-      await this.alchemy.config.getProvider()
+      await this.alchemy.config.getWebSocketProvider()
     );
   }
 
@@ -106,21 +113,21 @@ class AflabContract extends BaseContract {
         tokenIn: swap1.tokenIn.id, // Actual token address
         tokenOut: swap1.tokenOut.id, // Actual token address
         poolFee: Number(swap1.poolFee.toFixed(0)), // e.g., 3000 represents a 0.3%
-        amountOutMinimum: "0x0", // uint256
+        amountOutMinimum: BigNumber.from(0), // uint256
       },
       swap2: {
         tokenIn: swap2.tokenIn.id,
         tokenOut: swap2.tokenOut.id,
         poolFee: Number(swap2.poolFee.toFixed(0)),
-        amountOutMinimum: "0x0",
+        amountOutMinimum: BigNumber.from(0),
       },
       swap3: {
         tokenIn: swap3.tokenIn.id,
         tokenOut: swap3.tokenOut.id,
         poolFee: Number(swap3.poolFee.toFixed(0)),
-        amountOutMinimum: "0x0",
+        amountOutMinimum: BigNumber.from(0),
       },
-      extraCost: "0x0", // uint256
+      extraCost: BigNumber.from(0), // uint256
     };
   }
 
@@ -137,14 +144,15 @@ class AflabContract extends BaseContract {
     const req: TransactionRequest = {
       from: from,
       to: to,
-      data: this.contract!.interface.encodeFunctionData(INITIATE_FLASHLOAN_SIG, [
-        arbitInfo,
-        inputAmount,
-      ]),
-      value: "0x0",
+      data: this.contract!.interface.encodeFunctionData(
+        INITIATE_FLASHLOAN_SIG,
+        [arbitInfo, inputAmount]
+      ),
+      value: BigNumber.from(0),
       chainId: this.network,
-      gasLimit: 10000000, // Standard gas limit,
-      gasPrice: (await this.alchemy.core.getGasPrice()).add(1000000000), // 1 Gwei above the current gas price
+      gasLimit: 500000, // default gas limit
+      gasPrice: await this.alchemy.core.getGasPrice(),
+      nonce: await this.alchemy.core.getTransactionCount(from, "pending"),
     };
 
     return req;
@@ -218,13 +226,14 @@ class AflabContract extends BaseContract {
 
   private async sendTransactionWithRetry(
     tx: TransactionRequest,
-    retries: number = 20,
+    retries: number = 3,
     delayMs: number = 1000
   ): Promise<any> {
+    let txResponse: TransactionResponse | null = null;
     for (let attempt = 0; attempt < retries; attempt++) {
       try {
         const signedTransaction = await this.wallet.signTransaction(tx);
-        const txResponse = await this.alchemy.transact.sendTransaction(signedTransaction);
+        txResponse = await this.alchemy.transact.sendTransaction(signedTransaction);
         logger.info(
           `Transaction sent. Hash: ${txResponse.hash}`,
           this.constructor.name
@@ -237,50 +246,45 @@ class AflabContract extends BaseContract {
             `\t maxPriorityFeePerGas: ${txResponse.maxPriorityFeePerGas?.toNumber()}`,
           this.constructor.name
         );
-
-        const receipt = await txResponse.wait();
-        logger.info(
-          `Transaction confirmed in block ${receipt.blockNumber}`,
-          this.constructor.name
-        );
-        return receipt;
+        break; // Exit retry loop on successful send
       } catch (error) {
-        // Check error variable type and existance
         if (error instanceof Error && error.stack && error.message) {
           logger.error(error.stack, this.constructor.name);
         }
-
-        let latestNonce = tx.nonce;
-        if (
-          (error as Error).message.includes("already_exists: already known")
-        ) {
-          logger.warn(
-            `Attempt ${attempt + 1}: Transaction already exists. Retrying...`,
-            this.constructor.name
-          );
-
-          // Fetch the latest nonce
-          latestNonce = await this.alchemy.core.getTransactionCount(
-            this.wallet.address,
-            "pending"
-          );
-          tx.nonce = latestNonce;
-          logger.info(
-            `Updated tx nonce to: ${latestNonce}`,
-            this.constructor.name
-          );
-        } else {
-          logger.warn(
-            `Attempt ${attempt + 1} error: ${JSON.stringify(error)}`,
-            this.constructor.name
-          );
-        }
-
+        logger.warn(
+          `Attempt ${attempt} error sending transaction: ${JSON.stringify(error)}`,
+          this.constructor.name
+        );
         await exponentialBackoffDelay(delayMs, attempt);
-        if (attempt === retries) throw error; // Re-throw after final attempt
+        if (attempt === retries - 1) throw error; // Re-throw after final attempt
       }
     }
-    throw new Error("Transaction failed after multiple attempts");
+
+    if (!txResponse) {
+      throw new Error("Failed to send transaction after multiple attempts");
+    }
+
+    try {
+      const receipt = await txResponse.wait();
+      logger.info(
+        `Transaction confirmed in block ${receipt.blockNumber}`,
+        this.constructor.name
+      );
+      logger.info(
+        `Receipt: ${JSON.stringify(receipt.transactionHash)}`,
+        this.constructor.name
+      );
+      return receipt;
+    } catch (error) {
+      // Transaction failed after being mined
+      if (error instanceof Error && error.stack && error.message) {
+        logger.error(error.stack, this.constructor.name);
+      }
+      logger.error(
+        `Transaction failed after being mined: ${JSON.stringify(error)}`,
+        this.constructor.name
+      );
+    }
   }
 }
 

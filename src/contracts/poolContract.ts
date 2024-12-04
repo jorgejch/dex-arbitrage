@@ -24,9 +24,9 @@ import { Alchemy, Contract } from "alchemy-sdk";
 class PoolContract extends BaseContract {
   private readonly processSwap: (
     psv3Swap: UniswapV3Swap,
-    lastPoolSqrtPriceX96: bigint
+    lastPoolSqrtPriceX96: Decimal
   ) => Promise<void>;
-  private lastPoolSqrtPriceX96: bigint;
+  private lastPoolSqrtPriceX96: Decimal;
   protected readonly pool: Pool;
 
   constructor(
@@ -36,27 +36,25 @@ class PoolContract extends BaseContract {
     pool: Pool,
     processSwapFunction: (
       psv3Swap: UniswapV3Swap,
-      lastPoolSqrtPriceX96: bigint
+      lastPoolSqrtPriceX96: Decimal
     ) => Promise<void>,
     network: number
   ) {
     super(address, abi, ContractType.POOL, alchemy, network);
     this.processSwap = processSwapFunction;
     this.pool = pool;
-    this.lastPoolSqrtPriceX96 = BigInt(0);
+    this.lastPoolSqrtPriceX96 = new Decimal(0);
   }
 
   private async swapEventCallback(
     ...args: [
-      string,
-      string,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      number,
-      bigint,
-      bigint,
+      string, // sender
+      string, // recipient
+      bigint, // amount0
+      bigint, // amount1
+      bigint, // sqrtPriceX96
+      bigint, // liquidity
+      number, // tick
     ]
   ) {
     try {
@@ -66,18 +64,17 @@ class PoolContract extends BaseContract {
         amount0,
         amount1,
         sqrtPriceX96,
-        liquidity, // skip the thick
-        ,
-        protocolFeesToken0,
-        protocolFeesToken1,
+        liquidity,
+        tick, // skip the thick
       ] = args;
       const poolContractAddress = this.address;
+      const sqrtPriceX96Decimal = new Decimal(sqrtPriceX96.toString());
       const swap = new UniswapV3Swap(
         sender,
         recipient,
         amount0,
         amount1,
-        new Decimal(sqrtPriceX96.toString()),
+        sqrtPriceX96Decimal,
         liquidity,
         poolContractAddress
       );
@@ -102,7 +99,7 @@ class PoolContract extends BaseContract {
       }
 
       // Keep track of the last pool price
-      this.lastPoolSqrtPriceX96 = sqrtPriceX96;
+      this.lastPoolSqrtPriceX96 = sqrtPriceX96Decimal;
     } catch (error) {
       logger.error(
         `Error processing swap event: ${error}`,
@@ -132,10 +129,9 @@ class PoolContract extends BaseContract {
   /**
    * Listen for Swap events emitted by the contract.
    *
-   * @param contract The ethers.js contract instance
+   * @param contract The ethers.js compatible contract instance
    */
   async listenForEvents(contract: Contract): Promise<void> {
-    // Listen for Swap events (https://tinyurl.com/4nh7pcpj)
     if (!this.processSwap) {
       throw new Error("processSwap function is not defined");
     }
