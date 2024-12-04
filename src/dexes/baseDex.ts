@@ -142,7 +142,6 @@ abstract class BaseDex {
    * Calculates the expected profit from performing a three-step arbitrage cycle involving tokens A, B, and C.
    * The method simulates swapping an initial amount of token A to token B, then token B to token C,
    * and finally token C back to token A using the provided pool contracts.
-   * If any swap results in a zero net output, it returns a profit of zero.
    *
    * @param tokenA - The initial token to start the arbitrage cycle.
    * @param tokenB - The intermediary token in the arbitrage cycle.
@@ -523,7 +522,7 @@ abstract class BaseDex {
    */
   public abstract processSwap(
     swap: BaseSwap,
-    lastPoolSqrtPriceX96: bigint
+    lastPoolSqrtPriceX96: Decimal 
   ): Promise<void>;
 
   /**

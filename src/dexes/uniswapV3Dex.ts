@@ -31,10 +31,10 @@ class UniswapV3Dex extends BaseDex {
     super(alchemy, wallet, subgraph, aflabContract, networkId);
   }
 
-  async processSwap(swap: UniswapV3Swap, lastPoolSqrtPriceX96: bigint) {
+  async processSwap(swap: UniswapV3Swap, lastPoolSqrtPriceX96: Decimal) {
     let contract: PoolContract | undefined;
 
-    if (lastPoolSqrtPriceX96 <= 0) {
+    if (lastPoolSqrtPriceX96 <= new Decimal(0)) {
       logger.warn(
         `Invalid lastPoolSqrtPriceX96: ${lastPoolSqrtPriceX96}`,
         this.constructor.name
@@ -72,7 +72,7 @@ class UniswapV3Dex extends BaseDex {
 
     const opportunity: Opportunity = {
       tokenAIn: new Decimal(swapInputAmount.toString()).div(10), // Divide by 10 to avoid overflow
-      lastPoolSqrtPriceX96: new Decimal(lastPoolSqrtPriceX96.toString()),
+      lastPoolSqrtPriceX96: lastPoolSqrtPriceX96,
       originalSwap: swap,
       expectedProfit: undefined, // To be calculated
       originalSwapPriceImpact: undefined,
