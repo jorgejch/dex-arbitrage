@@ -12,6 +12,8 @@ const PANCAKESWAP_V3_SUBGRAPH_NAME: string =
   process.env.THE_GRAPH_PANCAKESWAP_V3_SUBGRAPH_ID ?? "";
 const THE_GRAPH_API_KEY: string = process.env.THE_GRAPH_API_KEY ?? "";
 const ALCHEMY_API_KEY: string = process.env.ALCHEMY_API_KEY ?? "";
+const AAVE_POOL_ADDRESS_PROVIDER_CONTRACT_ADDRESS: string =
+  process.env.AAVE_POOL_ADDRESS_PROVIDER_CONTRACT_ADDRESS ?? "";
 
 describe("Controller Tests", {}, () => {
   let controller: Controller;
@@ -23,7 +25,8 @@ describe("Controller Tests", {}, () => {
       THE_GRAPH_BASE_URL,
       THE_GRAPH_API_KEY,
       PANCAKESWAP_V3_SUBGRAPH_NAME,
-      ALCHEMY_API_KEY
+      ALCHEMY_API_KEY,
+      AAVE_POOL_ADDRESS_PROVIDER_CONTRACT_ADDRESS
     );
   });
   test.skip("run", async () => {

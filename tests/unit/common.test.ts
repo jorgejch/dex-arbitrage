@@ -1,4 +1,4 @@
-import { Decimal } from "decimal.js";
+import { BigNumber } from "alchemy-sdk";
 import {
   getHoursSinceUnixEpoch,
   getTGUrl,
@@ -52,7 +52,7 @@ describe("getLastFullHourUnixTime", () => {
   });
 });
 
-describe("getTGPUrl", () => {
+describe("getTGUrl", () => {
   it("should return the correct URL", () => {
     const baseUrl = "https://api.thegraph.com";
     const subgraphName = "pancakeswap";
@@ -81,80 +81,75 @@ describe("exponentialBackoffDelay", () => {
   });
 });
 
-describe("sqrtPriceX96ToBig", () => {
+describe("sqrtPriceX96ToDecimal", () => {
   it("should correctly calculate the price when token decimals are equal", () => {
-    const sqrtPriceX96 = new Decimal("79228162514264337593543950336"); // 2^96, corresponds to price 1
-    const token0Decimals = 18;
-    const token1Decimals = 18;
+    const sqrtPriceX96 = BigNumber.from(79228162514264337593543950336n); // 2^96, corresponds to price 1
+    const token0BigNumbers = 18;
+    const token1BigNumbers = 18;
     const expectedPrice = 1;
 
     const result = sqrtPriceX96ToDecimal(
       sqrtPriceX96,
-      token0Decimals,
-      token1Decimals
+      token0BigNumbers,
+      token1BigNumbers
     );
-    console.log(
-      `result: ${result.toString()}, expected: ${expectedPrice}`
-    );
+    console.log(`result: ${result.toString()}, expected: ${expectedPrice}`);
     expect(result.toNumber()).equal(expectedPrice);
   });
 
   it("should correctly calculate the price when token0 has more decimals than token1", () => {
-    const sqrtPriceX96 = new Decimal("79228162514264337593543950336");
-    const token0Decimals = 20;
-    const token1Decimals = 18;
+    const sqrtPriceX96 = BigNumber.from(79228162514264337593543950336n);
+    const token0BigNumbers = 20;
+    const token1BigNumbers = 18;
     const expectedPrice = 100;
 
     const result = sqrtPriceX96ToDecimal(
       sqrtPriceX96,
-      token0Decimals,
-      token1Decimals
+      token0BigNumbers,
+      token1BigNumbers
     );
-    console.log(
-      `result: ${result.toString()}, expected: ${expectedPrice}`
-    );
+    console.log(`result: ${result.toString()}, expected: ${expectedPrice}`);
     expect(result.toNumber()).equal(expectedPrice);
   });
 
   it("should correctly calculate the price when token1 has more decimals than token0", () => {
-    const sqrtPriceX96 = new Decimal("25054144837598984238623601279"); // Example price < 1
-    const token0Decimals = 18;
-    const token1Decimals = 20;
+    const sqrtPriceX96 = BigNumber.from(25054144837598984238623601279n); // Example price < 1
+    const token0BigNumbers = 18;
+    const token1BigNumbers = 20;
 
     const result = sqrtPriceX96ToDecimal(
       sqrtPriceX96,
-      token0Decimals,
-      token1Decimals
+      token0BigNumbers,
+      token1BigNumbers
     );
     console.log(`result: ${result.toString()}`);
     expect(result.toNumber()).greaterThan(0);
   });
 
   it("should return 0 when sqrtPriceX96 is 0", () => {
-    const sqrtPriceX96 = new Decimal(0);
-    const token0Decimals = 18;
-    const token1Decimals = 18;
+    const sqrtPriceX96 = BigNumber.from(0);
+    const token0BigNumbers = 18;
+    const token1BigNumbers = 18;
     const expectedPrice = 0;
 
     const result = sqrtPriceX96ToDecimal(
       sqrtPriceX96,
-      token0Decimals,
-      token1Decimals
+      token0BigNumbers,
+      token1BigNumbers
     );
     expect(result.toNumber()).equal(expectedPrice);
   });
 
   it("should handle large sqrtPriceX96 values", () => {
-    const sqrtPriceX96 = new Decimal(
-      "1461501637330902918203684832716283019655932542976"
-    );
-    const token0Decimals = 18;
-    const token1Decimals = 18;
+    const sqrtPriceX96 =
+      BigNumber.from(1461501637330902918203684832716283019655932542976n);
+    const token0BigNumbers = 18;
+    const token1BigNumbers = 18;
 
     const result = sqrtPriceX96ToDecimal(
       sqrtPriceX96,
-      token0Decimals,
-      token1Decimals
+      token0BigNumbers,
+      token1BigNumbers
     );
     expect(result.toNumber()).greaterThan(0);
   });

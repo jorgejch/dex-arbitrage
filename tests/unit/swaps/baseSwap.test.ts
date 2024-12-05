@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { BaseSwap } from "../../../src/swaps/baseSwap.js";
 import { Token } from "../../../src/types.js";
-import { Decimal } from "decimal.js";
+import { BigNumber } from "alchemy-sdk";
 
 class TestSwap extends BaseSwap {
   constructor(
@@ -9,7 +9,7 @@ class TestSwap extends BaseSwap {
     recipient: string,
     amount0: bigint,
     amount1: bigint,
-    sqrtPriceX96: Decimal,
+    sqrtPriceX96: BigNumber,
     liquidity: bigint,
     poolContract: string
   ) {
@@ -26,14 +26,13 @@ class TestSwap extends BaseSwap {
 }
 
 describe("BaseSwap", () => {
-
   it("should set and get input tokens correctly", () => {
     const swap = new TestSwap(
       "0xSender",
       "0xRecipient",
       -BigInt(1000),
       BigInt(2000),
-      new Decimal(123456789),
+      BigNumber.from(123456789),
       BigInt(1000000),
       "0xPoolContract"
     );
@@ -52,7 +51,7 @@ describe("BaseSwap", () => {
       "0xRecipient",
       -BigInt(3000),
       BigInt(4000),
-      new Decimal(223456789),
+      BigNumber.from(223456789),
       BigInt(2000000),
       "0xPoolContract"
     );
@@ -65,19 +64,19 @@ describe("BaseSwap", () => {
       "0xRecipient",
       -BigInt(5000),
       BigInt(6000),
-      new Decimal(323456789),
+      BigNumber.from(323456789),
       BigInt(3000000),
       "0xPoolContract"
     );
-    const lastPoolSqrtPriceX96 = new Decimal(1234560000000);
-    const token0Decimals = 18;
-    const token1Decimals = 18;
+    const lastPoolSqrtPriceX96 = BigNumber.from(1234560000000);
+    const token0BigNumbers = 18;
+    const token1BigNumbers = 18;
 
     const priceImpact = swap.calculatePriceImpact(
       lastPoolSqrtPriceX96,
-      token0Decimals,
-      token1Decimals
-    )
+      token0BigNumbers,
+      token1BigNumbers
+    );
 
     console.log(`priceImpact: ${priceImpact}`);
     expect(priceImpact).toBeGreaterThan(0);
@@ -89,19 +88,19 @@ describe("BaseSwap", () => {
       "0xRecipient",
       -BigInt(8000),
       BigInt(9000),
-      new Decimal(523456789),
+      BigNumber.from(523456789),
       BigInt(5000000),
       "0xPoolContract"
     );
-    const lastPoolSqrtPriceX96 = new Decimal(0);
-    const token0Decimals = 18;
-    const token1Decimals = 18;
+    const lastPoolSqrtPriceX96 = BigNumber.from(0);
+    const token0BigNumbers = 18;
+    const token1BigNumbers = 18;
 
     expect(() =>
       swap.calculatePriceImpact(
         lastPoolSqrtPriceX96,
-        token0Decimals,
-        token1Decimals
+        token0BigNumbers,
+        token1BigNumbers
       )
     ).toThrow("Division by zero error: priceBefore is zero");
   });
@@ -113,7 +112,7 @@ describe("BaseSwap", () => {
       "0xRecipient",
       -BigInt(500),
       BigInt(500),
-      new Decimal(123456789),
+      BigNumber.from(123456789),
       BigInt(1000000),
       "0xPoolContract"
     );
@@ -128,7 +127,7 @@ describe("BaseSwap", () => {
       "0xRecipient",
       -BigInt(6000),
       BigInt(7000),
-      new Decimal(223456789),
+      BigNumber.from(223456789),
       BigInt(2000000),
       "0xPoolContract"
     );
@@ -147,19 +146,19 @@ describe("BaseSwap", () => {
       "0xRecipient",
       -BigInt(7000),
       BigInt(8000),
-      new Decimal(323456789),
+      BigNumber.from(323456789),
       BigInt(3000000),
       "0xPoolContract"
     );
 
-    const lastPoolSqrtPriceX96 = new Decimal(323456789);
-    const token0Decimals = 18;
-    const token1Decimals = 18;
+    const lastPoolSqrtPriceX96 = BigNumber.from(323456789);
+    const token0BigNumbers = 18;
+    const token1BigNumbers = 18;
 
     const priceImpact = swap.calculatePriceImpact(
       lastPoolSqrtPriceX96,
-      token0Decimals,
-      token1Decimals
+      token0BigNumbers,
+      token1BigNumbers
     );
     expect(priceImpact).toBe(0);
   });
@@ -170,19 +169,19 @@ describe("BaseSwap", () => {
       "0xRecipient",
       -BigInt(9000),
       BigInt(10000),
-      new Decimal("12345678912345678900"),
+      BigNumber.from("12345678912345678900"),
       BigInt(4000000),
       "0xPoolContract"
     );
 
-    const lastPoolSqrtPriceX96 = new Decimal("123456789123456000");
-    const token0Decimals = 18;
-    const token1Decimals = 18;
+    const lastPoolSqrtPriceX96 = BigNumber.from("123456789123456000");
+    const token0BigNumbers = 18;
+    const token1BigNumbers = 18;
 
     const priceImpact = swap.calculatePriceImpact(
       lastPoolSqrtPriceX96,
-      token0Decimals,
-      token1Decimals
+      token0BigNumbers,
+      token1BigNumbers
     );
     expect(priceImpact).toBeGreaterThan(0);
   });
@@ -193,7 +192,7 @@ describe("BaseSwap", () => {
       "0xRecipient",
       BigInt(13000),
       BigInt(14000),
-      new Decimal(523456789),
+      BigNumber.from(523456789),
       BigInt(0),
       "0xPoolContract"
     );
@@ -201,26 +200,25 @@ describe("BaseSwap", () => {
     expect(otherSwap.liquidity).toBe(BigInt(0));
   });
 
-
   it("should calculate price impact correctly with different token decimals", () => {
     const swap = new TestSwap(
       "0xSender",
       "0xRecipient",
       -BigInt(17000),
       BigInt(18000),
-      new Decimal(723476789),
+      BigNumber.from(723476789),
       BigInt(7000000),
       "0xPoolContract"
     );
 
-    const lastPoolSqrtPriceX96 = new Decimal(723456000);
-    const token0Decimals = 6;
-    const token1Decimals = 18;
+    const lastPoolSqrtPriceX96 = BigNumber.from(723456000);
+    const token0BigNumbers = 6;
+    const token1BigNumbers = 18;
 
     const priceImpact = swap.calculatePriceImpact(
       lastPoolSqrtPriceX96,
-      token0Decimals,
-      token1Decimals
+      token0BigNumbers,
+      token1BigNumbers
     );
     expect(priceImpact).toBeGreaterThan(0);
   });
@@ -234,14 +232,14 @@ describe("BaseSwap", () => {
       "0xRecipient",
       -maxBigInt,
       maxBigInt,
-      new Decimal(maxBigInt.toString()),
+      BigNumber.from(maxBigInt.toString()),
       maxBigInt,
       "0xPoolContract"
     );
 
     expect(swap.amount0).toBe(-maxBigInt);
     expect(swap.amount1).toBe(maxBigInt);
-    expect(swap.sqrtPriceX96).toEqual(new Decimal(maxBigInt.toString()));
+    expect(swap.sqrtPriceX96).toEqual(BigNumber.from(maxBigInt));
     expect(swap.liquidity).toBe(maxBigInt);
   });
 });
