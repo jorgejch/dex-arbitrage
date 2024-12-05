@@ -3,11 +3,9 @@ import { DexPoolSubgraph } from "../../../src/subgraphs/dexPoolSubgraph.js";
 import { Pool, Token, Opportunity } from "../../../src/types.js";
 import { AflabContract } from "../../../src/contracts/aflabContract.js";
 import { PoolContract } from "../../../src/contracts/poolContract.js";
+import { LendingPoolAPContract } from "../../../src/contracts/lendingPoolAPContract.js";
 
-import {
-  Alchemy,
-  Wallet,
-} from "alchemy-sdk";
+import { Alchemy, Wallet, BigNumber } from "alchemy-sdk";
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { Decimal } from "decimal.js";
 
@@ -42,7 +40,7 @@ class TestDex extends BaseDex {
   }
 
   public calculateNetOutputPublic(
-    inputAmount: Decimal,
+    inputAmount: BigNumber,
     fromToken: Token,
     toToken: Token,
     poolContract: PoolContract
@@ -59,7 +57,7 @@ class TestDex extends BaseDex {
     tokenA: Token,
     tokenB: Token,
     tokenC: Token,
-    inputAmount: Decimal,
+    inputAmount: BigNumber,
     swap1PoolContract: PoolContract,
     swap2PoolContract: PoolContract,
     swap3PoolContract: PoolContract
@@ -71,18 +69,19 @@ class TestDex extends BaseDex {
       inputAmount,
       swap1PoolContract,
       swap2PoolContract,
-      swap3PoolContract
+      swap3PoolContract,
+      new Decimal(0)
     );
   }
 
-  public pickTokenBPublic(
+  public async pickTokenBPublic(
     tokenA: Token,
     tokenC: Token,
     possibleBs: Token[],
-    inputAmount: Decimal,
+    inputAmount: BigNumber,
     swapPoolContract: PoolContract
   ) {
-    return this.pickTokenB(
+    return await this.pickTokenB(
       tokenA,
       tokenC,
       possibleBs,
@@ -109,6 +108,7 @@ describe("BaseDex", () => {
   let subgraph: DexPoolSubgraph;
   let mockSigner: Wallet;
   let mockAflabContract: AflabContract;
+  let mockLendingPoolAPContract: LendingPoolAPContract;
   let alchemy: Alchemy;
 
   beforeEach(async () => {
@@ -118,7 +118,15 @@ describe("BaseDex", () => {
     mockAflabContract = {
       executeOpportunity: vi.fn().mockResolvedValue(undefined),
     } as unknown as AflabContract;
-    dex = new TestDex(alchemy, mockSigner, subgraph, mockAflabContract, 137);
+    mockLendingPoolAPContract = {} as unknown as LendingPoolAPContract;
+    dex = new TestDex(
+      alchemy,
+      mockSigner,
+      subgraph,
+      mockAflabContract,
+      mockLendingPoolAPContract,
+      137
+    );
     await dex.initialize();
   });
 

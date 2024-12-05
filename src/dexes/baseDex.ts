@@ -11,8 +11,9 @@ import { AflabContract } from "../contracts/aflabContract.js";
 import { BaseSwap } from "../swaps/baseSwap.js";
 import { DexPoolSubgraph } from "../subgraphs/dexPoolSubgraph.js";
 import { constants, logger, sqrtPriceX96ToDecimal } from "../common.js";
+import { Wallet, Alchemy, BigNumber } from "alchemy-sdk";
 import { Decimal } from "decimal.js";
-import { Wallet, Alchemy } from "alchemy-sdk";
+import { LendingPoolAPContract } from "../contracts/lendingPoolAPContract.js";
 
 /**
  * Abstract class representing a Uniswap V3-based Decentralized Exchange (DEX).
@@ -64,6 +65,11 @@ abstract class BaseDex {
   protected aflabContract: AflabContract;
 
   /**
+   * Interface for interacting with the LendingPoolAddressProvider smart contract.
+   */
+  protected lendingPoolAPContract: LendingPoolAPContract;
+
+  /**
    * The Alchemy SDK instance.
    */
   protected alchemy: Alchemy;
@@ -73,6 +79,7 @@ abstract class BaseDex {
    * @param wallet - Signer used to authorize and send transactions.
    * @param subgraph - Interface to The Graph subgraph for querying on-chain data.
    * @param aflabContract - Interface to the AFLAB smart contract for executing arbitrage.
+   * @param lendingPoolAPContract - Interface to the LendingPoolAddressProvider smart contract.
    * @param network - The network ID.
    */
   constructor(
@@ -80,6 +87,7 @@ abstract class BaseDex {
     wallet: Wallet,
     subgraph: DexPoolSubgraph,
     aflabContract: AflabContract,
+    lendingPoolAPContract: LendingPoolAPContract,
     network: number
   ) {
     this.alchemy = alchemy;
@@ -89,6 +97,7 @@ abstract class BaseDex {
     this.network = network;
     this.contractsMap = new Map<string, PoolContract>();
     this.inputTokenSymbolIndex = new Map<string, Pool[]>();
+    this.lendingPoolAPContract = lendingPoolAPContract;
   }
 
   /**
@@ -150,22 +159,24 @@ abstract class BaseDex {
    * @param swap1PoolContract - The pool contract for swapping token A to token B.
    * @param swap2PoolContract - The pool contract for swapping token B to token C.
    * @param swap3PoolContract - The pool contract for swapping token C back to token A.
+   * @param lendingPoolFeePercentage - The fee charged by the lending pool.
    * @returns {ExpectedProfitData} The expected profit as a `Decimal`, calculated as the net output from the final swap minus the initial input amount.
    */
   protected calculateExpectedProfit(
     tokenA: Token,
     tokenB: Token,
     tokenC: Token,
-    inputAmount: Decimal,
+    inputAmount: BigNumber,
     swap1PoolContract: PoolContract,
     swap2PoolContract: PoolContract,
-    swap3PoolContract: PoolContract
+    swap3PoolContract: PoolContract,
+    lendingPoolFeePercentage: Decimal
   ): ExpectedProfitData {
     const returnPayload: ExpectedProfitData = {
-      expectedProfit: new Decimal(0),
-      swap1FeeDecimal: new Decimal(0),
-      swap2FeeDecimal: new Decimal(0),
-      swap3FeeDecimal: new Decimal(0),
+      expectedProfit: BigNumber.from(0),
+      swap1FeeBigNumber: BigNumber.from(0),
+      swap2FeeBigNumber: BigNumber.from(0),
+      swap3FeeBigNumber: BigNumber.from(0),
     };
 
     // Swap 1: Token A to Token B
@@ -186,8 +197,10 @@ abstract class BaseDex {
       return returnPayload;
     }
 
-    if (swap1Result.netOutput.lessThanOrEqualTo(0)) return returnPayload;
-    returnPayload.swap1FeeDecimal = swap1Result.feeDecimal;
+    if (swap1Result.netOutput.lte(0)) return returnPayload;
+    returnPayload.swap1FeeBigNumber = BigNumber.from(
+      swap1Result.feeDecimal.mul(10 ** 7).toFixed(0)
+    );
 
     // Swap 2: Token B to Token C
     let swap2Result: NetOutputData;
@@ -206,8 +219,10 @@ abstract class BaseDex {
       return returnPayload;
     }
 
-    if (swap2Result.netOutput.lessThanOrEqualTo(0)) return returnPayload;
-    returnPayload.swap2FeeDecimal = swap2Result.feeDecimal;
+    if (swap2Result.netOutput.lte(0)) return returnPayload;
+    returnPayload.swap2FeeBigNumber = BigNumber.from(
+      swap2Result.feeDecimal.mul(10 ** 7).toFixed(0)
+    );
 
     // Swap 3: Token C to Token A
 
@@ -227,10 +242,17 @@ abstract class BaseDex {
       return returnPayload;
     }
 
-    if (swap3Result.netOutput.lessThanOrEqualTo(0)) return returnPayload;
-    returnPayload.swap3FeeDecimal = swap3Result.feeDecimal;
+    if (swap3Result.netOutput.lte(0)) return returnPayload;
+    returnPayload.swap3FeeBigNumber = BigNumber.from(
+      swap3Result.feeDecimal.mul(10 ** 7).toFixed(0)
+    );
 
-    const expectedProfit = swap3Result.netOutput.sub(inputAmount);
+    const lendingPoolFeeBigNumber = BigNumber.from(
+      inputAmount.mul(lendingPoolFeePercentage.toFixed(0))
+    );
+    const expectedProfit = swap3Result.netOutput.sub(
+      inputAmount.add(lendingPoolFeeBigNumber)
+    );
     returnPayload.expectedProfit = expectedProfit;
 
     logger.debug(
@@ -255,6 +277,7 @@ abstract class BaseDex {
         `\t\tFee Decimal: ${swap3Result.feeDecimal}\n` +
         `\t\tFee: ${swap3Result.fee}\n` +
         `\tExpected Profit: ${expectedProfit}\n` +
+        `\tExpected Profit (%): ${expectedProfit.mul(100).div(inputAmount)}%\n` +
         `==================================================`,
       this.constructor.name
     );
@@ -272,13 +295,13 @@ abstract class BaseDex {
    * @returns {NetOutputData} The net output data after the swap.
    */
   protected calculateNetOutput(
-    inputAmount: Decimal,
+    inputAmount: BigNumber,
     fromToken: Token,
     toToken: Token,
     poolContract: PoolContract
   ): NetOutputData {
-    const sqrtPriceX96: Decimal = poolContract.getLastPoolSqrtPriceX96();
-    if (sqrtPriceX96 === undefined || sqrtPriceX96.lessThanOrEqualTo(0)) {
+    const sqrtPriceX96: BigNumber = poolContract.getLastPoolSqrtPriceX96();
+    if (sqrtPriceX96 === undefined || sqrtPriceX96.lte(0)) {
       logger.debug(
         `Last price value for ${fromToken.symbol} to ${toToken.symbol} swap has not been initialized or is zero.`,
         this.constructor.name
@@ -299,23 +322,24 @@ abstract class BaseDex {
       token1.decimals
     );
 
-    const grossOutput = isToken0ToToken1
-      ? inputAmount.mul(price)
-      : inputAmount.div(price);
-
-    const feeDecimal: Decimal = poolContract.getTotalPoolFeesDecimal();
+    const inputAmountAsDecimal = new Decimal(inputAmount.toString());
+    const grossOutputDecimal = isToken0ToToken1
+      ? inputAmountAsDecimal.div(price)
+      : inputAmountAsDecimal.mul(price);
+    const feeDecimal: Decimal = poolContract.getTotalPoolFeesAsDecimal();
 
     // Alarm if fee percentage is too high
-    if (feeDecimal > constants.MAX_FEE_DECIMAL) {
+    if (feeDecimal.gt(constants.MAX_FEE_DECIMAL)) {
       logger.warn(
         `Fee decimal is too high (${feeDecimal})`,
         this.constructor.name
       );
     }
 
-    const fee = grossOutput.mul(feeDecimal);
-    const netOutput = grossOutput.sub(fee);
+    const fee = BigNumber.from(grossOutputDecimal.mul(feeDecimal).toFixed(0));
 
+    const grossOutput = BigNumber.from(grossOutputDecimal.toFixed(0));
+    const netOutput = grossOutput.sub(fee);
     const returnPayload: NetOutputData = {
       price,
       netOutput,
@@ -392,14 +416,14 @@ abstract class BaseDex {
    * @param swapPoolContract - The pool contract where the initial and final swap occurs.
    * @returns The token to use for the third leg of the arbitrage, or undefined if no arbitrage opportunity is identified.
    */
-  protected pickTokenB(
+  protected async pickTokenB(
     tokenA: Token,
     tokenC: Token,
     possibleBs: Token[],
-    inputAmount: Decimal,
+    inputAmount: BigNumber,
     swapPoolContract: PoolContract
-  ): TokenBPickData {
-    const profitMap = new Map<Decimal, TokenBPickData>();
+  ): Promise<TokenBPickData> {
+    const profitablePicks: TokenBPickData[] = [];
 
     if (!possibleBs) {
       throw new Error("No possible intermediary tokens found");
@@ -433,11 +457,12 @@ abstract class BaseDex {
               inputAmount,
               swap1PoolContract,
               swap2PoolContract,
-              swap3PoolContract
+              swap3PoolContract,
+              await this.lendingPoolAPContract.getFlashloanFee()
             );
 
           if (expectedProfitData.expectedProfit.gt(0)) {
-            profitMap.set(expectedProfitData.expectedProfit, {
+            profitablePicks.push({
               expectedProfitData,
               tokenB,
             });
@@ -446,18 +471,17 @@ abstract class BaseDex {
       }
     }
 
-    let maxProfit = new Decimal(0);
-    for (const profit of profitMap.keys()) {
-      if (profit.gt(maxProfit)) {
-        maxProfit = profit;
-      }
-    }
-
-    const maxProfitData = profitMap.get(maxProfit);
-
-    if (!maxProfitData?.tokenB) {
+    if (profitablePicks.length === 0) {
       throw new Error("No profitable arbitrage opportunities found");
     }
+
+    const maxProfitData = profitablePicks.reduce((max, current) => {
+      return current.expectedProfitData.expectedProfit.gt(
+      max.expectedProfitData.expectedProfit
+      )
+      ? current
+      : max;
+    }, profitablePicks[0]);
 
     return maxProfitData;
   }
@@ -473,9 +497,10 @@ abstract class BaseDex {
       opportunity.arbitInfo.swap1 === undefined ||
       opportunity.arbitInfo.swap2 === undefined ||
       opportunity.arbitInfo.swap3 === undefined ||
+      opportunity.arbitInfo.estimatedGasCost === undefined ||
       opportunity.tokenAIn === undefined ||
-      opportunity.lastPoolSqrtPriceX96 === undefined ||
-      opportunity.originalSwap === undefined
+      opportunity.expectedProfit === undefined ||
+      opportunity.originalSwapPriceImpact === undefined
     ) {
       throw new Error("Opportunity parameters are not defined");
     }
@@ -483,13 +508,14 @@ abstract class BaseDex {
     // Log the opportunity details
     logger.info(
       `\n========== Arbitrage Opportunity ==========\n` +
+        `\tInput Amount: ${opportunity.tokenAIn}\n` +
         `\tToken A: ${opportunity.arbitInfo.swap1.tokenIn.symbol}\n` +
         `\tToken B: ${opportunity.arbitInfo.swap2.tokenIn.symbol}\n` +
         `\tToken C: ${opportunity.arbitInfo.swap3.tokenIn.symbol}\n` +
-        `\tInput Amount: ${opportunity.tokenAIn}\n` +
-        `\tExpected Profit: ${opportunity.expectedProfit}\n` +
         `\tOriginal Swap Price Impact: ${opportunity.originalSwapPriceImpact}\n` +
         `\tEstimated Gas Cost: ${opportunity.arbitInfo.estimatedGasCost}\n` +
+        `\tExpected Profit: ${opportunity.expectedProfit}\n` +
+        `\tExpected Profit (%): ${new Decimal(opportunity.expectedProfit.toString()).div(new Decimal(opportunity.tokenAIn.toString())).mul(100).toString()}%\n` +
         `===========================================`,
       this.constructor.name
     );
@@ -522,7 +548,7 @@ abstract class BaseDex {
    */
   public abstract processSwap(
     swap: BaseSwap,
-    lastPoolSqrtPriceX96: Decimal 
+    lastPoolSqrtPriceX96: BigNumber
   ): Promise<void>;
 
   /**

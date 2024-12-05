@@ -1,14 +1,14 @@
 import { BaseDex } from "./baseDex.js";
 import { DexPoolSubgraph } from "../subgraphs/dexPoolSubgraph.js";
 import { UniswapV3Swap } from "../swaps/uniswapV3Swap.js";
-import { Token, Opportunity } from "../types.js";
+import { Token, Opportunity, ExpectedProfitData } from "../types.js";
 import { logger, isPriceImpactSignificant } from "../common.js";
 import { PoolContract } from "../contracts/poolContract.js";
 import { AflabContract } from "../contracts/aflabContract.js";
+import { LendingPoolAPContract } from "../contracts/lendingPoolAPContract.js";
 import abi from "../abis/uniswapV3PoolAbi.js";
 
-import { Wallet, Alchemy } from "alchemy-sdk";
-import { Decimal } from "decimal.js";
+import { Wallet, Alchemy, BigNumber } from "alchemy-sdk";
 
 /**
  * Represents the Uniswap V3 DEX.
@@ -19,6 +19,7 @@ class UniswapV3Dex extends BaseDex {
    * @param wallet The wallet instance
    * @param subgraph The DEX pool subgraph instance
    * @param aflabContract The AFLAB contract instance
+   * @param lendingPoolAPContract The LendingPoolAP contract instance
    * @param networkId The network ID
    */
   constructor(
@@ -26,15 +27,23 @@ class UniswapV3Dex extends BaseDex {
     wallet: Wallet,
     subgraph: DexPoolSubgraph,
     aflabContract: AflabContract,
+    lendingPoolAPContract: LendingPoolAPContract,
     networkId: number
   ) {
-    super(alchemy, wallet, subgraph, aflabContract, networkId);
+    super(
+      alchemy,
+      wallet,
+      subgraph,
+      aflabContract,
+      lendingPoolAPContract,
+      networkId
+    );
   }
 
-  async processSwap(swap: UniswapV3Swap, lastPoolSqrtPriceX96: Decimal) {
+  async processSwap(swap: UniswapV3Swap, lastPoolSqrtPriceX96: BigNumber) {
     let contract: PoolContract | undefined;
 
-    if (lastPoolSqrtPriceX96 <= new Decimal(0)) {
+    if (lastPoolSqrtPriceX96 <= BigNumber.from(0)) {
       logger.warn(
         `Invalid lastPoolSqrtPriceX96: ${lastPoolSqrtPriceX96}`,
         this.constructor.name
@@ -71,7 +80,7 @@ class UniswapV3Dex extends BaseDex {
     );
 
     const opportunity: Opportunity = {
-      tokenAIn: new Decimal(swapInputAmount.toString()).div(10), // Divide by 10 to avoid overflow
+      tokenAIn: BigNumber.from(swapInputAmount).div(10), // Divide by 10 to avoid overflow
       lastPoolSqrtPriceX96: lastPoolSqrtPriceX96,
       originalSwap: swap,
       expectedProfit: undefined, // To be calculated
@@ -80,7 +89,7 @@ class UniswapV3Dex extends BaseDex {
         swap1: undefined,
         swap2: undefined,
         swap3: undefined,
-        estimatedGasCost: new Decimal(0),
+        estimatedGasCost: BigNumber.from(0),
       },
     };
 
@@ -103,7 +112,7 @@ class UniswapV3Dex extends BaseDex {
       this.constructor.name
     );
 
-    if (isPriceImpactSignificant(opportunity.originalSwapPriceImpact!)) {
+    if (isPriceImpactSignificant(opportunity.originalSwapPriceImpact)) {
       logger.info(
         `Significant price impact (${opportunity.originalSwapPriceImpact}) detected for swap: ${swapName}`,
         this.constructor.name
@@ -129,7 +138,7 @@ class UniswapV3Dex extends BaseDex {
 
       let tokenBData;
       try {
-        tokenBData = this.pickTokenB(
+        tokenBData = await this.pickTokenB(
           tokenA,
           tokenC,
           candidateTokenBs,
@@ -145,42 +154,49 @@ class UniswapV3Dex extends BaseDex {
         return;
       }
 
-      opportunity.expectedProfit = tokenBData.expectedProfitData.expectedProfit;
+      const expectedProfit: ExpectedProfitData = tokenBData.expectedProfitData;
+
+      if (expectedProfit.expectedProfit.lte(0)) {
+        logger.error(
+          `Negative expected profit: ${expectedProfit.expectedProfit}`,
+          this.constructor.name
+        );
+        return;
+      }
+
+      opportunity.expectedProfit = expectedProfit.expectedProfit;
       opportunity.arbitInfo.swap1 = {
         tokenIn: tokenA,
         tokenOut: tokenBData.tokenB,
-        poolFee: tokenBData.expectedProfitData.swap1FeeDecimal,
-        amountOutMinimum: new Decimal(0),
+        poolFee: expectedProfit.swap1FeeBigNumber,
+        amountOutMinimum: BigNumber.from(0),
       };
       opportunity.arbitInfo.swap2 = {
         tokenIn: tokenBData.tokenB,
         tokenOut: tokenC,
-        poolFee: tokenBData.expectedProfitData.swap2FeeDecimal,
-        amountOutMinimum: new Decimal(0),
+        poolFee: expectedProfit.swap2FeeBigNumber,
+        amountOutMinimum: BigNumber.from(0),
       };
       opportunity.arbitInfo.swap3 = {
         tokenIn: tokenC,
         tokenOut: tokenA,
-        poolFee: tokenBData.expectedProfitData.swap3FeeDecimal,
-        amountOutMinimum: new Decimal(0),
+        poolFee: expectedProfit.swap3FeeBigNumber,
+        amountOutMinimum: BigNumber.from(0),
       };
 
       try {
         this.logOpportunity(opportunity);
       } catch (error) {
         logger.warn(`Invalid opportunity: ${error}`, this.constructor.name);
-        return;
       }
 
       try {
-        // Trigger smart contract execution
         await this.triggerSmartContract(opportunity);
       } catch (error) {
-        logger.warn(
+        logger.error(
           `Error triggering smart contract: ${error}`,
           this.constructor.name
         );
-        return;
       }
     }
   }
@@ -195,10 +211,20 @@ class UniswapV3Dex extends BaseDex {
     }
 
     try {
-      this.aflabContract.initialize();
+      await this.aflabContract.initialize();
     } catch (error) {
       logger.error(
         `Error initializing AFLAB contract: ${error}`,
+        this.constructor.name
+      );
+      throw error;
+    }
+
+    try {
+      await this.lendingPoolAPContract.initialize();
+    } catch (error) {
+      logger.error(
+        `Error initializing LendingPoolAP contract: ${error}`,
         this.constructor.name
       );
       throw error;
