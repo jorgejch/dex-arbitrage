@@ -1,5 +1,8 @@
 import poolAbi from "./abis/uniswapV3PoolAbi.js";
 import aflabAbi from "./abis/aflabUniswapV3Abi.js";
+import lendingPoolAPAbi from "./abis/lendingPoolAPAbi.js";
+import lendingPoolAbi from "./abis/lendingPoolAbi.js";
+import { BigNumber } from "alchemy-sdk";
 import { Decimal } from "decimal.js";
 
 // Constants
@@ -17,8 +20,9 @@ const config = {
   LOGGER_PREFIX: "FlashLoanArbitrage",
   POOL_ABI: poolAbi,
   AFLAB_ABI: aflabAbi,
+  LENDING_POOL_AP_ABI: lendingPoolAPAbi,
+  LENDING_POOL_ABI: lendingPoolAbi,
   LOG_LEVEL: "INFO",
-  // LOG_LEVEL: "DEBUG",
   RECONNECT_INTERVAL_BASE: 1000, // Base interval for WSS reconnection attempts in milliseconds
   EXPECTED_PONG_BACK: 5000, // Time to wait for a pong response in milliseconds
   KEEP_ALIVE_CHECK_INTERVAL: 7500, // Interval for sending ping messages in milliseconds
@@ -34,11 +38,7 @@ const config = {
  * @param apiKey The API key
  * @returns The The Graph PancakeSwap v3 subgraph URL
  */
-const getTGUrl = (
-  baseUrl: string,
-  subgraphName: string,
-  apiKey: string
-) => {
+const getTGUrl = (baseUrl: string, subgraphName: string, apiKey: string) => {
   return `${baseUrl}/api/${apiKey}/subgraphs/id/${subgraphName}`;
 };
 
@@ -72,19 +72,19 @@ function exponentialBackoffDelay(
  * Converts a Q64.96 fixed-point number to a float representing the price.
  *
  * @param sqrtPriceX96 The Q64.96 fixed-point number representing the square root of the price
- * @param token0Decimals The number of decimals for token0
- * @param token1Decimals The number of decimals for token1
+ * @param token0BigNumbers The number of BigNumbers for token0
+ * @param token1BigNumbers The number of BigNumbers for token1
  * @returns The price as a Decimal float
  */
 function sqrtPriceX96ToDecimal(
-  sqrtPriceX96: Decimal,
-  token0Decimals: number,
-  token1Decimals: number
+  sqrtPriceX96: BigNumber,
+  token0BigNumbers: number,
+  token1BigNumbers: number
 ): Decimal {
   const num = sqrtPriceX96.mul(sqrtPriceX96);
-  const priceAdjusted = num
+  const priceAdjusted: Decimal = new Decimal(num.toString())
     .div(constants.QI92)
-    .mul(new Decimal(10).pow(token0Decimals - token1Decimals));
+    .mul(10 ** (token0BigNumbers - token1BigNumbers));
   return priceAdjusted;
 }
 
