@@ -31,7 +31,7 @@ class TestContract extends BaseContract {
     this.contract = vi.fn() as unknown as Contract;
   }
 
-  protected customInit(): void {
+  protected async customInit(): Promise<void> {
     // Mock implementation
   }
 }
@@ -39,7 +39,7 @@ class TestContract extends BaseContract {
 describe("Base Contract Integration Tests", () => {
   let testContract: TestContract;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     testContract = new TestContract(
       new Alchemy({
         apiKey: process.env.ALCHEMY_API_KEY,
@@ -51,7 +51,7 @@ describe("Base Contract Integration Tests", () => {
     );
 
     try {
-      testContract.initialize();
+      await testContract.initialize();
     } catch (e) {
       console.log(`Error initializing contract: ${e}`);
     }

@@ -50,15 +50,27 @@ abstract class BaseContract {
   protected abstract listenForEvents(contract: Contract): Promise<void>;
 
   /**
+   * Custom initialization logic.
+   * Must be implemented by the subclass.
+   * This method is called after the contract instance is created.
+   */
+  protected abstract customInit(): Promise<void>;
+
+  /**
    * Initialize the contract.
    */
   public async initialize(): Promise<void> {
+    // Create the contract instance as defined by the subclass
     await this.createContract();
 
     if (!this.contract) {
       throw new Error("Contract is not defined");
     }
 
+    // Run the custom initialization logic of the subclass
+    await this.customInit();
+
+    // Listen for events emitted by the contract configured in the subclass
     await this.listenForEvents(this.contract);
     this.initialized = true;
     logger.info(`Initialized contract ${this.address}`, this.constructor.name);

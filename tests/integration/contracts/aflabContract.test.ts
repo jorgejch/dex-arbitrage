@@ -3,9 +3,8 @@ import { ArbitrageInfo, Opportunity, SwapInfo } from "../../../src/types.js";
 import { BaseSwap } from "../../../src/swaps/baseSwap.js";
 import { config, logger } from "../../../src/common.js";
 
-import { Decimal } from "decimal.js";
 import { vi, describe, expect, beforeAll, afterAll, test } from "vitest";
-import { Alchemy, Network, Wallet } from "alchemy-sdk";
+import { Alchemy, Network, Wallet, BigNumber } from "alchemy-sdk";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -48,7 +47,7 @@ describe("AflabContract Integration Tests", () => {
   });
 
   test("should execute trade successfully", async () => {
-    const inputAmount: Decimal = new Decimal("10");
+    const inputAmount: BigNumber = BigNumber.from("10");
     const swap1: SwapInfo = {
       tokenIn: {
         id: "0x55d398326f99059ff775485246999027b3197955",
@@ -62,8 +61,8 @@ describe("AflabContract Integration Tests", () => {
         symbol: "WBNB",
         decimals: 18,
       },
-      poolFee: new Decimal(0.03).mul(10 ** 5),
-      amountOutMinimum: new Decimal(0),
+      poolFee: BigNumber.from(0.03).mul(10 ** 5),
+      amountOutMinimum: BigNumber.from(0),
     };
 
     const swap2: SwapInfo = {
@@ -79,8 +78,8 @@ describe("AflabContract Integration Tests", () => {
         symbol: "DAO",
         decimals: 18,
       },
-      poolFee: new Decimal(0.03).mul(10 ** 5),
-      amountOutMinimum: new Decimal(0),
+      poolFee: BigNumber.from(0.03).mul(10 ** 5),
+      amountOutMinimum: BigNumber.from(0),
     };
 
     const swap3: SwapInfo = {
@@ -96,15 +95,15 @@ describe("AflabContract Integration Tests", () => {
         symbol: "USDT",
         decimals: 18,
       },
-      poolFee: new Decimal(0.03).mul(10 ** 5),
-      amountOutMinimum: new Decimal(0),
+      poolFee: BigNumber.from(0.03).mul(10 ** 5),
+      amountOutMinimum: BigNumber.from(0),
     };
 
     const arbitInfo: ArbitrageInfo = {
       swap1: swap1,
       swap2: swap2,
       swap3: swap3,
-      estimatedGasCost: new Decimal(0),
+      estimatedGasCost: BigNumber.from(0),
     };
 
     const mockOriginalSwap: BaseSwap = {
@@ -126,7 +125,7 @@ describe("AflabContract Integration Tests", () => {
       amount1: BigInt(0),
       sender: "",
       recipient: "",
-      sqrtPriceX96: new Decimal(0),
+      sqrtPriceX96: BigNumber.from(0),
       liquidity: BigInt(0),
       poolContractAddress: "",
       setTokens: vi.fn(),
@@ -138,9 +137,9 @@ describe("AflabContract Integration Tests", () => {
     const opportunity: Opportunity = {
       arbitInfo: arbitInfo,
       tokenAIn: inputAmount,
-      lastPoolSqrtPriceX96: new Decimal(0),
+      lastPoolSqrtPriceX96: BigNumber.from(0),
       originalSwap: mockOriginalSwap,
-      expectedProfit: new Decimal(0),
+      expectedProfit: BigNumber.from(0),
       originalSwapPriceImpact: 18,
     };
 

@@ -3,8 +3,8 @@ import { BaseContract } from "./baseContract.js";
 import { logger } from "../common.js";
 import { UniswapV3Swap } from "../swaps/uniswapV3Swap.js";
 
+import { Alchemy, Contract, BigNumber } from "alchemy-sdk";
 import { Decimal } from "decimal.js";
-import { Alchemy, Contract } from "alchemy-sdk";
 
 /**
  * A contract class representing a liquidity pool.
@@ -22,12 +22,14 @@ import { Alchemy, Contract } from "alchemy-sdk";
  * @param network - The network ID.
  */
 class PoolContract extends BaseContract {
+
   private readonly processSwap: (
     psv3Swap: UniswapV3Swap,
-    lastPoolSqrtPriceX96: Decimal
+    lastPoolSqrtPriceX96: BigNumber
   ) => Promise<void>;
-  private lastPoolSqrtPriceX96: Decimal;
+  private lastPoolSqrtPriceX96: BigNumber;
   protected readonly pool: Pool;
+  private totalPoolFeesCache: Decimal | null = null;
 
   constructor(
     address: string,
@@ -36,14 +38,14 @@ class PoolContract extends BaseContract {
     pool: Pool,
     processSwapFunction: (
       psv3Swap: UniswapV3Swap,
-      lastPoolSqrtPriceX96: Decimal
+      lastPoolSqrtPriceX96: BigNumber
     ) => Promise<void>,
     network: number
   ) {
     super(address, abi, ContractType.POOL, alchemy, network);
     this.processSwap = processSwapFunction;
     this.pool = pool;
-    this.lastPoolSqrtPriceX96 = new Decimal(0);
+    this.lastPoolSqrtPriceX96 = BigNumber.from(0);
   }
 
   private async swapEventCallback(
@@ -68,13 +70,13 @@ class PoolContract extends BaseContract {
         tick, // skip the thick
       ] = args;
       const poolContractAddress = this.address;
-      const sqrtPriceX96Decimal = new Decimal(sqrtPriceX96.toString());
+      const sqrtPriceX96BigNumber = BigNumber.from(sqrtPriceX96);
       const swap = new UniswapV3Swap(
         sender,
         recipient,
         amount0,
         amount1,
-        sqrtPriceX96Decimal,
+        sqrtPriceX96BigNumber,
         liquidity,
         poolContractAddress
       );
@@ -83,7 +85,7 @@ class PoolContract extends BaseContract {
        * The first Swap caught is a sacrifice
        * in order to initialize lastPoolSqrtPriceX96
        */
-      if (this.getLastPoolSqrtPriceX96() > new Decimal(0)) {
+      if (this.getLastPoolSqrtPriceX96() > BigNumber.from(0)) {
         try {
           await this.processSwap(swap, this.lastPoolSqrtPriceX96);
         } catch (error) {
@@ -99,7 +101,7 @@ class PoolContract extends BaseContract {
       }
 
       // Keep track of the last pool price
-      this.lastPoolSqrtPriceX96 = sqrtPriceX96Decimal;
+      this.lastPoolSqrtPriceX96 = sqrtPriceX96BigNumber;
     } catch (error) {
       logger.error(
         `Error processing swap event: ${error}`,
@@ -107,8 +109,6 @@ class PoolContract extends BaseContract {
       );
     }
   }
-
-  private totalPoolFeesCache: Decimal | null = null;
 
   /**
    * Create the contract instance.
@@ -126,6 +126,11 @@ class PoolContract extends BaseContract {
     }
   }
 
+  /**
+   * Custom initialization logic.
+   */
+  protected async customInit(): Promise<void> {}
+  
   /**
    * Listen for Swap events emitted by the contract.
    *
@@ -149,8 +154,8 @@ class PoolContract extends BaseContract {
     return this.pool;
   }
 
-  public getLastPoolSqrtPriceX96(): Decimal {
-    return new Decimal(this.lastPoolSqrtPriceX96.toString());
+  public getLastPoolSqrtPriceX96(): BigNumber {
+    return this.lastPoolSqrtPriceX96;
   }
 
   public getInputTokens(): Array<Token> {
@@ -161,14 +166,13 @@ class PoolContract extends BaseContract {
   }
 
   /**
-   * Get the total pool fees as a decimal.
+   * Get the total pool fees as a Decimal.
    * The total pool fees are the sum of all fees in the pool.
-   * fee = feePercentage / 100
    * @returns {Decimal} The total pool fees
    */
-  public getTotalPoolFeesDecimal(): Decimal {
+  public getTotalPoolFeesAsDecimal(): Decimal {
     if (this.totalPoolFeesCache === null) {
-      const totalFeePercentage = this.pool.fees.reduce((acc, fee) => {
+      const totalFeePercentage: Decimal = this.pool.fees.reduce((acc, fee) => {
         const feePercentage: Decimal = new Decimal(fee.feePercentage);
         return acc.add(feePercentage);
       }, new Decimal(0));

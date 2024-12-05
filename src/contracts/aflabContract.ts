@@ -33,7 +33,7 @@ class AflabContract extends BaseContract {
     abi: any,
     alchemy: Alchemy,
     wallet: Wallet,
-    network: number
+    network: number,
   ) {
     super(address, abi, ContractType.AFLAB, alchemy, network);
     this.wallet = wallet;
@@ -60,8 +60,11 @@ class AflabContract extends BaseContract {
         this.constructor.name
       );
     });
-    contract.on("SwapError", (...args: any[]) => {
-      logger.info(`Swap error: ${JSON.stringify(args)}`, this.constructor.name);
+    contract.on("FlashLoanSuccess", (...args: any[]) => {
+      logger.info(
+        `Flashloan executed: ${JSON.stringify(args)}`,
+        this.constructor.name
+      );
     });
     contract.on("ArbitrageConcluded", (...args: any[]) => {
       logger.info(
@@ -75,18 +78,18 @@ class AflabContract extends BaseContract {
     const { swap1, swap2, swap3, estimatedGasCost } = opportunity.arbitInfo;
 
     if (
-      !swap1 ||
-      !swap1.tokenIn ||
-      !swap1.tokenOut ||
-      !swap1.poolFee ||
-      !swap1.amountOutMinimum
+      !(
+        swap1?.tokenIn &&
+        swap1.tokenOut &&
+        swap1.poolFee &&
+        swap1.amountOutMinimum
+      )
     ) {
       throw new Error("Missing value for component swap1");
     }
 
     if (
-      !swap2 ||
-      !swap2.tokenIn ||
+      !swap2?.tokenIn ||
       !swap2.tokenOut ||
       !swap2.poolFee ||
       !swap2.amountOutMinimum
@@ -95,8 +98,7 @@ class AflabContract extends BaseContract {
     }
 
     if (
-      !swap3 ||
-      !swap3.tokenIn ||
+      !swap3?.tokenIn ||
       !swap3.tokenOut ||
       !swap3.poolFee ||
       !swap3.amountOutMinimum
@@ -112,19 +114,19 @@ class AflabContract extends BaseContract {
       swap1: {
         tokenIn: swap1.tokenIn.id, // Actual token address
         tokenOut: swap1.tokenOut.id, // Actual token address
-        poolFee: Number(swap1.poolFee.toFixed(0)), // e.g., 3000 represents a 0.3%
+        poolFee: swap1.poolFee.toNumber(), // e.g., 3000 represents a 0.3%
         amountOutMinimum: BigNumber.from(0), // uint256
       },
       swap2: {
         tokenIn: swap2.tokenIn.id,
         tokenOut: swap2.tokenOut.id,
-        poolFee: Number(swap2.poolFee.toFixed(0)),
+        poolFee: swap2.poolFee.toNumber(),
         amountOutMinimum: BigNumber.from(0),
       },
       swap3: {
         tokenIn: swap3.tokenIn.id,
         tokenOut: swap3.tokenOut.id,
-        poolFee: Number(swap3.poolFee.toFixed(0)),
+        poolFee: swap3.poolFee.toNumber(),
         amountOutMinimum: BigNumber.from(0),
       },
       extraCost: BigNumber.from(0), // uint256
@@ -135,7 +137,7 @@ class AflabContract extends BaseContract {
     from: string,
     to: string,
     arbitInfo: any,
-    inputAmount: string
+    inputAmount: BigNumber
   ): Promise<TransactionRequest> {
     if (!this.contract) {
       throw new Error("Contract not initialized");
@@ -144,7 +146,7 @@ class AflabContract extends BaseContract {
     const req: TransactionRequest = {
       from: from,
       to: to,
-      data: this.contract!.interface.encodeFunctionData(
+      data: this.contract.interface.encodeFunctionData(
         INITIATE_FLASHLOAN_SIG,
         [arbitInfo, inputAmount]
       ),
@@ -158,6 +160,17 @@ class AflabContract extends BaseContract {
     return req;
   }
 
+  /**
+   * Custom initialization logic.
+   */
+  protected async customInit(): Promise<void> {}
+
+  /**
+   * Executes an arbitrage opportunity.
+   * @param opportunity The arbitrage opportunity to execute.
+   * @returns A promise that resolves when the opportunity is executed.
+   * @throws An error if the opportunity cannot be executed.
+   */
   public async executeOpportunity(opportunity: Opportunity): Promise<void> {
     if (!this.contract) {
       logger.error(
@@ -182,13 +195,13 @@ class AflabContract extends BaseContract {
       this.constructor.name
     );
 
-    let req: TransactionRequest; // transaction request
+    let req: TransactionRequest;
     try {
       req = await this.getTransactionRequest(
         this.wallet.address,
         this.address,
         arbitInfo,
-        opportunity.tokenAIn.toString()
+        opportunity.tokenAIn
       );
     } catch (error) {
       logger.error(
@@ -233,7 +246,8 @@ class AflabContract extends BaseContract {
     for (let attempt = 0; attempt < retries; attempt++) {
       try {
         const signedTransaction = await this.wallet.signTransaction(tx);
-        txResponse = await this.alchemy.transact.sendTransaction(signedTransaction);
+        txResponse =
+          await this.alchemy.transact.sendTransaction(signedTransaction);
         logger.info(
           `Transaction sent. Hash: ${txResponse.hash}`,
           this.constructor.name
@@ -255,8 +269,9 @@ class AflabContract extends BaseContract {
           `Attempt ${attempt} error sending transaction: ${JSON.stringify(error)}`,
           this.constructor.name
         );
-        await exponentialBackoffDelay(delayMs, attempt);
         if (attempt === retries - 1) throw error; // Re-throw after final attempt
+        tx.gasPrice = BigNumber.from(tx.gasPrice!).mul(1.1).toBigInt(); // Increase gas price by 10%
+        await exponentialBackoffDelay(delayMs, attempt);
       }
     }
 
