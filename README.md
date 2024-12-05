@@ -25,7 +25,7 @@ Key features of this system include:
 - [Node.js](https://nodejs.org) - JavaScript runtime.
 - [TypeScript](https://www.typescriptlang.org) - Typed superset of JavaScript.
 - [Hardhat](https://hardhat.org) - Ethereum development environment.
-- [QuickNode](https://www.quicknode.com) - Ethereum node provider.
+- [Alchemy](www.alchemy.com) - Ethereum node provider.
 - [Solidity](https://soliditylang.org) - A programming language for writing smart contracts.
 - [Uniswap v3](https://app.uniswap.org/) - Decentralized exchange on Binance Smart Chain.
 
