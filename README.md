@@ -1,5 +1,5 @@
 # Another Flash-loan Arbitrage Bot (AFLAB)
-
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=jorgejch_dex-arbitrage&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=jorgejch_dex-arbitrage)
 ## What?
 
 Another Flash-loan arbitrage system that:
