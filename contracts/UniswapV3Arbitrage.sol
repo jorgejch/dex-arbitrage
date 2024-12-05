@@ -48,6 +48,14 @@ contract UniswapV3Arbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
     event FlashloanError(uint32 indexed executionId, string message);
 
     /**
+     * @dev Event emitted when a flash loan is successful.
+     *
+     * @param executionId The execution identifier number (counter)
+     * @param amount The amount of the flash loan
+     */
+    event FlashLoanSuccess(uint32 indexed executionId, uint256 amount);
+
+    /**
      * @dev Event emitted when a swap is executed.
      * @param executionId The execution identifier number (counter)
      * @param tokenIn The input token address
@@ -62,14 +70,6 @@ contract UniswapV3Arbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
         uint256 amount0Delta,
         uint256 amount1Delta
     );
-
-    /**
-     * @dev Event emitted when a swap error occurs.
-     *
-     * @param executionId The execution identifier number (counter)
-     * @param message The error message
-     */
-    event SwapError(uint32 indexed executionId, string message);
 
     /**
      * @dev Event emitted when a token is withdrawn from the contract.
@@ -149,11 +149,14 @@ contract UniswapV3Arbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
             amountIn
         );
 
-        try _swapRouter.exactInputSingle(params) returns (uint256 _amountOut) {
-            amountOut = _amountOut;
-        } catch Error(string memory reason) {
-            emit SwapError(_executionCounter, reason);
-        }
+        amountOut = _swapRouter.exactInputSingle(params);
+        emit SwapExecuted(
+            _executionCounter,
+            swapInfo.tokenIn,
+            swapInfo.tokenOut,
+            uint256(amountIn),
+            uint256(amountOut)
+        );
     }
 
     /**
@@ -172,7 +175,6 @@ contract UniswapV3Arbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
         address /* initiator */,
         bytes calldata params
     ) external override returns (bool isSuccess) {
-        // require(msg.sender == _poolAddress, "malicious callback");
         require(
             amount <= IERC20(asset).balanceOf(_contractAddress),
             "invalid balance"
@@ -224,7 +226,9 @@ contract UniswapV3Arbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
                 abi.encode(data), // The arbitrage data
                 0
             )
-        {} catch Error(string memory reason) {
+        {
+            emit FlashLoanSuccess(_executionCounter, tokenAIn);
+        } catch Error(string memory reason) {
             emit FlashloanError(_executionCounter, reason);
         }
     }
