@@ -3,6 +3,7 @@ import { UniswapV3Dex } from "./dexes/uniswapV3Dex.js";
 import { DexPoolSubgraph } from "./subgraphs/dexPoolSubgraph.js";
 import { getTGUrl, logger, config } from "./common.js";
 import { AflabContract } from "./contracts/aflabContract.js";
+import { LendingPoolAPContract } from "./contracts/lendingPoolAPContract.js";
 import { Network, Alchemy, Wallet } from "alchemy-sdk";
 
 class Controller {
@@ -12,6 +13,7 @@ class Controller {
   private readonly theGraphBaseUrl: string;
   private readonly theGraphApiKey: string;
   private readonly uniswapV3SubgraphName: string;
+  private readonly aavePoolAddressProviderContractAddress: string;
   private dexes?: BaseDex[];
 
   /**
@@ -21,6 +23,7 @@ class Controller {
    * @param theGraphApiKey - The API key for The Graph.
    * @param uniswapV3SubgraphName - The name of the Uniswap V3 subgraph.
    * @param alchemyApiKey - The API key for Alchemy.
+   * @param aavePoolAddressProviderContractAddress - The address of the Aave Pool Address Provider contract.
    *
    * @throws Will throw an error if initialization fails.
    */
@@ -30,7 +33,8 @@ class Controller {
     theGraphBaseUrl: string,
     theGraphApiKey: string,
     uniswapV3SubgraphName: string,
-    alchemyApiKey: string
+    alchemyApiKey: string,
+    aavePoolAddressProviderContractAddress: string
   ) {
     try {
       this.theGraphBaseUrl = theGraphBaseUrl;
@@ -44,6 +48,8 @@ class Controller {
       });
       this.wallet = new Wallet(walletPrivateKey, this.alchemy);
       this.aflabContractAddress = aflabContractAddress;
+      this.aavePoolAddressProviderContractAddress =
+        aavePoolAddressProviderContractAddress;
     } catch (error) {
       logger.error(
         `Error initializing Controller: ${error}`,
@@ -70,6 +76,12 @@ class Controller {
           config.AFLAB_ABI,
           this.alchemy,
           this.wallet,
+          137
+        ),
+        new LendingPoolAPContract(
+          this.aavePoolAddressProviderContractAddress,
+          this.alchemy,
+          config.LENDING_POOL_AP_ABI,
           137
         ),
         137

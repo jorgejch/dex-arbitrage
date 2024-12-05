@@ -14,6 +14,8 @@ const THE_GRAPH_BASE_URL: string = process.env.THE_GRAPH_BASE_URL ?? "";
 const UNISWAP_V3_SUBGRAPH_ID: string =
   process.env.THE_GRAPH_UNISWAP_V3_SUBGRAPH_ID ?? "";
 const THE_GRAPH_API_KEY: string = process.env.THE_GRAPH_API_KEY ?? "";
+const AAVE_POOL_ADDRESS_PROVIDER_CONTRACT_ADDRESS: string =
+  process.env.AAVE_POOL_ADDRESS_PROVIDER_CONTRACT_ADDRESS ?? "";
 
 let controller: Controller;
 
@@ -36,6 +38,11 @@ async function main() {
   if (!THE_GRAPH_API_KEY) {
     throw new Error("THE_GRAPH_API_KEY is not set");
   }
+  if (!AAVE_POOL_ADDRESS_PROVIDER_CONTRACT_ADDRESS) {
+    throw new Error(
+      "AAVE_POOL_ADDRESS_PROVIDER_CONTRACT_ADDRESS is not set"
+    );
+  }
 
   // Set the log level
   logger.setLogLevel(LOG_LEVEL);
@@ -46,7 +53,8 @@ async function main() {
     THE_GRAPH_BASE_URL,
     THE_GRAPH_API_KEY,
     UNISWAP_V3_SUBGRAPH_ID,
-    ALCHEMY_API_KEY
+    ALCHEMY_API_KEY,
+    AAVE_POOL_ADDRESS_PROVIDER_CONTRACT_ADDRESS
   );
 
   try {
