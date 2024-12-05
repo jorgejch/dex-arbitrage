@@ -248,7 +248,7 @@ abstract class BaseDex {
     );
 
     const lendingPoolFeeBigNumber = BigNumber.from(
-      inputAmount.mul(lendingPoolFeePercentage.toFixed(0))
+      new Decimal(inputAmount.toString()).mul(lendingPoolFeePercentage).toFixed(0)
     );
     const expectedProfit = swap3Result.netOutput.sub(
       inputAmount.add(lendingPoolFeeBigNumber)
@@ -276,6 +276,8 @@ abstract class BaseDex {
         `\t\tNet Output: ${swap3Result.netOutput}\n` +
         `\t\tFee Decimal: ${swap3Result.feeDecimal}\n` +
         `\t\tFee: ${swap3Result.fee}\n` +
+        `\tLending Pool Fee Percentage: ${lendingPoolFeePercentage}\n` +
+        `\tLending Pool Fee: ${lendingPoolFeeBigNumber}\n` +
         `\tExpected Profit: ${expectedProfit}\n` +
         `\tExpected Profit (%): ${expectedProfit.mul(100).div(inputAmount)}%\n` +
         `==================================================`,
