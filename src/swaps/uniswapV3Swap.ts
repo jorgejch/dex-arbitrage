@@ -1,6 +1,6 @@
 import { BaseSwap } from "./baseSwap.js";
 
-import { Decimal } from "decimal.js";
+import { BigNumber } from "alchemy-sdk";
 
 /**
  * Represents a Uniswap v3 swap.
@@ -11,7 +11,7 @@ class UniswapV3Swap extends BaseSwap {
     recipient: string,
     amount0: bigint,
     amount1: bigint,
-    sqrtPriceX96: Decimal,
+    sqrtPriceX96: BigNumber,
     liquidity: bigint,
     contractAddress: string
   ) {

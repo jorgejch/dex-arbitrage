@@ -1,6 +1,7 @@
 import { Token } from "../types.js";
 import { sqrtPriceX96ToDecimal } from "../common.js";
 
+import { BigNumber } from "alchemy-sdk";
 import { Decimal } from "decimal.js";
 
 /**
@@ -13,7 +14,7 @@ import { Decimal } from "decimal.js";
  * @property {string} recipient - The address of the recipient receiving the swap.
  * @property {bigint} amount0 - The amount of token0 involved in the swap.
  * @property {bigint} amount1 - The amount of token1 involved in the swap.
- * @property {Decimal} sqrtPriceX96 - The square root of the price after the swap times 2^96, used for precision in calculations.
+ * @property {BigNumber} sqrtPriceX96 - The square root of the price after the swap times 2^96, used for precision in calculations.
  * @property {bigint} liquidity - The liquidity of the pool after the swap.
  * @property {string} poolContractAddress - The address of the pool contract where the swap occurred.
  * @property {Token[]} [inputTokens] - Optional array of input tokens for the swap.
@@ -23,7 +24,7 @@ abstract class BaseSwap {
   recipient: string;
   amount0: bigint;
   amount1: bigint;
-  sqrtPriceX96: Decimal;
+  sqrtPriceX96: BigNumber;
   liquidity: bigint;
   poolContractAddress: string;
   inputTokens?: Token[];
@@ -33,7 +34,7 @@ abstract class BaseSwap {
     recipient: string,
     amount0: bigint,
     amount1: bigint,
-    sqrtPriceX96: Decimal,
+    sqrtPriceX96: BigNumber,
     liquidity: bigint,
     poolContractAddress: string
   ) {
@@ -77,9 +78,9 @@ abstract class BaseSwap {
    * @throws An error if the price before the swap is zero
    */
   public calculatePriceImpact(
-    lastPoolSqrtPriceX96: Decimal,
-    token0Decimals: number,
-    token1Decimals: number
+    lastPoolSqrtPriceX96: BigNumber,
+    token0BigNumbers: number,
+    token1BigNumbers: number
   ): number {
     if (lastPoolSqrtPriceX96.eq(0)) {
       throw new Error("Division by zero error: priceBefore is zero");
@@ -88,14 +89,14 @@ abstract class BaseSwap {
     // Calculate the price before the swap
     const priceAfter: Decimal = sqrtPriceX96ToDecimal(
       this.sqrtPriceX96,
-      token0Decimals,
-      token1Decimals
+      token0BigNumbers,
+      token1BigNumbers
     );
 
     const priceBefore: Decimal = sqrtPriceX96ToDecimal(
       lastPoolSqrtPriceX96,
-      token0Decimals,
-      token1Decimals
+      token0BigNumbers,
+      token1BigNumbers
     );
 
     // Calculate the price impact in bps.
@@ -104,8 +105,7 @@ abstract class BaseSwap {
       .div(priceBefore)
       .mul(10000); // Convert to basis points (bps)
 
-    const priceImpactNum = priceImpact.abs().round().toNumber();
-    return priceImpactNum;
+    return priceImpact.abs().round().toNumber();
   }
 
   public getContractAddress(): string {
