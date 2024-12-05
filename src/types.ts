@@ -2,9 +2,10 @@
  * @fileoverview Typescript types for used in AFLAB
  */
 
+import { Decimal } from "decimal.js";
 import { BaseSwap } from "./swaps/baseSwap.js";
 
-import { Decimal } from "decimal.js";
+import { BigNumber } from "alchemy-sdk";
 
 /**
  * Contract type enum
@@ -14,22 +15,23 @@ enum ContractType {
   TEST,
   POOL,
   AFLAB,
+  POOL_ADDRESS_PROVIDER,
 }
 
 /**
  * Expected profit data.
  *
  * @typedef {Object} ExpectedProfitData
- * @property {Decimal} expectedProfit The expected profit
- * @property {Decimal} swap1FeeDecimal The fee for swap 1
- * @property {Decimal} swap2FeeDecimal The fee for swap 2
- * @property {Decimal} swap3FeeDecimal The fee for swap 3
+ * @property {BigNumber} expectedProfit The expected profit
+ * @property {BigNumber} swap1FeeBigNumber The fee tier for swap 1
+ * @property {BigNumber} swap2FeeBigNumber The fee tier for swap 2
+ * @property {BigNumber} swap3FeeBigNumber The fee tier for swap 3
  */
 type ExpectedProfitData = {
-  expectedProfit: Decimal;
-  swap1FeeDecimal: Decimal;
-  swap2FeeDecimal: Decimal;
-  swap3FeeDecimal: Decimal;
+  expectedProfit: BigNumber;
+  swap1FeeBigNumber: BigNumber;
+  swap2FeeBigNumber: BigNumber;
+  swap3FeeBigNumber: BigNumber;
 };
 
 /**
@@ -48,17 +50,17 @@ type TokenBPickData = {
  *
  * @typedef {Object} NetOutputData
  * @property {Decimal} price The price
- * @property {Decimal} netOutput The net output
- * @property {Decimal} grossOutput The gross output
+ * @property {BigNumber} netOutput The net output
+ * @property {BigNumber} grossOutput The gross output
  * @property {Decimal} feeDecimal The fee decimal
- * @property {Decimal} fee The fee
+ * @property {BigNumber} fee The fee
  */
 type NetOutputData = {
   price: Decimal;
-  netOutput: Decimal;
-  grossOutput: Decimal;
+  netOutput: BigNumber;
+  grossOutput: BigNumber;
   feeDecimal: Decimal;
-  fee: Decimal;
+  fee: BigNumber;
 };
 
 /**
@@ -67,8 +69,8 @@ type NetOutputData = {
 type SwapInfo = {
   tokenIn: Token;
   tokenOut: Token;
-  poolFee: Decimal;
-  amountOutMinimum: Decimal;
+  poolFee: BigNumber;
+  amountOutMinimum: BigNumber;
 };
 
 /**
@@ -78,7 +80,7 @@ type ArbitrageInfo = {
   swap1: SwapInfo | undefined;
   swap2: SwapInfo | undefined;
   swap3: SwapInfo | undefined;
-  estimatedGasCost: Decimal;
+  estimatedGasCost: BigNumber;
 };
 
 /**
@@ -86,18 +88,18 @@ type ArbitrageInfo = {
  *
  * @typedef {Object} Opportunity
  * @property {ArbitrageInfo} arbitInfo - Information about the arbitrage.
- * @property {Decimal} tokenAIn - The amount of token A involved in the arbitrage.
- * @property {Decimal} lastPoolSqrtPriceX96 - The last square root price of the pool in X96 format.
+ * @property {BigNumber} tokenAIn - The amount of token A involved in the arbitrage.
+ * @property {BigNumber} lastPoolSqrtPriceX96 - The last square root price of the pool in X96 format.
  * @property {BaseSwap} originalSwap - The original swap details.
- * @property {Decimal | undefined} expectedProfit - The expected profit from the arbitrage, if any.
+ * @property {BigNumber | undefined} expectedProfit - The expected profit from the arbitrage, if any.
  * @property {number | undefined} originalSwapPriceImpact - The price impact of the original swap, if any.
  */
 type Opportunity = {
   arbitInfo: ArbitrageInfo;
-  tokenAIn: Decimal;
-  lastPoolSqrtPriceX96: Decimal;
+  tokenAIn: BigNumber;
+  lastPoolSqrtPriceX96: BigNumber;
   originalSwap: BaseSwap;
-  expectedProfit: Decimal | undefined;
+  expectedProfit: BigNumber | undefined;
   originalSwapPriceImpact: number | undefined;
 };
 
