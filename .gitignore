@@ -12,3 +12,5 @@ cache/
 ignition/deployments/
 typechain-types/
 bin/
+.idea/
+.vscode/
