@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeAll } from "vitest";
-import { Alchemy, Network, Wallet } from "alchemy-sdk";
-import { config } from "../../../src/common.js";
-import { LendingPoolAPContract } from "../../../src/contracts/lendingPoolAPContract.js";
+import {beforeAll, describe, expect, it} from "vitest";
+import {Alchemy, Network} from "alchemy-sdk";
+import {config} from "../../../src/common.js";
+import {LendingPoolAPContract} from "../../../src/contracts/lendingPoolAPContract.js";
 import dotenv from "dotenv";
-import { Decimal } from "decimal.js";
+import {Decimal} from "decimal.js";
 
 dotenv.config();
 const privateKey = process.env.WALLET_PRIVATE_KEY as string;
@@ -13,7 +13,6 @@ const contractAddress = process.env
 
 describe("PoolAddressProviderContract Integration Tests", () => {
   let contract: LendingPoolAPContract;
-  let wallet: Wallet;
   let alchemy: Alchemy;
 
   beforeAll(async () => {
@@ -21,7 +20,6 @@ describe("PoolAddressProviderContract Integration Tests", () => {
       throw new Error("Missing environment variables");
     }
     console.log(contractAddress)
-    wallet = new Wallet(privateKey);
     alchemy = new Alchemy({ apiKey: apiKey, network: Network.MATIC_MAINNET });
 
     contract = new LendingPoolAPContract(
