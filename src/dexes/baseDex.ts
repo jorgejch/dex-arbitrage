@@ -246,9 +246,7 @@ abstract class BaseDex {
     );
 
     const lendingPoolFeeBigNumber = BigNumber.from(
-      new Decimal(inputAmount.toString())
-        .mul(lendingPoolFeePercentage)
-        .toFixed(0)
+      new Decimal(inputAmount.toString()).mul(lendingPoolFeePercentage).toFixed(0)
     );
     const expectedProfit = swap3Result.netOutput.sub(
       inputAmount.add(lendingPoolFeeBigNumber)
