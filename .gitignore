@@ -14,3 +14,4 @@ typechain-types/
 bin/
 .idea/
 .vscode/
+package-lock.json
