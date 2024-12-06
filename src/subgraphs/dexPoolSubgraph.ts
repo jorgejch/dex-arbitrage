@@ -62,9 +62,9 @@ class DexPoolSubgraph extends BaseSubgraph {
    * @returns A list of Pool objects.
    */
   public async getPools(
-    limit: number = 100,
-    numPagestoFetch: number = 10,
-    pageSize: number = 10,
+    limit = 100,
+    numPagestoFetch = 10,
+    pageSize = 10,
     hsUnixEpoch: number = getHoursSinceUnixEpoch()
   ): Promise<Pool[]> {
     const allPools: Pool[] = [];
@@ -109,8 +109,8 @@ class DexPoolSubgraph extends BaseSubgraph {
           throw new Error(`Invalid Response: ${JSON.stringify(response)}`);
         }
 
-        const snapshots: [] = response.liquidityPoolHourlySnapshots;
-        const pools: Pool[] = snapshots.map((snapshot: any) => snapshot.pool);
+        const snapshots: [] = (response as any).liquidityPoolHourlySnapshots;
+        const pools: Pool[] = snapshots.map((snapshot: unknown) => (snapshot as any).pool);
 
         for (const pool of pools) {
           if (!uniquePoolIds.has(pool.id)) {
