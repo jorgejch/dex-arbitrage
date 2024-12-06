@@ -302,7 +302,7 @@ class UniswapV3Dex extends BaseDex {
         if (!this.inputTokenSymbolIndex.has(token.symbol)) {
           this.inputTokenSymbolIndex.set(token.symbol, []);
         }
-        this.inputTokenSymbolIndex.get(token.symbol)!.push(pool);
+        this.inputTokenSymbolIndex.get(token.symbol)?.push(pool);
       }
     }
 
