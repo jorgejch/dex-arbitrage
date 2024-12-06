@@ -35,19 +35,19 @@ describe("UniswapV3Subgraph", {}, () => {
     console.log(pools);
     expect(pools).toBeDefined();
     expect(pools).toBeTypeOf("object");
-  }, 60000);
+  }, 30000);
 
   test("getPools() should return a list of 4 pools, in parallel and paginating", async () => {
     const pools = await subgraph.getPools(4, 2, 1);
     console.log(pools);
     expect(pools).toBeDefined();
     expect(pools).toBeTypeOf("object");
-  }, 60000);
+  }, 30000);
 
   test("getPools() should return a default list of pools, in parallel and paginating", async () => {
     const pools = await subgraph.getPools();
     expect(pools).toBeDefined();
     expect(pools).toBeTypeOf("object");
     console.log(pools.length);
-  }, 300000);
+  }, 30000);
 });
