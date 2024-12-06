@@ -1,17 +1,20 @@
-import {BaseDex} from "./baseDex.js";
-import {DexPoolSubgraph} from "../subgraphs/dexPoolSubgraph.js";
-import {UniswapV3Swap} from "../swaps/uniswapV3Swap.js";
-import {ExpectedProfitData, Opportunity, Token} from "../types.js";
-import {isPriceImpactSignificant, logger} from "../common.js";
-import {PoolContract} from "../contracts/poolContract.js";
-import {AflabContract} from "../contracts/aflabContract.js";
-import {LendingPoolAPContract} from "../contracts/lendingPoolAPContract.js";
+import { BaseDex } from "./baseDex.js";
+import { DexPoolSubgraph } from "../subgraphs/dexPoolSubgraph.js";
+import { UniswapV3Swap } from "../swaps/uniswapV3Swap.js";
+import { ExpectedProfitData, Opportunity, Token } from "../types.js";
+import { isPriceImpactSignificant, logger } from "../common.js";
+import { PoolContract } from "../contracts/poolContract.js";
+import { AflabContract } from "../contracts/aflabContract.js";
+import { LendingPoolAPContract } from "../contracts/lendingPoolAPContract.js";
 import abi from "../abis/uniswapV3PoolAbi.js";
 
-import {Alchemy, BigNumber, Wallet} from "alchemy-sdk";
+import { Alchemy, BigNumber, Wallet } from "alchemy-sdk";
 
 /**
- * Represents the Uniswap V3 DEX.
+ * Represents a Uniswap V3 decentralized exchange implementation.
+ * Extends the BaseDex class to provide specific functionality for interacting with Uniswap V3 pools.
+ *
+ * @extends BaseDex
  */
 class UniswapV3Dex extends BaseDex {
   /**
@@ -38,6 +41,100 @@ class UniswapV3Dex extends BaseDex {
       lendingPoolAPContract,
       networkId
     );
+  }
+
+  private async handleSignificantPriceImpact(
+    opportunity: Opportunity,
+    tokenA: Token,
+    tokenC: Token,
+    swapName: string,
+    contract: PoolContract
+  ) {
+    logger.info(
+      `Significant price impact (${opportunity.originalSwapPriceImpact}) detected for swap: ${swapName}`,
+      this.constructor.name
+    );
+
+    const candidateTokenBs: Token[] = this.findIntermediaryTokens(
+      tokenA.symbol,
+      tokenC.symbol
+    );
+
+    if (candidateTokenBs.length === 0) {
+      logger.info(
+        `No candidates for token B found for opportunity.`,
+        this.constructor.name
+      );
+      return;
+    }
+
+    logger.info(
+      `Found ${candidateTokenBs.length} candidate token Bs`,
+      this.constructor.name
+    );
+
+    let tokenBData;
+    try {
+      tokenBData = await this.pickTokenB(
+        tokenA,
+        tokenC,
+        candidateTokenBs,
+        opportunity.tokenAIn,
+        contract
+      );
+    } catch (error) {
+      logger.debug(`Unable to pick token B: ${error}`, this.constructor.name);
+      logger.info(
+        `No profitable arbitrage opportunities found for swap: ${swapName}`,
+        this.constructor.name
+      );
+      return;
+    }
+
+    const expectedProfit: ExpectedProfitData = tokenBData.expectedProfitData;
+
+    if (expectedProfit.expectedProfit.lte(0)) {
+      logger.error(
+        `Negative expected profit: ${expectedProfit.expectedProfit}`,
+        this.constructor.name
+      );
+      return;
+    }
+
+    opportunity.expectedProfit = expectedProfit.expectedProfit;
+    opportunity.arbitInfo.swap1 = {
+      tokenIn: tokenA,
+      tokenOut: tokenBData.tokenB,
+      poolFee: expectedProfit.swap1FeeBigNumber,
+      amountOutMinimum: BigNumber.from(0),
+    };
+    opportunity.arbitInfo.swap2 = {
+      tokenIn: tokenBData.tokenB,
+      tokenOut: tokenC,
+      poolFee: expectedProfit.swap2FeeBigNumber,
+      amountOutMinimum: BigNumber.from(0),
+    };
+    opportunity.arbitInfo.swap3 = {
+      tokenIn: tokenC,
+      tokenOut: tokenA,
+      poolFee: expectedProfit.swap3FeeBigNumber,
+      amountOutMinimum: BigNumber.from(0),
+    };
+
+    try {
+      this.logOpportunity(opportunity);
+    } catch (error) {
+      logger.warn(`Invalid opportunity: ${error}`, this.constructor.name);
+    }
+
+    try {
+      await this.triggerSmartContract(opportunity);
+    } catch (error) {
+      logger.error(
+        `Error triggering smart contract: ${error}`,
+        this.constructor.name
+      );
+    }
   }
 
   async processSwap(swap: UniswapV3Swap, lastPoolSqrtPriceX96: BigNumber) {
@@ -113,91 +210,13 @@ class UniswapV3Dex extends BaseDex {
     );
 
     if (isPriceImpactSignificant(opportunity.originalSwapPriceImpact)) {
-      logger.info(
-        `Significant price impact (${opportunity.originalSwapPriceImpact}) detected for swap: ${swapName}`,
-        this.constructor.name
+      await this.handleSignificantPriceImpact(
+        opportunity,
+        tokenA,
+        tokenC,
+        swapName,
+        contract
       );
-
-      const candidateTokenBs: Token[] = this.findIntermediaryTokens(
-        tokenA.symbol,
-        tokenC.symbol
-      );
-
-      if (candidateTokenBs.length === 0) {
-        logger.info(
-          `No candidates for token B found for opportunity.`,
-          this.constructor.name
-        );
-        return;
-      }
-
-      logger.info(
-        `Found ${candidateTokenBs.length} candidate token Bs`,
-        this.constructor.name
-      );
-
-      let tokenBData;
-      try {
-        tokenBData = await this.pickTokenB(
-          tokenA,
-          tokenC,
-          candidateTokenBs,
-          opportunity.tokenAIn,
-          contract
-        );
-      } catch (error) {
-        logger.debug(`Unable to pick token B: ${error}`, this.constructor.name);
-        logger.info(
-          `No profitable arbitrage opportunities found for swap: ${swapName}`,
-          this.constructor.name
-        );
-        return;
-      }
-
-      const expectedProfit: ExpectedProfitData = tokenBData.expectedProfitData;
-
-      if (expectedProfit.expectedProfit.lte(0)) {
-        logger.error(
-          `Negative expected profit: ${expectedProfit.expectedProfit}`,
-          this.constructor.name
-        );
-        return;
-      }
-
-      opportunity.expectedProfit = expectedProfit.expectedProfit;
-      opportunity.arbitInfo.swap1 = {
-        tokenIn: tokenA,
-        tokenOut: tokenBData.tokenB,
-        poolFee: expectedProfit.swap1FeeBigNumber,
-        amountOutMinimum: BigNumber.from(0),
-      };
-      opportunity.arbitInfo.swap2 = {
-        tokenIn: tokenBData.tokenB,
-        tokenOut: tokenC,
-        poolFee: expectedProfit.swap2FeeBigNumber,
-        amountOutMinimum: BigNumber.from(0),
-      };
-      opportunity.arbitInfo.swap3 = {
-        tokenIn: tokenC,
-        tokenOut: tokenA,
-        poolFee: expectedProfit.swap3FeeBigNumber,
-        amountOutMinimum: BigNumber.from(0),
-      };
-
-      try {
-        this.logOpportunity(opportunity);
-      } catch (error) {
-        logger.warn(`Invalid opportunity: ${error}`, this.constructor.name);
-      }
-
-      try {
-        await this.triggerSmartContract(opportunity);
-      } catch (error) {
-        logger.error(
-          `Error triggering smart contract: ${error}`,
-          this.constructor.name
-        );
-      }
     }
   }
 
@@ -291,5 +310,4 @@ class UniswapV3Dex extends BaseDex {
     logger.info("Initialized Dex", this.constructor.name);
   }
 }
-
 export { UniswapV3Dex };

@@ -1,24 +1,26 @@
 # Another Flash-loan Arbitrage Bot (AFLAB)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=jorgejch_dex-arbitrage&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=jorgejch_dex-arbitrage)
+
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=jorgejch_dex-arbitrage&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=jorgejch_dex-arbitrage) [![Codacy Badge](https://app.codacy.com/project/badge/Grade/7538c6b1bbb44105a7159daa9d70450e)](https://app.codacy.com/gh/jorgejch/dex-arbitrage/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+
 ## What?
 
-Another Flash-loan arbitrage system that:
+Another Flash-loan arbitrage bot that:
 
 - is low cost, works on Polygon;
-- uses AAVE for flash loans;
-- it uses Uniswap v3 for the DEX;
+- uses AAVE for flash-loans;
+- performs swaps on Uniswap v3 (the DEX);
 - makes use of established patterns when they exist;
 - prefers open-source tools but does not shy away from freemium services.
 
 ## Introduction
 
-Decentralized exchanges (DEXs) often have price discrepancies due to liquidity variations and large trades. This system aims to exploit these discrepancies through flash loans, which allow borrowing large amounts of cryptocurrency without collateral, provided the loan is repaid within the same transaction.
+Decentralized exchanges (DEXs) often exhibit price discrepancies due to the impact of large trades. This system aims to take advantage of these discrepancies through flash loans, which allow borrowing large amounts of cryptocurrency without collateral, provided the loan is repaid within the same transaction.
 
 Key features of this system include:
 
-- **Mispricing**: Take advantage of mispricing between exchanges. When someone executes a large trade into one liquidity pool, it can create an imbalance, distorting the price and causing slippage for that trader.
-- **Smart Contract Relay**: Use a Solidity smart contract as a relay between our controller and the exchanges.
-- **Risk Management**: We can revert the entire transaction and only lose the transaction fee if it is not profitable with one line of code: `require(endBalance > startBalance, "Trade Reverted, No Profit Made");`
+- **Price Arbitrage**: Capitalize on price misalignments between exchanges. Large trades can create imbalances in liquidity pools, distorting prices and causing slippage.
+- **Smart Contract Relay**: Utilize a Solidity smart contract to act as a relay between the controller and the exchanges, ensuring efficient and secure transactions.
+- **Modular and Extensible Design**: Built with a modular architecture, allowing for easy integration of additional features and support for other exchanges.
 
 ## Tech Stack
 
@@ -45,9 +47,14 @@ Key features of this system include:
 
 Ensure you have the following installed:
 
-- Node.js
-- npm
-- TypeScript
+- [Node.js](https://nodejs.org)
+- [npm](https://www.npmjs.com/)
+
+Additionally, you will need:
+
+- An Ethereum wallet with sufficient funds to cover gas fees. You can create a new wallet using the script in the `scripts` folder.
+- An account on [Alchemy](https://www.alchemy.com/) with a new project created to obtain the API key.
+- Deployed smart contracts on the Polygon network. The [Remix IDE](https://remix.ethereum.org/) is a good tool to perform the deployment.
 
 ### Installation
 
@@ -82,7 +89,7 @@ Ensure you have the following installed:
 
 ## Disclaimer
 
-This repo is not either investment advice or a recommendation or solicitation to buy or sell any investment. It should not be used to evaluate the merits of making any investment decision. It should not be relied upon for accounting, legal, tax advice, or investment recommendations. The contents reflected herein are subject to change unless updated.
+This repository is for educational and informational purposes only. It is not investment advice or a recommendation to buy or sell any financial instrument. The information provided here should not be used as the basis for any investment decision. Always conduct your own research and consult with a qualified financial advisor before making any investment decisions. The authors and contributors are not responsible for any financial losses or damages incurred as a result of using this software. The contents are subject to change without notice.
 
 ## Contributing
 
