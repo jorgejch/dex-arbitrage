@@ -62,7 +62,7 @@ function getHoursSinceUnixEpoch(): number {
  */
 function exponentialBackoffDelay(
   attempt: number,
-  baseDelay: number = 100
+  baseDelay = 100
 ): Promise<void> {
   const delay = Math.pow(2, attempt) * baseDelay + Math.random() * baseDelay; // Add jitter to avoid collisions
   return new Promise((resolve) => setTimeout(resolve, delay));
@@ -108,7 +108,7 @@ class Logger {
   /**
    * @param prefix The logger prefix
    */
-  constructor(prefix: string, logLevel: string = "INFO") {
+  constructor(prefix: string, logLevel = "INFO") {
     this.prefix = prefix;
     this.logLevel = logLevel.toUpperCase();
   }

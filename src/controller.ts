@@ -111,7 +111,7 @@ class Controller {
     let dexInitPromises: Promise<void>[];
     try {
       dexInitPromises = this.dexes.map(async (dex: BaseDex) => {
-        dex.initialize();
+        void dex.initialize();
       });
     } catch (error) {
       logger.error(
