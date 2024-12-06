@@ -34,7 +34,7 @@ class PoolContract extends BaseContract {
   constructor(
     address: string,
     alchemy: Alchemy,
-    abi: any,
+    abi: object[],
     pool: Pool,
     processSwapFunction: (
       psv3Swap: UniswapV3Swap,
@@ -67,7 +67,7 @@ class PoolContract extends BaseContract {
         amount1,
         sqrtPriceX96,
         liquidity,
-        tick, // skip the thick
+        , // skip the thick
       ] = args;
       const poolContractAddress = this.address;
       const sqrtPriceX96BigNumber = BigNumber.from(sqrtPriceX96);
@@ -158,7 +158,7 @@ class PoolContract extends BaseContract {
     return this.lastPoolSqrtPriceX96;
   }
 
-  public getInputTokens(): Array<Token> {
+  public getInputTokens(): Token[] {
     if (!this.pool?.inputTokens) {
       throw new Error("Input tokens are not defined");
     }

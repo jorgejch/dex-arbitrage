@@ -30,7 +30,7 @@ class AflabContract extends BaseContract {
    */
   constructor(
     address: string,
-    abi: any,
+    abi: object[],
     alchemy: Alchemy,
     wallet: Wallet,
     network: number,
@@ -48,25 +48,25 @@ class AflabContract extends BaseContract {
   }
 
   protected async listenForEvents(contract: Contract): Promise<void> {
-    contract.on("SwapExecuted", (...args: any[]) => {
+    contract.on("SwapExecuted", (...args: unknown[]) => {
       logger.info(
         `Swap executed: ${JSON.stringify(args)}`,
         this.constructor.name
       );
     });
-    contract.on("FlashloanError", (...args: any[]) => {
+    contract.on("FlashloanError", (...args: unknown[]) => {
       logger.info(
         `Flashloan error: ${JSON.stringify(args)}`,
         this.constructor.name
       );
     });
-    contract.on("FlashLoanSuccess", (...args: any[]) => {
+    contract.on("FlashLoanSuccess", (...args: unknown[]) => {
       logger.info(
         `Flashloan executed: ${JSON.stringify(args)}`,
         this.constructor.name
       );
     });
-    contract.on("ArbitrageConcluded", (...args: any[]) => {
+    contract.on("ArbitrageConcluded", (...args: unknown[]) => {
       logger.info(
         `Arbitrage concluded: ${JSON.stringify(args)}`,
         this.constructor.name
@@ -74,7 +74,7 @@ class AflabContract extends BaseContract {
     });
   }
 
-  protected getArbitInfo(opportunity: Opportunity): any {
+  protected getArbitInfo(opportunity: Opportunity): unknown {
     const { swap1, swap2, swap3, estimatedGasCost } = opportunity.arbitInfo;
 
     if (
@@ -136,7 +136,7 @@ class AflabContract extends BaseContract {
   private async getTransactionRequest(
     from: string,
     to: string,
-    arbitInfo: any,
+    arbitInfo: unknown,
     inputAmount: BigNumber
   ): Promise<TransactionRequest> {
     if (!this.contract) {
