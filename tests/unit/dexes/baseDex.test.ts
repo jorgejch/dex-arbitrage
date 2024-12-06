@@ -67,9 +67,7 @@ class TestDex extends BaseDex {
       tokenB,
       tokenC,
       inputAmount,
-      swap1PoolContract,
-      swap2PoolContract,
-      swap3PoolContract,
+      [swap1PoolContract, swap2PoolContract, swap3PoolContract],
       new Decimal(0)
     );
   }

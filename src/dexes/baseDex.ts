@@ -167,9 +167,7 @@ abstract class BaseDex {
     tokenB: Token,
     tokenC: Token,
     inputAmount: BigNumber,
-    swap1PoolContract: PoolContract,
-    swap2PoolContract: PoolContract,
-    swap3PoolContract: PoolContract,
+    swapPoolContracts: PoolContract[],
     lendingPoolFeePercentage: Decimal
   ): ExpectedProfitData {
     const returnPayload: ExpectedProfitData = {
@@ -187,7 +185,7 @@ abstract class BaseDex {
         inputAmount,
         tokenA,
         tokenB,
-        swap1PoolContract
+        swapPoolContracts[0]
       );
     } catch (error) {
       logger.warn(
@@ -209,7 +207,7 @@ abstract class BaseDex {
         swap1Result.netOutput,
         tokenB,
         tokenC,
-        swap2PoolContract
+        swapPoolContracts[1]
       );
     } catch (error) {
       logger.warn(
@@ -232,7 +230,7 @@ abstract class BaseDex {
         swap2Result.netOutput,
         tokenC,
         tokenA,
-        swap3PoolContract
+        swapPoolContracts[2]
       );
     } catch (error) {
       logger.warn(
@@ -248,7 +246,9 @@ abstract class BaseDex {
     );
 
     const lendingPoolFeeBigNumber = BigNumber.from(
-      new Decimal(inputAmount.toString()).mul(lendingPoolFeePercentage).toFixed(0)
+      new Decimal(inputAmount.toString())
+        .mul(lendingPoolFeePercentage)
+        .toFixed(0)
     );
     const expectedProfit = swap3Result.netOutput.sub(
       inputAmount.add(lendingPoolFeeBigNumber)
@@ -457,9 +457,7 @@ abstract class BaseDex {
               tokenB,
               tokenC,
               inputAmount,
-              swap1PoolContract,
-              swap2PoolContract,
-              swap3PoolContract,
+              [swap1PoolContract, swap2PoolContract, swap3PoolContract],
               await this.lendingPoolAPContract.getFlashloanFee()
             );
 
@@ -479,10 +477,10 @@ abstract class BaseDex {
 
     const maxProfitData = profitablePicks.reduce((max, current) => {
       return current.expectedProfitData.expectedProfit.gt(
-      max.expectedProfitData.expectedProfit
+        max.expectedProfitData.expectedProfit
       )
-      ? current
-      : max;
+        ? current
+        : max;
     }, profitablePicks[0]);
 
     return maxProfitData;
