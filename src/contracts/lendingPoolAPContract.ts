@@ -9,7 +9,7 @@ class LendingPoolAPContract extends BaseContract {
   private poolContract?: Contract;
   private flashloanFee?: Decimal;
 
-  constructor(address: string, alchemy: Alchemy, abi: any, network: number) {
+  constructor(address: string, alchemy: Alchemy, abi: object[], network: number) {
     super(address, abi, ContractType.POOL_ADDRESS_PROVIDER, alchemy, network);
   }
 

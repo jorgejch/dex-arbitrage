@@ -11,7 +11,7 @@ abstract class BaseContract {
   protected address: string;
   protected contract?: Contract; // ethers.js Contract
   protected contractType: ContractType;
-  protected abi: any;
+  protected abi: object[];
   protected network: number;
   private initialized = false;
 
@@ -23,7 +23,7 @@ abstract class BaseContract {
    */
   constructor(
     address: string,
-    abi: any,
+    abi: object[],
     contractType: ContractType,
     alchemy: Alchemy,
     network: number
