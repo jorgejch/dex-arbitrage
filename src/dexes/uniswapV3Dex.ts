@@ -1,14 +1,14 @@
-import { BaseDex } from "./baseDex.js";
-import { DexPoolSubgraph } from "../subgraphs/dexPoolSubgraph.js";
-import { UniswapV3Swap } from "../swaps/uniswapV3Swap.js";
-import { Token, Opportunity, ExpectedProfitData } from "../types.js";
-import { logger, isPriceImpactSignificant } from "../common.js";
-import { PoolContract } from "../contracts/poolContract.js";
-import { AflabContract } from "../contracts/aflabContract.js";
-import { LendingPoolAPContract } from "../contracts/lendingPoolAPContract.js";
+import {BaseDex} from "./baseDex.js";
+import {DexPoolSubgraph} from "../subgraphs/dexPoolSubgraph.js";
+import {UniswapV3Swap} from "../swaps/uniswapV3Swap.js";
+import {ExpectedProfitData, Opportunity, Token} from "../types.js";
+import {isPriceImpactSignificant, logger} from "../common.js";
+import {PoolContract} from "../contracts/poolContract.js";
+import {AflabContract} from "../contracts/aflabContract.js";
+import {LendingPoolAPContract} from "../contracts/lendingPoolAPContract.js";
 import abi from "../abis/uniswapV3PoolAbi.js";
 
-import { Wallet, Alchemy, BigNumber } from "alchemy-sdk";
+import {Alchemy, BigNumber, Wallet} from "alchemy-sdk";
 
 /**
  * Represents the Uniswap V3 DEX.
@@ -265,7 +265,7 @@ class UniswapV3Dex extends BaseDex {
 
       // Initialize the contract instance
       try {
-        poolContract.initialize();
+        await poolContract.initialize();
       } catch (error) {
         logger.error(
           `Error initializing pool contract: ${error}`,
