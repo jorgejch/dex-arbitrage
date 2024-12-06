@@ -42,7 +42,7 @@ abstract class BaseDex {
    *
    * @default false
    */
-  protected initialized: boolean = false;
+  protected initialized = false;
 
   /**
    * List of available liquidity pools within the DEX.
