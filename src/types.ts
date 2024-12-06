@@ -27,7 +27,7 @@ enum ContractType {
  * @property {BigNumber} swap2FeeBigNumber The fee tier for swap 2
  * @property {BigNumber} swap3FeeBigNumber The fee tier for swap 3
  */
-type ExpectedProfitData = {
+interface ExpectedProfitData {
   expectedProfit: BigNumber;
   swap1FeeBigNumber: BigNumber;
   swap2FeeBigNumber: BigNumber;
@@ -40,7 +40,7 @@ type ExpectedProfitData = {
  * @property {ExpectedProfitData} expectedProfitData The expected profit data
  * @property {Token} tokenB The token B
  */
-type TokenBPickData = {
+interface TokenBPickData {
   expectedProfitData: ExpectedProfitData;
   tokenB: Token;
 };
@@ -55,7 +55,7 @@ type TokenBPickData = {
  * @property {Decimal} feeDecimal The fee decimal
  * @property {BigNumber} fee The fee
  */
-type NetOutputData = {
+interface NetOutputData {
   price: Decimal;
   netOutput: BigNumber;
   grossOutput: BigNumber;
@@ -66,7 +66,7 @@ type NetOutputData = {
 /**
  * Opportunity individual swap information.
  */
-type SwapInfo = {
+interface SwapInfo {
   tokenIn: Token;
   tokenOut: Token;
   poolFee: BigNumber;
@@ -76,7 +76,7 @@ type SwapInfo = {
 /**
  * Triangular arbitrage information.
  */
-type ArbitrageInfo = {
+interface ArbitrageInfo {
   swap1: SwapInfo | undefined;
   swap2: SwapInfo | undefined;
   swap3: SwapInfo | undefined;
@@ -94,7 +94,7 @@ type ArbitrageInfo = {
  * @property {BigNumber | undefined} expectedProfit - The expected profit from the arbitrage, if any.
  * @property {number | undefined} originalSwapPriceImpact - The price impact of the original swap, if any.
  */
-type Opportunity = {
+interface Opportunity {
   arbitInfo: ArbitrageInfo;
   tokenAIn: BigNumber;
   lastPoolSqrtPriceX96: BigNumber;
@@ -111,7 +111,7 @@ type Opportunity = {
  * @property {string} symbol The token symbol
  * @property {number} decimals The token decimals
  */
-type Token = {
+interface Token {
   id: string;
   name: string;
   symbol: string;
@@ -124,7 +124,7 @@ type Token = {
  * @property {number} feePercentage The fee percentage
  * @property {string} feeType The fee type
  */
-type Fee = {
+interface Fee {
   feePercentage: number;
   feeType: string;
 };
@@ -136,7 +136,7 @@ type Fee = {
  * @property {number} hourlyVolumeUSD The hourly volume in USD
  * @property {number} timestamp The timestamp of the hourly snapshot
  */
-type HourlySnapshot = {
+interface HourlySnapshot {
   hourlySwapCount: number;
   hourlyVolumeUSD: number;
   timestamp: number;
@@ -152,7 +152,7 @@ type HourlySnapshot = {
  * @property {Array<Fee>} pool.fees The fees related to this pool
  * @property {Array<Token>} pool.inputTokens The pool input tokens
  */
-type Pool = {
+interface Pool {
   id: string;
   name: string;
   symbol: string;
