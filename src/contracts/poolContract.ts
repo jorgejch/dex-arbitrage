@@ -67,7 +67,6 @@ class PoolContract extends BaseContract {
         amount1,
         sqrtPriceX96,
         liquidity,
-        , // skip the thick
       ] = args;
       const poolContractAddress = this.address;
       const sqrtPriceX96BigNumber = BigNumber.from(sqrtPriceX96);

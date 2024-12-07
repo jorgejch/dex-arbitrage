@@ -1,4 +1,4 @@
-import { describe, beforeEach, vi } from "vitest";
+import { describe, vi, beforeEach } from "vitest";
 import { AflabContract } from "../../../src/contracts/aflabContract.js";
 import { Alchemy, Wallet } from "alchemy-sdk";
 
