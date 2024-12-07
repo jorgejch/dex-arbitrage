@@ -26,6 +26,12 @@ class LendingPoolAPContract extends BaseContract {
       logger.warn(`Error getting pool address: ${e}`, this.constructor.name);
       throw new Error("Failed to get pool address");
     }
+
+    // Ensure rawPoolAddress is defined and is not huge.
+    if (!rawPoolAddress || rawPoolAddress.length > 60) {
+      throw new Error("Invalid pool address");
+    } 
+
     // There is a strange series of 0s at the beginning of the address
     const match = /^0x0+(.+)$/.exec(rawPoolAddress)!;
     return `0x${match[1]}`;
