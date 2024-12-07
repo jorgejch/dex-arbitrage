@@ -9,7 +9,7 @@ abstract class BaseSubgraph {
   private readonly subgraphUrl: string;
   private graffle!: {
     gql: (query: TemplateStringsArray) => {
-      send: (variables?: object) => Promise<any>;
+      send: (variables?: object) => Promise<unknown>;
     };
   };
   private readonly queries = new Map<
