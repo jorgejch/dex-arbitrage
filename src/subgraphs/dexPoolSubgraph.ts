@@ -2,25 +2,64 @@ import { BaseSubgraph } from "./baseSubgraph.js";
 import { getHoursSinceUnixEpoch, logger } from "../common.js";
 import { Pool, LiquidityPoolHourlySnapshot } from "../types.js";
 
-/**
- * DexPoolSubgraph is a class that provides methods to interact with the
- * DexPoolSubgraph v3 subgraph developed by Messari.
- *
- * https://github.com/messari/subgraphs/tree/master/subgraphs/uniswap-v3-forks
- */
 interface FetchPoolsContext {
   uniquePoolIds: Set<string>;
   allPools: Pool[];
   totalRecords: number;
 }
 
+/**
+ * DexPoolSubgraph is a class that provides methods to interact with the
+ * DexPoolSubgraph v3 subgraph developed by Messari.
+ *
+ * https://github.com/messari/subgraphs/tree/master/subgraphs/uniswap-v3-forks
+ */
 class DexPoolSubgraph extends BaseSubgraph {
   /**
    * @param baseURL The base URL for the The Graph Node
-   * @param name The subgraph name
    */
   constructor(url: string) {
     super(url);
+  }
+
+  /**
+   * Retrieves a list of pools with pagination and limiting options.
+   *
+   * @param limit - The maximum number of pools to retrieve. Defaults to 100.
+   * @param numPagestoFetch - The number of pages to fetch per call. Defaults to 10.
+   * @param pageSize - The number of pools per page. Defaults to 10.
+   * @param hsUnixEpoch - Hours since the Unix Epoch minus one, used as an index for the subgraph's hourly snapshots.
+   * @returns A promise that resolves to an array of Pool objects.
+   */
+  public async getPools(
+    limit = 100,
+    numPagestoFetch = 10,
+    pageSize = 10,
+    hsUnixEpoch: number = getHoursSinceUnixEpoch()
+  ): Promise<Pool[]> {
+    const allPools: Pool[] = [];
+    const uniquePoolIds = new Set<string>();
+    let skip = 0;
+    const context: FetchPoolsContext = {
+      uniquePoolIds,
+      allPools,
+      totalRecords: 0,
+    };
+
+    logger.debug(
+      `Getting pools. Parameters: {limit: ${limit}, numOfPagesPerCall: ${numPagestoFetch}, pageSize: ${pageSize}, hoursSinceUnixEpoch: ${hsUnixEpoch}}`,
+      this.constructor.name
+    );
+
+    await this.handlePoolFetching(
+      hsUnixEpoch,
+      numPagestoFetch,
+      pageSize,
+      skip,
+      limit,
+      context
+    );
+    return allPools;
   }
 
   protected customInit(): void {
@@ -58,29 +97,17 @@ class DexPoolSubgraph extends BaseSubgraph {
   }
 
   /**
-   * Get pools with pagination.
+   * Fetches pools from the subgraph until the limit is reached.
    */
-  public async getPools(
-    limit = 100,
-    numPagestoFetch = 10,
-    pageSize = 10,
-    hsUnixEpoch: number = getHoursSinceUnixEpoch()
-  ): Promise<Pool[]> {
-    const allPools: Pool[] = [];
-    const uniquePoolIds = new Set<string>();
-    let skip = 0;
+  private async handlePoolFetching(
+    hsUnixEpoch: number,
+    numPagestoFetch: number,
+    pageSize: number,
+    skip: number,
+    limit: number,
+    context: FetchPoolsContext
+  ): Promise<void> {
     let hasMore = true;
-    const context: FetchPoolsContext = {
-      uniquePoolIds,
-      allPools,
-      totalRecords: 0,
-    };
-
-    logger.debug(
-      `Getting pools. Parameters: {limit: ${limit}, numOfPagesPerCall: ${numPagestoFetch}, pageSize: ${pageSize}, hoursSinceUnixEpoch: ${hsUnixEpoch}}`,
-      this.constructor.name
-    );
-
     while (hasMore && context.totalRecords < limit) {
       try {
         const returnInfo = await this.fetchPoolPages(
@@ -99,7 +126,6 @@ class DexPoolSubgraph extends BaseSubgraph {
         throw error;
       }
     }
-    return allPools;
   }
 
   /*
