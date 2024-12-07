@@ -3,15 +3,19 @@ import { getHoursSinceUnixEpoch, logger } from "../common.js";
 import { Pool, LiquidityPoolHourlySnapshot } from "../types.js";
 
 /**
- * PSv3Subgraph is a class that provides methods to interact with the
- * PancakeSwap v3 subgraph developed by Messari.
+ * DexPoolSubgraph is a class that provides methods to interact with the
+ * DexPoolSubgraph v3 subgraph developed by Messari.
  *
  * https://github.com/messari/subgraphs/tree/master/subgraphs/uniswap-v3-forks
  */
+interface FetchPoolsContext {
+  uniquePoolIds: Set<string>;
+  allPools: Pool[];
+  totalRecords: number;
+}
+
 class DexPoolSubgraph extends BaseSubgraph {
   /**
-   * Constructor for PSv3Subgraph.
-   *
    * @param baseURL The base URL for the The Graph Node
    * @param name The subgraph name
    */
@@ -23,7 +27,7 @@ class DexPoolSubgraph extends BaseSubgraph {
     /* Define queries */
     this.addQuery(
       "pools",
-      this.gql`
+      `
       query ($hoursSinceUnixEpoch: Int!, $size: Int!, $offset: Int!) {
       liquidityPoolHourlySnapshots(
         first: $size,
@@ -55,11 +59,6 @@ class DexPoolSubgraph extends BaseSubgraph {
 
   /**
    * Get pools with pagination.
-   *
-   * @param limit The maximum number of pools to fetch
-   * @param numPagestoFetch The number of pages to fetch in parallel
-   * @param pageSize The number of items to fetch per page
-   * @returns A list of Pool objects.
    */
   public async getPools(
     limit = 100,
@@ -69,72 +68,101 @@ class DexPoolSubgraph extends BaseSubgraph {
   ): Promise<Pool[]> {
     const allPools: Pool[] = [];
     const uniquePoolIds = new Set<string>();
-    const query = this.getQuery("pools");
     let skip = 0;
     let hasMore = true;
-    let totalRecords = 0;
+    const context: FetchPoolsContext = {
+      uniquePoolIds,
+      allPools,
+      totalRecords: 0,
+    };
 
     logger.debug(
       `Getting pools. Parameters: {limit: ${limit}, numOfPagesPerCall: ${numPagestoFetch}, pageSize: ${pageSize}, hoursSinceUnixEpoch: ${hsUnixEpoch}}`,
       this.constructor.name
     );
 
-    while (hasMore && totalRecords < limit) {
-      // Create an array of promises to fetch multiple pages in parallel
-      const fetchPromises = [];
-      for (let i = 0; i < numPagestoFetch; i++) {
-        // Fetch numPagestoFetch pages in parallel
-        fetchPromises.push(
-          this.fetchData(query, {
-            hoursSinceUnixEpoch: hsUnixEpoch,
-            size: pageSize,
-            offset: skip + i * pageSize,
-          })
-        );
-      }
-
-      let responses;
+    while (hasMore && context.totalRecords < limit) {
       try {
-        // Wait for all fetches to complete
-        responses = await Promise.all(fetchPromises);
+        const returnInfo = await this.fetchPoolPages(
+          hsUnixEpoch,
+          numPagestoFetch,
+          pageSize,
+          skip,
+          limit,
+          context
+        );
+        context.totalRecords += returnInfo.fetchedRecords;
+        hasMore = returnInfo.hasMore;
+        skip += numPagestoFetch * pageSize;
       } catch (error) {
         logger.error(`Error fetching data: ${error}`, this.constructor.name);
         throw error;
       }
-
-      // Process the responses
-      let fetchedRecords = 0;
-      for (const response of responses) {
-        if (!response) {
-          throw new Error(`Invalid Response: ${JSON.stringify(response)}`);
-        }
-
-        const snapshots: LiquidityPoolHourlySnapshot[] =
-          response.liquidityPoolHourlySnapshots;
-        const pools: Pool[] = snapshots.map(
-          (snapshot: LiquidityPoolHourlySnapshot) => snapshot.pool
-        );
-
-        for (const pool of pools) {
-          if (!uniquePoolIds.has(pool.id)) {
-            uniquePoolIds.add(pool.id);
-            allPools.push(pool);
-            totalRecords++;
-            fetchedRecords++;
-          }
-        }
-      }
-
-      logger.debug(
-        `Fetched ${fetchedRecords} records. Total records: ${totalRecords}`,
-        this.constructor.name
-      );
-
-      // Update skip and check if more records need to be fetched
-      skip += numPagestoFetch * pageSize;
-      hasMore = fetchedRecords === numPagestoFetch * pageSize;
     }
     return allPools;
+  }
+
+  /*
+   * Fetches pools from the subgraph.
+   *
+   * @param hsUnixEpoch The hours since Unix Epoch
+   * @param numPagestoFetch The number of pages to fetch
+   * @param pageSize The page size
+   * @param skip The number of records to skip
+   * @param limit The maximum number of records to fetch
+   * @param context The context object
+   * @returns The number of fetched records and a boolean indicating if there are more records to fetch
+   */
+  private async fetchPoolPages(
+    hsUnixEpoch: number,
+    numPagestoFetch: number,
+    pageSize: number,
+    skip: number,
+    limit: number,
+    context: FetchPoolsContext
+  ): Promise<{ fetchedRecords: number; hasMore: boolean }> {
+    const query = this.getQuery("pools");
+    const fetchPromises = [];
+    for (let i = 0; i < numPagestoFetch; i++) {
+      fetchPromises.push(
+        this.fetchData(query, {
+          hoursSinceUnixEpoch: hsUnixEpoch,
+          size: pageSize,
+          offset: skip + i * pageSize,
+        })
+      );
+    }
+
+    const responses = await Promise.all(fetchPromises);
+    let fetchedRecords = 0;
+
+    for (const response of responses) {
+      if (!response) {
+        throw new Error(`Invalid Response: ${JSON.stringify(response)}`);
+      }
+
+      const snapshots: LiquidityPoolHourlySnapshot[] =
+        response.liquidityPoolHourlySnapshots;
+      const pools: Pool[] = snapshots.map(
+        (snapshot: LiquidityPoolHourlySnapshot) => snapshot.pool
+      );
+
+      for (const pool of pools) {
+        if (!context.uniquePoolIds.has(pool.id)) {
+          context.uniquePoolIds.add(pool.id);
+          context.allPools.push(pool);
+          fetchedRecords++;
+          if (fetchedRecords >= limit) break;
+        }
+      }
+    }
+
+    logger.debug(`Fetched ${fetchedRecords} records.`, this.constructor.name);
+
+    const hasMore =
+      fetchedRecords === numPagestoFetch * pageSize &&
+      context.totalRecords + fetchedRecords < limit;
+    return { fetchedRecords, hasMore };
   }
 }
 

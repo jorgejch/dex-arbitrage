@@ -7,19 +7,19 @@ dotenv.config();
 
 class TestSubgraph extends BaseSubgraph {
   protected customInit(): void {
-    this.addQuery("liqPools", this.gql`{liquidityPools(first: 5) {id}}`);
+    this.addQuery("liqPools", `{liquidityPools(first: 5) {id}}`);
   }
   constructor(url: string) {
     super(url);
     console.log(`Instantiating Subgraph with url ${url}`);
   }
 
-  public async testQuery(): Promise<{ send: () => Promise<any> }> {
+  public async testQuery(): Promise<any> {
     const query = this.getQuery("liqPools");
     return await this.fetchData(query);
   }
 
-  public async fetchData(query: { send: () => Promise<any> }): Promise<any> {
+  public async fetchData(query: string): Promise<any> {
     try {
       return await super.fetchData(query);
     } catch (error) {
