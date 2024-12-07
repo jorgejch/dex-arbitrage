@@ -109,8 +109,10 @@ class DexPoolSubgraph extends BaseSubgraph {
           throw new Error(`Invalid Response: ${JSON.stringify(response)}`);
         }
 
-        const snapshots: [] = (response as any).liquidityPoolHourlySnapshots;
-        const pools: Pool[] = snapshots.map((snapshot: unknown) => (snapshot as any).pool);
+        const snapshots: [] = response.liquidityPoolHourlySnapshots;
+        const pools: Pool[] = snapshots.map(
+          (snapshot: any) => snapshot.pool
+        );
 
         for (const pool of pools) {
           if (!uniquePoolIds.has(pool.id)) {
