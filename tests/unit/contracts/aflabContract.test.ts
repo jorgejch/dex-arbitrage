@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, beforeEach, vi } from "vitest";
 import { AflabContract } from "../../../src/contracts/aflabContract.js";
 import { Alchemy, Wallet } from "alchemy-sdk";
 
@@ -20,6 +20,8 @@ describe.skip("AflabContract Unit Tests", () => {
     }) as unknown as Alchemy;
 
     aflabContract = new AflabContract(address, abi, alchemy, wallet, 137);
+    
+    console.log("aflabContract", aflabContract);
   });
 
   // ... rest of the tests
