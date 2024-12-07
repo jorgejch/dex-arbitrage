@@ -9,7 +9,7 @@ abstract class BaseSubgraph {
   private readonly subgraphUrl: string;
   private graffle!: {
     gql: (query: TemplateStringsArray) => {
-      send: (_variables?: object) => Promise<unknown>;
+      send: (_variables?: object) => Promise<object>;
     };
   };
   private readonly queries = new Map<
@@ -106,13 +106,13 @@ abstract class BaseSubgraph {
    */
   public addQuery(
     name: string,
-    query: { send: (variables?: {}) => Promise<unknown> }
+    query: { send: (variables?: {}) => Promise<object> }
   ): void {
     this.queries.set(name, query);
   }
 
   public getQuery(name: string): {
-    send: (variables?: {}) => Promise<unknown>;
+    send: (variables?: {}) => Promise<object>;
   } {
     if (!this.queries.has(name)) {
       throw new Error(`Query ${name} not found`);
