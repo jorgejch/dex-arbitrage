@@ -1,6 +1,6 @@
 import { BaseSubgraph } from "./baseSubgraph.js";
 import { getHoursSinceUnixEpoch, logger } from "../common.js";
-import { Pool } from "../types.js";
+import { Pool, LiquidityPoolHourlySnapshot } from "../types.js";
 
 /**
  * PSv3Subgraph is a class that provides methods to interact with the
@@ -109,9 +109,10 @@ class DexPoolSubgraph extends BaseSubgraph {
           throw new Error(`Invalid Response: ${JSON.stringify(response)}`);
         }
 
-        const snapshots: [] = response.liquidityPoolHourlySnapshots;
+        const snapshots: LiquidityPoolHourlySnapshot[] =
+          response.liquidityPoolHourlySnapshots;
         const pools: Pool[] = snapshots.map(
-          (snapshot: any) => snapshot.pool
+          (snapshot: LiquidityPoolHourlySnapshot) => snapshot.pool
         );
 
         for (const pool of pools) {
