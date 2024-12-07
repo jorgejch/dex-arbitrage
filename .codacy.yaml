@@ -1,0 +1,7 @@
+---
+reviews:
+  high_level_summary: true
+engines:
+  duplication:
+    exclude_paths:
+      - "src/abis/*"
