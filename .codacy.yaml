@@ -3,5 +3,22 @@ reviews:
   high_level_summary: true
 engines:
   duplication:
+    include:
+      - "src/**/*"
     exclude_paths:
-      - "src/abis/*"
+      - "src/abis/**/*"
+      - "tests/**/*"
+      - ".sonarlint/**/*"
+      - ".github/**/*"
+      - "diagrams/**/*"
+
+exclude_paths:
+  - "src/abis/**/*"
+  - "tests/**/*"
+  - ".sonarlint/**/*"
+  - ".github/**/*"
+  - "diagrams/**/*"
+  - "vitest.config.ts"
+include_paths:
+  - "tests/integration/**/*"
+  
