@@ -129,7 +129,9 @@ class PoolContract extends BaseContract {
   /**
    * Custom initialization logic.
    */
-  protected async customInit(): Promise<void> {}
+  protected async customInit(): Promise<void> {
+    /* Add any subclass specific initialization logic here */
+  }
   
   /**
    * Listen for Swap events emitted by the contract.

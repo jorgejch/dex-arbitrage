@@ -163,7 +163,7 @@ class AflabContract extends BaseContract {
   /**
    * Custom initialization logic.
    */
-  protected async customInit(): Promise<void> {}
+  protected async customInit(): Promise<void>{ /* Add any subclass specific initialization logic here */ }
 
   /**
    * Executes an arbitrage opportunity.
