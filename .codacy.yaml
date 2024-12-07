@@ -11,6 +11,7 @@ engines:
       - ".sonarlint/**/*"
       - ".github/**/*"
       - "diagrams/**/*"
+      - "scripts/**/*"
 
 exclude_paths:
   - "src/abis/**/*"
@@ -19,6 +20,6 @@ exclude_paths:
   - ".github/**/*"
   - "diagrams/**/*"
   - "vitest.config.ts"
+  - "scripts/**/*"
 include_paths:
   - "tests/integration/**/*"
-  
