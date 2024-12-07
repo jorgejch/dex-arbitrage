@@ -1,11 +1,15 @@
-import { defineConfig, ViteUserConfig } from "vitest/config";
+import {
+  defineConfig,
+  ViteUserConfig,
+  coverageConfigDefaults,
+} from "vitest/config";
 
 const config: ViteUserConfig = {
   test: {
     coverage: {
       reporter: ["cobertura"],
       include: ["src/**/*"],
-      exclude: ["src/abis/**/*"], // Exclude abis from coverage
+      exclude: ["src/abis/**/*",  ...coverageConfigDefaults.exclude], // Exclude abis from coverage
     },
   },
 };
