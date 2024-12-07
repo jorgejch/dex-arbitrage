@@ -9,12 +9,12 @@ abstract class BaseSubgraph {
   private readonly subgraphUrl: string;
   private graffle!: {
     gql: (query: TemplateStringsArray) => {
-      send: (variables?: object) => Promise<unknown>;
+      send: (_variables?: object) => Promise<unknown>;
     };
   };
   private readonly queries = new Map<
     string,
-    { send: (variables?: object) => Promise<any> }
+    { send: (_variables?: object) => Promise<any> }
   >();
 
   /**
@@ -35,7 +35,7 @@ abstract class BaseSubgraph {
   protected async fetchData(
     query: { send: (variables?: object) => Promise<any> },
     variables?: object
-  ): Promise<unknown> {
+  ): Promise<any> {
     const maxRetries = 3;
     let attempts = 0;
     while (attempts < maxRetries) {
@@ -111,7 +111,9 @@ abstract class BaseSubgraph {
     this.queries.set(name, query);
   }
 
-  public getQuery(name: string): { send: (variables?: {}) => Promise<unknown> } {
+  public getQuery(name: string): {
+    send: (variables?: {}) => Promise<unknown>;
+  } {
     if (!this.queries.has(name)) {
       throw new Error(`Query ${name} not found`);
     }
