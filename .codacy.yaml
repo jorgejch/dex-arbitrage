@@ -3,7 +3,7 @@ reviews:
   high_level_summary: true
 engines:
   duplication:
-    include:
+    include_paths:
       - "src/**/*"
     exclude_paths:
       - "src/abis/**/*"
