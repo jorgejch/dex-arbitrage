@@ -28,7 +28,7 @@ class LendingPoolAPContract extends BaseContract {
     }
 
     // Ensure rawPoolAddress is defined and is not huge.
-    if (!rawPoolAddress || rawPoolAddress.length > 60) {
+    if (!rawPoolAddress || rawPoolAddress.length > 100) {
       throw new Error("Invalid pool address");
     } 
 
