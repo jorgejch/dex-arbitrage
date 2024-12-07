@@ -61,7 +61,7 @@ describe("AflabContract Integration Tests", () => {
         symbol: "WBNB",
         decimals: 18,
       },
-      poolFee: BigNumber.from(0.03).mul(10 ** 5),
+      poolFee: BigNumber.from(0.03 * 10 ** 5),
       amountOutMinimum: BigNumber.from(0),
     };
 
