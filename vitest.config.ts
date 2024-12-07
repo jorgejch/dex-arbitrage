@@ -9,7 +9,12 @@ const config: ViteUserConfig = {
     coverage: {
       reporter: ["cobertura"],
       include: ["src/**/*"],
-      exclude: ["src/abis/**/*",  ...coverageConfigDefaults.exclude], // Exclude abis from coverage
+      exclude: [
+        "src/abis/**/*",
+        "diagrams/**/*",
+        "scripts/**/*",
+        ...coverageConfigDefaults.exclude,
+      ],
     },
   },
 };
