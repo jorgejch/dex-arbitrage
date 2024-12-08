@@ -31,7 +31,7 @@ const config = {
 };
 
 /**
- * Get the The Graph PancakeSwap v3 subgraph URL.
+ * Get the TG subgraph URL.
  *
  * @param baseUrl The base URL for The Graph Node
  * @param subgraphName The subgraph name
@@ -122,10 +122,6 @@ class Logger {
 
   public setLogLevel(logLevel: string): void {
     this.logLevel = logLevel.toUpperCase();
-  }
-
-  public getLogLevel(): string {
-    return this.logLevel;
   }
 
   public debug(message: string, extraPrefix?: string): void {
