@@ -1,8 +1,6 @@
 name: SonarQube Code Quality
-on:
-  push:
-    branches:
-      - *
+on: [ push ]
+
 jobs:
   sonarqube:
     name: SonarQube
