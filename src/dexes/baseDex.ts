@@ -492,10 +492,10 @@ abstract class BaseDex {
   protected logOpportunity(opportunity: Opportunity): void {
     // Check if all the opportuniy's parameters are defined
     if (
-      opportunity.arbitInfo.swap1 === undefined ||
-      opportunity.arbitInfo.swap2 === undefined ||
-      opportunity.arbitInfo.swap3 === undefined ||
-      opportunity.arbitInfo.estimatedGasCost === undefined ||
+      opportunity.arbitrageInfo.swap1 === undefined ||
+      opportunity.arbitrageInfo.swap2 === undefined ||
+      opportunity.arbitrageInfo.swap3 === undefined ||
+      opportunity.arbitrageInfo.estimatedGasCost === undefined ||
       opportunity.tokenAIn === undefined ||
       opportunity.expectedProfit === undefined ||
       opportunity.originalSwapPriceImpact === undefined
@@ -507,11 +507,11 @@ abstract class BaseDex {
     logger.info(
       `\n========== Arbitrage Opportunity ==========\n` +
         `\tInput Amount: ${opportunity.tokenAIn}\n` +
-        `\tToken A: ${opportunity.arbitInfo.swap1.tokenIn.symbol}\n` +
-        `\tToken B: ${opportunity.arbitInfo.swap2.tokenIn.symbol}\n` +
-        `\tToken C: ${opportunity.arbitInfo.swap3.tokenIn.symbol}\n` +
+        `\tToken A: ${opportunity.arbitrageInfo.swap1.tokenIn.symbol}\n` +
+        `\tToken B: ${opportunity.arbitrageInfo.swap2.tokenIn.symbol}\n` +
+        `\tToken C: ${opportunity.arbitrageInfo.swap3.tokenIn.symbol}\n` +
         `\tOriginal Swap Price Impact: ${opportunity.originalSwapPriceImpact}\n` +
-        `\tEstimated Gas Cost: ${opportunity.arbitInfo.estimatedGasCost}\n` +
+        `\tEstimated Gas Cost: ${opportunity.arbitrageInfo.estimatedGasCost}\n` +
         `\tExpected Profit: ${opportunity.expectedProfit}\n` +
         `\tExpected Profit (%): ${new Decimal(opportunity.expectedProfit.toString()).div(new Decimal(opportunity.tokenAIn.toString())).mul(100).toString()}%\n` +
         `===========================================`,
