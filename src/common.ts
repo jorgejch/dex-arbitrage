@@ -82,10 +82,9 @@ function sqrtPriceX96ToDecimal(
   token1BigNumbers: number
 ): Decimal {
   const num = sqrtPriceX96.mul(sqrtPriceX96);
-  const priceAdjusted: Decimal = new Decimal(num.toString())
+  return new Decimal(num.toString())
     .div(constants.QI92)
     .mul(10 ** (token0BigNumbers - token1BigNumbers));
-  return priceAdjusted;
 }
 
 /**
