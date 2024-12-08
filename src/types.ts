@@ -89,8 +89,8 @@ interface ArbitrageInfo {
 /**
  * Represents an arbitrage opportunity.
  *
- * @property {ArbitrageInfo} arbitInfo - Information about the arbitrage opportunity.
- * @property {ArbitrageInfo} arbitInfo - Information about the arbitrage.
+ * @property {ArbitrageInfo} arbitrageInfo - Information about the arbitrage opportunity.
+ * @property {ArbitrageInfo} arbitrageInfo - Information about the arbitrage.
  * @property {BigNumber} tokenAIn - The amount of token A involved in the arbitrage.
  * @property {BigNumber} lastPoolSqrtPriceX96 - The last square root price of the pool in X96 format.
  * @property {BaseSwap} originalSwap - The original swap details.
@@ -98,7 +98,7 @@ interface ArbitrageInfo {
  * @property {number | undefined} originalSwapPriceImpact - The price impact of the original swap, if any.
  */
 interface Opportunity {
-  arbitInfo: ArbitrageInfo;
+  arbitrageInfo: ArbitrageInfo;
   tokenAIn: BigNumber;
   lastPoolSqrtPriceX96: BigNumber;
   originalSwap: BaseSwap;
