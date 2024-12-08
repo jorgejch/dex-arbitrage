@@ -1,6 +1,6 @@
-import { BaseSubgraph } from "./baseSubgraph.js";
-import { getHoursSinceUnixEpoch, logger } from "../common.js";
-import { Pool, LiquidityPoolHourlySnapshot } from "../types.js";
+import {BaseSubgraph} from "./baseSubgraph.js";
+import {getHoursSinceUnixEpoch, logger} from "../common.js";
+import {LiquidityPoolHourlySnapshot, Pool} from "../types.js";
 
 interface FetchPoolsContext {
   uniquePoolIds: Set<string>;
@@ -16,7 +16,7 @@ interface FetchPoolsContext {
  */
 class DexPoolSubgraph extends BaseSubgraph {
   /**
-   * @param baseURL The base URL for the The Graph Node
+   * @param url The base URL for the The Graph Node
    */
   constructor(url: string) {
     super(url);
