@@ -1,6 +1,6 @@
-import { logger } from "../common.js";
-import { ContractType } from "../types.js";
-import { Contract, Alchemy } from "alchemy-sdk";
+import {logger} from "../common.js";
+import {ContractType} from "../types.js";
+import {Alchemy, Contract} from "alchemy-sdk";
 
 /**
  * Abstract base class for managing smart contract interactions.
@@ -16,10 +16,11 @@ abstract class BaseContract {
   private initialized = false;
 
   /**
-   * @param address The contract addres>
-   * @param alchemy The WebSocket Manager
+   * @param address The contract address>
    * @param abi The contract ABI
    * @param contractType One of the ContractType enum values
+   * @param alchemy The WebSocket Manager
+   * @param network The network ID
    */
   constructor(
     address: string,

@@ -2,8 +2,8 @@ import poolAbi from "./abis/uniswapV3PoolAbi.js";
 import aflabAbi from "./abis/aflabUniswapV3Abi.js";
 import lendingPoolAPAbi from "./abis/lendingPoolAPAbi.js";
 import lendingPoolAbi from "./abis/lendingPoolAbi.js";
-import { BigNumber } from "alchemy-sdk";
-import { Decimal } from "decimal.js";
+import {BigNumber} from "alchemy-sdk";
+import {Decimal} from "decimal.js";
 
 // Constants
 const constants = {
@@ -31,7 +31,7 @@ const config = {
 };
 
 /**
- * Get the The Graph PancakeSwap v3 subgraph URL.
+ * Get the TG subgraph URL.
  *
  * @param baseUrl The base URL for The Graph Node
  * @param subgraphName The subgraph name
@@ -82,10 +82,9 @@ function sqrtPriceX96ToDecimal(
   token1BigNumbers: number
 ): Decimal {
   const num = sqrtPriceX96.mul(sqrtPriceX96);
-  const priceAdjusted: Decimal = new Decimal(num.toString())
+  return new Decimal(num.toString())
     .div(constants.QI92)
     .mul(10 ** (token0BigNumbers - token1BigNumbers));
-  return priceAdjusted;
 }
 
 /**
@@ -107,6 +106,7 @@ class Logger {
 
   /**
    * @param prefix The logger prefix
+   * @param logLevel The log level
    */
   constructor(prefix: string, logLevel = "INFO") {
     this.prefix = prefix;
@@ -122,10 +122,6 @@ class Logger {
 
   public setLogLevel(logLevel: string): void {
     this.logLevel = logLevel.toUpperCase();
-  }
-
-  public getLogLevel(): string {
-    return this.logLevel;
   }
 
   public debug(message: string, extraPrefix?: string): void {

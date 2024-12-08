@@ -11,7 +11,7 @@ import abi from "../abis/uniswapV3PoolAbi.js";
 import { Alchemy, BigNumber, Wallet } from "alchemy-sdk";
 
 /**
- * Represents a Uniswap V3 decentralized exchange implementation.
+ * Represents an Uniswap V3 decentralized exchange implementation.
  * Extends the BaseDex class to provide specific functionality for interacting with Uniswap V3 pools.
  *
  * @extends BaseDex
@@ -102,19 +102,19 @@ class UniswapV3Dex extends BaseDex {
     }
 
     opportunity.expectedProfit = expectedProfit.expectedProfit;
-    opportunity.arbitInfo.swap1 = {
+    opportunity.arbitrageInfo.swap1 = {
       tokenIn: tokenA,
       tokenOut: tokenBData.tokenB,
       poolFee: expectedProfit.swap1FeeBigNumber,
       amountOutMinimum: BigNumber.from(0),
     };
-    opportunity.arbitInfo.swap2 = {
+    opportunity.arbitrageInfo.swap2 = {
       tokenIn: tokenBData.tokenB,
       tokenOut: tokenC,
       poolFee: expectedProfit.swap2FeeBigNumber,
       amountOutMinimum: BigNumber.from(0),
     };
-    opportunity.arbitInfo.swap3 = {
+    opportunity.arbitrageInfo.swap3 = {
       tokenIn: tokenC,
       tokenOut: tokenA,
       poolFee: expectedProfit.swap3FeeBigNumber,
@@ -182,7 +182,7 @@ class UniswapV3Dex extends BaseDex {
       originalSwap: swap,
       expectedProfit: undefined, // To be calculated
       originalSwapPriceImpact: undefined,
-      arbitInfo: {
+      arbitrageInfo: {
         swap1: undefined,
         swap2: undefined,
         swap3: undefined,

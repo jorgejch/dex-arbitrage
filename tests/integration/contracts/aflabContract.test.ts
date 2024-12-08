@@ -61,7 +61,7 @@ describe("AflabContract Integration Tests", () => {
         symbol: "WBNB",
         decimals: 18,
       },
-      poolFee: BigNumber.from(0.03).mul(10 ** 5),
+      poolFee: BigNumber.from(0.03 * 10 ** 5),
       amountOutMinimum: BigNumber.from(0),
     };
 
@@ -99,7 +99,7 @@ describe("AflabContract Integration Tests", () => {
       amountOutMinimum: BigNumber.from(0),
     };
 
-    const arbitInfo: ArbitrageInfo = {
+    const arbitrageInfo: ArbitrageInfo = {
       swap1: swap1,
       swap2: swap2,
       swap3: swap3,
@@ -135,7 +135,7 @@ describe("AflabContract Integration Tests", () => {
     };
 
     const opportunity: Opportunity = {
-      arbitInfo: arbitInfo,
+      arbitrageInfo: arbitrageInfo,
       tokenAIn: inputAmount,
       lastPoolSqrtPriceX96: BigNumber.from(0),
       originalSwap: mockOriginalSwap,
