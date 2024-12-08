@@ -3,8 +3,9 @@ reviews:
   high_level_summary: true
 engines:
   duplication:
-    include_paths:
-      - "src/**/*"
+    config:
+      languages:
+        - "typescript"
     exclude_paths:
       - "src/abis/**/*"
       - "tests/**/*"
