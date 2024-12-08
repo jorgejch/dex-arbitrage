@@ -1,102 +1,87 @@
-import { BaseContract } from "./baseContract.js";
-import { logger, config } from "../common.js";
-import { ContractType } from "../types.js";
+import {BaseContract}   from "./baseContract.js";
+import {config, logger} from "../common.js";
+import {ContractType}   from "../types.js";
 
-import { Alchemy, Contract, TransactionRequest } from "alchemy-sdk";
-import { Decimal } from "decimal.js";
+import {Alchemy, Contract, TransactionRequest} from "alchemy-sdk";
+import {Decimal}                               from "decimal.js";
 
 class LendingPoolAPContract extends BaseContract {
-  private poolContract?: Contract;
-  private flashloanFee?: Decimal;
+    private poolContract?: Contract;
+    private flashloanFee?: Decimal;
 
-  constructor(address: string, alchemy: Alchemy, abi: object[], network: number) {
-    super(address, abi, ContractType.POOL_ADDRESS_PROVIDER, alchemy, network);
-  }
-
-  private async getPoolAddress(): Promise<string> {
-    const tr: TransactionRequest = {
-      to: this.address,
-      data: this.contract?.interface.encodeFunctionData("getPool", []),
-    };
-
-    let rawPoolAddress: string;
-    try {
-      rawPoolAddress = await this.alchemy.core.call(tr);
-    } catch (e) {
-      logger.warn(`Error getting pool address: ${e}`, this.constructor.name);
-      throw new Error("Failed to get pool address");
+    constructor(address: string, alchemy: Alchemy, abi: object[], network: number) {
+        super(address, abi, ContractType.POOL_ADDRESS_PROVIDER, alchemy, network);
     }
 
-    // Ensure rawPoolAddress is defined and is not huge.
-    if (!rawPoolAddress || rawPoolAddress.length > 100) {
-      throw new Error("Invalid pool address");
-    } 
+    public async getFlashloanFee(): Promise<Decimal> {
+        if (this.flashloanFee) {
+            return this.flashloanFee;
+        }
 
-    // There is a strange series of 0s at the beginning of the address
-    const match = /^0x0+(.+)$/.exec(rawPoolAddress)!;
-    return `0x${match[1]}`;
-  }
+        if (!this.poolContract) {
+            throw new Error("Pool contract is not defined");
+        }
 
-  protected async customInit(): Promise<void> {
-    const poolAddress = await this.getPoolAddress();
-    console.log("Pool address:", poolAddress);
-    if (!poolAddress) {
-      throw new Error("Pool address is not defined");
-    }
-    console.log("Pool address:", poolAddress);
+        const tr: TransactionRequest = {
+            to: this.poolContract.address,
+            data: this.poolContract.interface.encodeFunctionData("FLASHLOAN_PREMIUM_TOTAL", []),
+        };
 
-    this.poolContract = new Contract(
-      poolAddress,
-      config.LENDING_POOL_ABI,
-      await this.alchemy.config.getProvider()
-    );
-  }
+        let fee: string;
+        try {
+            fee = await this.alchemy.core.call(tr);
+        } catch (e) {
+            logger.warn(`Error getting flashloan fee: ${e}`, this.constructor.name);
+            throw new Error("Failed to get flashloan fee");
+        }
 
-  protected async createContract() {
-    this.contract = new Contract(
-      this.address,
-      this.abi,
-      await this.alchemy.config.getProvider()
-    );
-  }
-
-  protected async listenForEvents(contract: Contract) {
-    contract.on("PoolUpdated", async (poolAddress) => {
-      logger.info(
-        `Pool address updated: ${poolAddress}`,
-        this.constructor.name
-      );
-    });
-  }
-
-  public async getFlashloanFee(): Promise<Decimal> {
-    if (this.flashloanFee) {
-      return this.flashloanFee;
+        this.flashloanFee = new Decimal(fee).div(1e4);
+        return this.flashloanFee;
     }
 
-    if (!this.poolContract) {
-      throw new Error("Pool contract is not defined");
+    protected async createContract() {
+        this.contract = new Contract(this.address, this.abi, await this.alchemy.config.getProvider());
     }
 
-    const tr: TransactionRequest = {
-      to: this.poolContract.address,
-      data: this.poolContract.interface.encodeFunctionData(
-        "FLASHLOAN_PREMIUM_TOTAL",
-        []
-      ),
-    };
+    protected async customInit(): Promise<void> {
+        const poolAddress = await this.getPoolAddress();
+        console.log("Pool address:", poolAddress);
+        if (!poolAddress) {
+            throw new Error("Pool address is not defined");
+        }
+        console.log("Pool address:", poolAddress);
 
-    let fee: string;
-    try {
-      fee = await this.alchemy.core.call(tr);
-    } catch (e) {
-      logger.warn(`Error getting flashloan fee: ${e}`, this.constructor.name);
-      throw new Error("Failed to get flashloan fee");
+        this.poolContract = new Contract(poolAddress, config.LENDING_POOL_ABI, await this.alchemy.config.getProvider());
     }
 
-    this.flashloanFee = new Decimal(fee).div(1e4);
-    return this.flashloanFee;
-  }
+    protected async listenForEvents(contract: Contract) {
+        contract.on("PoolUpdated", async (poolAddress) => {
+            logger.info(`Pool address updated: ${poolAddress}`, this.constructor.name);
+        });
+    }
+
+    private async getPoolAddress(): Promise<string> {
+        const tr: TransactionRequest = {
+            to: this.address, data: this.contract?.interface.encodeFunctionData("getPool", []),
+        };
+
+        let rawPoolAddress: string;
+        try {
+            rawPoolAddress = await this.alchemy.core.call(tr);
+        } catch (e) {
+            logger.warn(`Error getting pool address: ${e}`, this.constructor.name);
+            throw new Error("Failed to get pool address");
+        }
+
+        // Ensure rawPoolAddress is defined and is not huge.
+        if (!rawPoolAddress || rawPoolAddress.length > 100) {
+            throw new Error("Invalid pool address");
+        }
+
+        // There is a strange series of 0s at the beginning of the address
+        const match = /^0x0+(.+)$/.exec(rawPoolAddress)!;
+        return `0x${match[1]}`;
+    }
 }
 
-export { LendingPoolAPContract };
+export {LendingPoolAPContract};
