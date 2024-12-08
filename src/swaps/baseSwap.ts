@@ -1,8 +1,8 @@
-import { Token } from "../types.js";
-import { sqrtPriceX96ToDecimal } from "../common.js";
+import {Token} from "../types.js";
+import {sqrtPriceX96ToDecimal} from "../common.js";
 
-import { BigNumber } from "alchemy-sdk";
-import { Decimal } from "decimal.js";
+import {BigNumber} from "alchemy-sdk";
+import {Decimal} from "decimal.js";
 
 /**
  * BaseSwap is an abstract class that represents a swap event.
@@ -29,7 +29,7 @@ abstract class BaseSwap {
   poolContractAddress: string;
   inputTokens?: Token[];
 
-  constructor(
+  protected constructor(
     sender: string,
     recipient: string,
     amount0: bigint,
@@ -74,6 +74,8 @@ abstract class BaseSwap {
    * Calculate the price impact of the swap
    *
    * @param lastPoolSqrtPriceX96 The square root of the price before the swap times 2^96
+   * @param token0BigNumbers The number of BigNumbers for token0
+   * @param token1BigNumbers The number of BigNumbers for token1
    * @returns The price impact of the swap in basis points
    * @throws An error if the price before the swap is zero
    */
