@@ -1,14 +1,14 @@
-import {BaseDex} from "./baseDex.js";
-import {DexPoolSubgraph} from "../subgraphs/dexPoolSubgraph.js";
-import {UniswapV3Swap} from "../swaps/uniswapV3Swap.js";
-import {ExpectedProfitData, Opportunity, Token} from "../types.js";
-import {isPriceImpactSignificant, logger} from "../common.js";
-import {PoolContract} from "../contracts/poolContract.js";
-import {AflabContract} from "../contracts/aflabContract.js";
-import {LendingPoolAPContract} from "../contracts/lendingPoolAPContract.js";
+import { BaseDex } from "./baseDex.js";
+import { DexPoolSubgraph } from "../subgraphs/dexPoolSubgraph.js";
+import { UniswapV3Swap } from "../swaps/uniswapV3Swap.js";
+import { ExpectedProfitData, Opportunity, Token } from "../types.js";
+import { isPriceImpactSignificant, logger } from "../common.js";
+import { PoolContract } from "../contracts/poolContract.js";
+import { AflabContract } from "../contracts/aflabContract.js";
+import { LendingPoolAPContract } from "../contracts/lendingPoolAPContract.js";
 import abi from "../abis/uniswapV3PoolAbi.js";
 
-import {Alchemy, BigNumber, Wallet} from "alchemy-sdk";
+import { Alchemy, BigNumber, Wallet } from "alchemy-sdk";
 
 /**
  * Represents an Uniswap V3 decentralized exchange implementation.
@@ -26,8 +26,12 @@ class UniswapV3Dex extends BaseDex {
      * @param networkId The network ID
      */
     constructor(
-        alchemy: Alchemy, wallet: Wallet, subgraph: DexPoolSubgraph, aflabContract: AflabContract,
-        lendingPoolAPContract: LendingPoolAPContract, networkId: number
+        alchemy: Alchemy,
+        wallet: Wallet,
+        subgraph: DexPoolSubgraph,
+        aflabContract: AflabContract,
+        lendingPoolAPContract: LendingPoolAPContract,
+        networkId: number,
     ) {
         super(alchemy, wallet, subgraph, aflabContract, lendingPoolAPContract, networkId);
     }
@@ -81,7 +85,7 @@ class UniswapV3Dex extends BaseDex {
                 abi,
                 pool,
                 this.processSwap.bind(this),
-                this.network
+                this.network,
             );
             this.contractsMap.set(pool.id, poolContract);
 
@@ -131,20 +135,25 @@ class UniswapV3Dex extends BaseDex {
         [tokenA, tokenC] = swap.amount0 > 0 ? [inputTokens[0], inputTokens[1]] : [inputTokens[1], inputTokens[0]];
 
         const swapName = `${tokenA.symbol} -> ${tokenC.symbol}`;
-        const [swapInputAmount, swapOutAmount] = swap.amount0 > 0 ? [swap.amount0, swap.amount1] : [
-            swap.amount1, swap.amount0
-        ];
+        const [swapInputAmount, swapOutAmount] =
+            swap.amount0 > 0 ? [swap.amount0, swap.amount1] : [swap.amount1, swap.amount0];
         logger.debug(
             `Processing swap: ${swapName}, amountA=${swapInputAmount}, amountC=${swapOutAmount}`,
-            this.constructor.name
+            this.constructor.name,
         );
 
         const opportunity: Opportunity = {
             tokenAIn: BigNumber.from(swapInputAmount).div(100), // Start dividing by 100 and adapt
-            lastPoolSqrtPriceX96: lastPoolSqrtPriceX96, originalSwap: swap, expectedProfit: undefined, // To be
-                                                                                                       // calculated
-            originalSwapPriceImpact: undefined, arbitrageInfo: {
-                swap1: undefined, swap2: undefined, swap3: undefined, estimatedGasCost: BigNumber.from(0),
+            lastPoolSqrtPriceX96: lastPoolSqrtPriceX96,
+            originalSwap: swap,
+            expectedProfit: undefined, // To be
+            // calculated
+            originalSwapPriceImpact: undefined,
+            arbitrageInfo: {
+                swap1: undefined,
+                swap2: undefined,
+                swap3: undefined,
+                estimatedGasCost: BigNumber.from(0),
             },
         };
 
@@ -152,7 +161,7 @@ class UniswapV3Dex extends BaseDex {
             opportunity.originalSwapPriceImpact = swap.calculatePriceImpact(
                 opportunity.lastPoolSqrtPriceX96,
                 tokenA.decimals,
-                tokenC.decimals
+                tokenC.decimals,
             );
         } catch (error) {
             logger.warn(`Error calculating price impact: ${error}`, this.constructor.name);
@@ -161,7 +170,7 @@ class UniswapV3Dex extends BaseDex {
 
         logger.debug(
             `Calculated price impact of ${opportunity.originalSwapPriceImpact} (bps) for swap: ${swapName}`,
-            this.constructor.name
+            this.constructor.name,
         );
 
         if (isPriceImpactSignificant(opportunity.originalSwapPriceImpact)) {
@@ -170,12 +179,15 @@ class UniswapV3Dex extends BaseDex {
     }
 
     private async handleSignificantPriceImpact(
-        opportunity: Opportunity, tokenA: Token, tokenC: Token, swapName: string,
-        contract: PoolContract
+        opportunity: Opportunity,
+        tokenA: Token,
+        tokenC: Token,
+        swapName: string,
+        contract: PoolContract,
     ) {
         logger.info(
             `Significant price impact (${opportunity.originalSwapPriceImpact}) detected for swap: ${swapName}`,
-            this.constructor.name
+            this.constructor.name,
         );
 
         const candidateTokenBs: Token[] = this.findIntermediaryTokens(tokenA.symbol, tokenC.symbol);
@@ -237,4 +249,4 @@ class UniswapV3Dex extends BaseDex {
     }
 }
 
-export {UniswapV3Dex};
+export { UniswapV3Dex };

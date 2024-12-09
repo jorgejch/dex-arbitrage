@@ -1,9 +1,9 @@
-import {beforeEach, expect, it, vi} from "vitest";
-import {BigNumber} from "alchemy-sdk";
-import {Decimal} from "decimal.js";
-import {BaseDex} from "../../../src/dexes/baseDex.js";
-import {ExpectedProfitData, Pool, Token} from "../../../src/types.js";
-import {PoolContract} from "../../../src/contracts/poolContract.js";
+import { beforeEach, expect, it, vi } from "vitest";
+import { BigNumber } from "alchemy-sdk";
+import { Decimal } from "decimal.js";
+import { BaseDex } from "../../../src/dexes/baseDex.js";
+import { ExpectedProfitData, Pool, Token } from "../../../src/types.js";
+import { PoolContract } from "../../../src/contracts/poolContract.js";
 
 // Mocking dependencies
 class MockPoolContract {
@@ -11,27 +11,48 @@ class MockPoolContract {
 }
 
 const mockTokenA: Token = {
-    id: "0xaaaaaa", symbol: "A", decimals: 18, name: "Token A",
+    id: "0xaaaaaa",
+    symbol: "A",
+    decimals: 18,
+    name: "Token A",
 };
 
 const mockTokenB: Token = {
-    id: "0xbbbbbb", symbol: "B", decimals: 18, name: "Token B",
+    id: "0xbbbbbb",
+    symbol: "B",
+    decimals: 18,
+    name: "Token B",
 };
 
 const mockTokenC: Token = {
-    id: "0xcccccc", symbol: "C", decimals: 18, name: "Token C",
+    id: "0xcccccc",
+    symbol: "C",
+    decimals: 18,
+    name: "Token C",
 };
 
 const mockPoolA: Pool = {
-    id: "poolA", inputTokens: [mockTokenA, mockTokenB], name: "", symbol: "", fees: [],
+    id: "poolA",
+    inputTokens: [mockTokenA, mockTokenB],
+    name: "",
+    symbol: "",
+    fees: [],
 };
 
 const mockPoolB: Pool = {
-    id: "poolB", inputTokens: [mockTokenB, mockTokenC], name: "", symbol: "", fees: [],
+    id: "poolB",
+    inputTokens: [mockTokenB, mockTokenC],
+    name: "",
+    symbol: "",
+    fees: [],
 };
 
 const mockPoolC: Pool = {
-    id: "poolC", inputTokens: [mockTokenA, mockTokenC], name: "", symbol: "", fees: [],
+    id: "poolC",
+    inputTokens: [mockTokenA, mockTokenC],
+    name: "",
+    symbol: "",
+    fees: [],
 };
 
 // Mock LendingPoolAPContract
@@ -67,12 +88,20 @@ class TestDex extends BaseDex {
     }
 
     public testCalculateExpectedProfit(
-        tokenA: Token, tokenB: Token, tokenC: Token, inputAmount: BigNumber,
-        swapPoolContracts: PoolContract[], lendingPoolFeePercentage: Decimal
+        tokenA: Token,
+        tokenB: Token,
+        tokenC: Token,
+        inputAmount: BigNumber,
+        swapPoolContracts: PoolContract[],
+        lendingPoolFeePercentage: Decimal,
     ): ExpectedProfitData {
         return this.calculateExpectedProfit(
-            tokenA, tokenB, tokenC, inputAmount, swapPoolContracts,
-            lendingPoolFeePercentage
+            tokenA,
+            tokenB,
+            tokenC,
+            inputAmount,
+            swapPoolContracts,
+            lendingPoolFeePercentage,
         );
     }
 }
@@ -83,8 +112,12 @@ let dex: TestDex;
 beforeEach(() => {
     mockPoolContract = new MockPoolContract();
     dex = new TestDex(
-        MockAlchemy as any, MockWallet as any, MockDexPoolSubgraph as any, MockAflabContract as any,
-        MockLendingPoolAPContract as any, 1 // network ID
+        MockAlchemy as any,
+        MockWallet as any,
+        MockDexPoolSubgraph as any,
+        MockAflabContract as any,
+        MockLendingPoolAPContract as any,
+        1, // network ID
     );
 
     // Setup internal state maps
@@ -118,10 +151,16 @@ it("should return pool contracts common to two tokens", () => {
 
 it("should return empty array if no pools found", () => {
     const tokenX: Token = {
-        id: "X", symbol: "X", decimals: 18, name: "",
+        id: "X",
+        symbol: "X",
+        decimals: 18,
+        name: "",
     };
     const tokenY: Token = {
-        id: "Y", symbol: "Y", decimals: 18, name: "",
+        id: "Y",
+        symbol: "Y",
+        decimals: 18,
+        name: "",
     };
     const result = dex.testGetPoolContractsForTokens(tokenX, tokenY);
     expect(result).toEqual([]);
@@ -136,9 +175,14 @@ it("should calculate expected profit for a three-step arbitrage if profitable", 
     mockPoolContract.getLastPoolSqrtPriceX96.mockReturnValue(BigNumber.from("1000000000000000000000000"));
 
     // Act
-    const result = dex.testCalculateExpectedProfit(mockTokenA, mockTokenB, mockTokenC, inputAmount, [
-        mockPoolContract as any, mockPoolContract as any, mockPoolContract as any
-    ], lendingPoolFee);
+    const result = dex.testCalculateExpectedProfit(
+        mockTokenA,
+        mockTokenB,
+        mockTokenC,
+        inputAmount,
+        [mockPoolContract as any, mockPoolContract as any, mockPoolContract as any],
+        lendingPoolFee,
+    );
 
     // Assert
     // We are not sure what the exact profit would be since it's dependent on the mocked values.
@@ -154,8 +198,13 @@ it("should handle case when net output is non-positive in intermediate swaps", a
     mockPoolContract.getLastPoolSqrtPriceX96.mockReturnValue(BigNumber.from("1")); // Very small sqrt price
     const inputAmount = BigNumber.from("1000");
     const lendingPoolFee = await MockLendingPoolAPContract.getFlashloanFee();
-    const result = dex.testCalculateExpectedProfit(mockTokenA, mockTokenB, mockTokenC, inputAmount, [
-        mockPoolContract as any, mockPoolContract as any, mockPoolContract as any
-    ], lendingPoolFee);
+    const result = dex.testCalculateExpectedProfit(
+        mockTokenA,
+        mockTokenB,
+        mockTokenC,
+        inputAmount,
+        [mockPoolContract as any, mockPoolContract as any, mockPoolContract as any],
+        lendingPoolFee,
+    );
     expect(result.expectedProfit.toNumber()).toBe(0);
 });

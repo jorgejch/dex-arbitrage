@@ -1,8 +1,8 @@
-import {Token} from "../types.js";
-import {sqrtPriceX96ToDecimal} from "../common.js";
+import { Token } from "../types.js";
+import { sqrtPriceX96ToDecimal } from "../common.js";
 
-import {BigNumber} from "alchemy-sdk";
-import {Decimal} from "decimal.js";
+import { BigNumber } from "alchemy-sdk";
+import { Decimal } from "decimal.js";
 
 /**
  * BaseSwap is an abstract class that represents a swap event.
@@ -31,8 +31,13 @@ abstract class BaseSwap {
     inputTokens?: Token[];
 
     protected constructor(
-        sender: string, recipient: string, amount0: bigint, amount1: bigint, sqrtPriceX96: BigNumber,
-        liquidity: bigint, poolContractAddress: string
+        sender: string,
+        recipient: string,
+        amount0: bigint,
+        amount1: bigint,
+        sqrtPriceX96: BigNumber,
+        liquidity: bigint,
+        poolContractAddress: string,
     ) {
         this.sender = sender;
         this.recipient = recipient;
@@ -76,8 +81,9 @@ abstract class BaseSwap {
      * @throws An error if the price before the swap is zero
      */
     public calculatePriceImpact(
-        lastPoolSqrtPriceX96: BigNumber, token0BigNumbers: number,
-        token1BigNumbers: number
+        lastPoolSqrtPriceX96: BigNumber,
+        token0BigNumbers: number,
+        token1BigNumbers: number,
     ): number {
         if (lastPoolSqrtPriceX96.eq(0)) {
             throw new Error("Division by zero error: priceBefore is zero");
@@ -89,10 +95,8 @@ abstract class BaseSwap {
         const priceBefore: Decimal = sqrtPriceX96ToDecimal(lastPoolSqrtPriceX96, token0BigNumbers, token1BigNumbers);
 
         // Calculate the price impact in bps.
-        const priceImpact: Decimal = priceAfter
-            .sub(priceBefore)
-            .div(priceBefore)
-            .mul(10000); // Convert to basis points (bps)
+        const priceImpact: Decimal = priceAfter.sub(priceBefore).div(priceBefore).mul(10000); // Convert to basis
+        // points (bps)
 
         return priceImpact.abs().round().toNumber();
     }
@@ -102,4 +106,4 @@ abstract class BaseSwap {
     }
 }
 
-export {BaseSwap};
+export { BaseSwap };

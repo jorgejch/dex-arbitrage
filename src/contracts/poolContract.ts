@@ -1,10 +1,10 @@
-import {ContractType, Pool, Token} from "../types.js";
-import {BaseContract} from "./baseContract.js";
-import {logger} from "../common.js";
-import {UniswapV3Swap} from "../swaps/uniswapV3Swap.js";
+import { ContractType, Pool, Token } from "../types.js";
+import { BaseContract } from "./baseContract.js";
+import { logger } from "../common.js";
+import { UniswapV3Swap } from "../swaps/uniswapV3Swap.js";
 
-import {Alchemy, BigNumber, Contract} from "alchemy-sdk";
-import {Decimal} from "decimal.js";
+import { Alchemy, BigNumber, Contract } from "alchemy-sdk";
+import { Decimal } from "decimal.js";
 
 /**
  * A contract class representing a liquidity pool.
@@ -24,16 +24,18 @@ import {Decimal} from "decimal.js";
  * @param network - The network ID.
  */
 class PoolContract extends BaseContract {
-
     protected readonly pool: Pool;
     private readonly processSwap: (psv3Swap: UniswapV3Swap, lastPoolSqrtPriceX96: BigNumber) => Promise<void>;
     private lastPoolSqrtPriceX96: BigNumber;
     private totalPoolFeesCache: Decimal | null = null;
 
     constructor(
-        address: string, alchemy: Alchemy, abi: object[], pool: Pool,
+        address: string,
+        alchemy: Alchemy,
+        abi: object[],
+        pool: Pool,
         processSwapFunction: (psv3Swap: UniswapV3Swap, lastPoolSqrtPriceX96: BigNumber) => Promise<void>,
-        network: number
+        network: number,
     ) {
         super(address, abi, ContractType.POOL, alchemy, network);
         this.processSwap = processSwapFunction;
@@ -116,24 +118,29 @@ class PoolContract extends BaseContract {
         logger.info(`Listening for Swap events on contract ${this.address}`, this.constructor.name);
     }
 
-    private async swapEventCallback(...args: [
-        string, // sender
-        string, // recipient
-        bigint, // amount0
-        bigint, // amount1
-        bigint, // sqrtPriceX96
-        bigint, // liquidity
-        number, // tick
-    ]) {
+    private async swapEventCallback(
+        ...args: [
+            string, // sender
+            string, // recipient
+            bigint, // amount0
+            bigint, // amount1
+            bigint, // sqrtPriceX96
+            bigint, // liquidity
+            number, // tick
+        ]
+    ) {
         try {
-            const [
-                sender, recipient, amount0, amount1, sqrtPriceX96, liquidity,
-            ] = args;
+            const [sender, recipient, amount0, amount1, sqrtPriceX96, liquidity] = args;
             const poolContractAddress = this.address;
             const sqrtPriceX96BigNumber = BigNumber.from(sqrtPriceX96);
             const swap = new UniswapV3Swap(
-                sender, recipient, amount0, amount1, sqrtPriceX96BigNumber, liquidity,
-                poolContractAddress
+                sender,
+                recipient,
+                amount0,
+                amount1,
+                sqrtPriceX96BigNumber,
+                liquidity,
+                poolContractAddress,
             );
 
             /*
@@ -160,4 +167,4 @@ class PoolContract extends BaseContract {
     }
 }
 
-export {PoolContract};
+export { PoolContract };

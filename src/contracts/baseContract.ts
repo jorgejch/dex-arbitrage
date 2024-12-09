@@ -1,6 +1,6 @@
-import {logger} from "../common.js";
-import {ContractType} from "../types.js";
-import {Alchemy, Contract} from "alchemy-sdk";
+import { logger } from "../common.js";
+import { ContractType } from "../types.js";
+import { Alchemy, Contract } from "alchemy-sdk";
 
 /**
  * Abstract base class for managing smart contract interactions.
@@ -86,4 +86,4 @@ abstract class BaseContract {
     protected abstract customInit(): Promise<void>;
 }
 
-export {BaseContract};
+export { BaseContract };

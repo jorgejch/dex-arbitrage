@@ -2,16 +2,19 @@
  * @fileoverview TypeScript types used in AFLAB
  */
 
-import {Decimal} from "decimal.js";
-import {BaseSwap} from "./swaps/baseSwap.js";
-import {BigNumber} from "alchemy-sdk";
+import { Decimal } from "decimal.js";
+import { BaseSwap } from "./swaps/baseSwap.js";
+import { BigNumber } from "alchemy-sdk";
 
 /**
  * Contract type enum
  * @enum {string}
  */
 enum ContractType {
-    TEST = "TEST", POOL = "POOL", AFLAB = "AFLAB", POOL_ADDRESS_PROVIDER = "POOL_ADDRESS_PROVIDER",
+    TEST = "TEST",
+    POOL = "POOL",
+    AFLAB = "AFLAB",
+    POOL_ADDRESS_PROVIDER = "POOL_ADDRESS_PROVIDER",
 }
 
 /**

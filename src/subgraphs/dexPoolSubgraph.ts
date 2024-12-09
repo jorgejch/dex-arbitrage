@@ -1,6 +1,6 @@
-import {BaseSubgraph} from "./baseSubgraph.js";
-import {getHoursSinceUnixEpoch, logger} from "../common.js";
-import {LiquidityPoolHourlySnapshot, Pool} from "../types.js";
+import { BaseSubgraph } from "./baseSubgraph.js";
+import { getHoursSinceUnixEpoch, logger } from "../common.js";
+import { LiquidityPoolHourlySnapshot, Pool } from "../types.js";
 
 interface FetchPoolsContext {
     uniquePoolIds: Set<string>;
@@ -32,21 +32,28 @@ class DexPoolSubgraph extends BaseSubgraph {
      * @returns A promise that resolves to an array of Pool objects.
      */
     public async getPools(
-        limit = 100, numPagesToFetch = 10, pageSize = 10,
-        hsUnixEpoch: number = getHoursSinceUnixEpoch()
+        limit = 100,
+        numPagesToFetch = 10,
+        pageSize = 10,
+        hsUnixEpoch: number = getHoursSinceUnixEpoch(),
     ): Promise<Pool[]> {
         const allPools: Pool[] = [];
         const uniquePoolIds = new Set<string>();
         let skip = 0;
         const context: FetchPoolsContext = {
-            uniquePoolIds, allPools, totalRecords: 0,
+            uniquePoolIds,
+            allPools,
+            totalRecords: 0,
         };
 
-        logger.debug(`Getting pools. Parameters: {`
-                     + `limit: ${limit}, `
-                     + `numOfPagesPerCall: ${numPagesToFetch}, `
-                     + `pageSize: ${pageSize}, `
-                     + `hoursSinceUnixEpoch: ${hsUnixEpoch}}`, this.constructor.name);
+        logger.debug(
+            `Getting pools. Parameters: {` +
+                `limit: ${limit}, ` +
+                `numOfPagesPerCall: ${numPagesToFetch}, ` +
+                `pageSize: ${pageSize}, ` +
+                `hoursSinceUnixEpoch: ${hsUnixEpoch}}`,
+            this.constructor.name,
+        );
 
         await this.handlePoolFetching(hsUnixEpoch, numPagesToFetch, pageSize, skip, limit, context);
         return allPools;
@@ -54,7 +61,9 @@ class DexPoolSubgraph extends BaseSubgraph {
 
     protected customInit(): void {
         /* Define queries */
-        this.addQuery("pools", `
+        this.addQuery(
+            "pools",
+            `
       query ($hoursSinceUnixEpoch: Int!, $size: Int!, $offset: Int!) {
       liquidityPoolHourlySnapshots(
         first: $size,
@@ -80,15 +89,20 @@ class DexPoolSubgraph extends BaseSubgraph {
         }
       }
       }
-      `);
+      `,
+        );
     }
 
     /**
      * Fetches pools from the subgraph until the limit is reached.
      */
     private async handlePoolFetching(
-        hsUnixEpoch: number, numPagesToFetch: number, pageSize: number, skip: number,
-        limit: number, context: FetchPoolsContext
+        hsUnixEpoch: number,
+        numPagesToFetch: number,
+        pageSize: number,
+        skip: number,
+        limit: number,
+        context: FetchPoolsContext,
     ): Promise<void> {
         let hasMore = true;
         while (hasMore && context.totalRecords < limit) {
@@ -99,7 +113,7 @@ class DexPoolSubgraph extends BaseSubgraph {
                     pageSize,
                     skip,
                     limit,
-                    context
+                    context,
                 );
                 context.totalRecords += returnInfo.fetchedRecords;
                 hasMore = returnInfo.hasMore;
@@ -123,15 +137,23 @@ class DexPoolSubgraph extends BaseSubgraph {
      * @returns The number of fetched records and a boolean indicating if there are more records to fetch
      */
     private async fetchPoolPages(
-        hsUnixEpoch: number, numPagesToFetch: number, pageSize: number, skip: number,
-        limit: number, context: FetchPoolsContext
+        hsUnixEpoch: number,
+        numPagesToFetch: number,
+        pageSize: number,
+        skip: number,
+        limit: number,
+        context: FetchPoolsContext,
     ): Promise<{ fetchedRecords: number; hasMore: boolean }> {
         const query = this.getQuery("pools");
         const fetchPromises = [];
         for (let i = 0; i < numPagesToFetch; i++) {
-            fetchPromises.push(this.fetchData(query, {
-                hoursSinceUnixEpoch: hsUnixEpoch, size: pageSize, offset: skip + i * pageSize,
-            }));
+            fetchPromises.push(
+                this.fetchData(query, {
+                    hoursSinceUnixEpoch: hsUnixEpoch,
+                    size: pageSize,
+                    offset: skip + i * pageSize,
+                }),
+            );
         }
 
         const responses = await Promise.all(fetchPromises);
@@ -158,8 +180,8 @@ class DexPoolSubgraph extends BaseSubgraph {
         logger.debug(`Fetched ${fetchedRecords} records.`, this.constructor.name);
 
         const hasMore = fetchedRecords === numPagesToFetch * pageSize && context.totalRecords + fetchedRecords < limit;
-        return {fetchedRecords, hasMore};
+        return { fetchedRecords, hasMore };
     }
 }
 
-export {DexPoolSubgraph};
+export { DexPoolSubgraph };

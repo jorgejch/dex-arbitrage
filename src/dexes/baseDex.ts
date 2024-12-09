@@ -1,12 +1,12 @@
-import {ExpectedProfitData, NetOutputData, Opportunity, Pool, Token, TokenBPickData,} from "../types.js";
-import {PoolContract} from "../contracts/poolContract.js";
-import {AflabContract} from "../contracts/aflabContract.js";
-import {BaseSwap} from "../swaps/baseSwap.js";
-import {DexPoolSubgraph} from "../subgraphs/dexPoolSubgraph.js";
-import {constants, logger, sqrtPriceX96ToDecimal} from "../common.js";
-import {Alchemy, BigNumber, Wallet} from "alchemy-sdk";
-import {Decimal} from "decimal.js";
-import {LendingPoolAPContract} from "../contracts/lendingPoolAPContract.js";
+import { ExpectedProfitData, NetOutputData, Opportunity, Pool, Token, TokenBPickData } from "../types.js";
+import { PoolContract } from "../contracts/poolContract.js";
+import { AflabContract } from "../contracts/aflabContract.js";
+import { BaseSwap } from "../swaps/baseSwap.js";
+import { DexPoolSubgraph } from "../subgraphs/dexPoolSubgraph.js";
+import { constants, logger, sqrtPriceX96ToDecimal } from "../common.js";
+import { Alchemy, BigNumber, Wallet } from "alchemy-sdk";
+import { Decimal } from "decimal.js";
+import { LendingPoolAPContract } from "../contracts/lendingPoolAPContract.js";
 
 /**
  * Abstract class representing an Uniswap V3-based Decentralized Exchange (DEX).
@@ -76,8 +76,12 @@ abstract class BaseDex {
      * @param network - The network ID.
      */
     constructor(
-        alchemy: Alchemy, wallet: Wallet, subgraph: DexPoolSubgraph, aflabContract: AflabContract,
-        lendingPoolAPContract: LendingPoolAPContract, network: number
+        alchemy: Alchemy,
+        wallet: Wallet,
+        subgraph: DexPoolSubgraph,
+        aflabContract: AflabContract,
+        lendingPoolAPContract: LendingPoolAPContract,
+        network: number,
     ) {
         this.alchemy = alchemy;
         this.wallet = wallet;
@@ -156,8 +160,12 @@ abstract class BaseDex {
      *     swap minus the initial input amount.
      */
     protected calculateExpectedProfit(
-        tokenA: Token, tokenB: Token, tokenC: Token, inputAmount: BigNumber,
-        swapPoolContracts: PoolContract[], lendingPoolFeePercentage: Decimal
+        tokenA: Token,
+        tokenB: Token,
+        tokenC: Token,
+        inputAmount: BigNumber,
+        swapPoolContracts: PoolContract[],
+        lendingPoolFeePercentage: Decimal,
     ): ExpectedProfitData {
         const returnPayload: ExpectedProfitData = {
             expectedProfit: BigNumber.from(0),
@@ -204,36 +212,40 @@ abstract class BaseDex {
         if (swap3Result.netOutput.lte(0)) return returnPayload;
         returnPayload.swap3FeeBigNumber = BigNumber.from(swap3Result.feeDecimal.mul(10 ** 7).toFixed(0));
 
-        const lendingPoolFeeBigNumber = BigNumber.from(new Decimal(inputAmount.toString()).mul(lendingPoolFeePercentage)
-                                                                                          .toFixed(0));
+        const lendingPoolFeeBigNumber = BigNumber.from(
+            new Decimal(inputAmount.toString()).mul(lendingPoolFeePercentage).toFixed(0),
+        );
         const expectedProfit = swap3Result.netOutput.sub(inputAmount.add(lendingPoolFeeBigNumber));
         returnPayload.expectedProfit = expectedProfit;
 
-        logger.debug(`\n========== Expected Profit Calculation ==========\n`
-                     + `\tInput Amount: ${inputAmount}\n`
-                     + `\tSwap 1: ${tokenA.symbol} to ${tokenB.symbol}\n`
-                     + `\t\tPrice: ${swap1Result.price}\n`
-                     + `\t\tGross Output: ${swap1Result.grossOutput}\n`
-                     + `\t\tNet Output: ${swap1Result.netOutput}\n`
-                     + `\t\tFee Decimal: ${swap1Result.feeDecimal}\n`
-                     + `\t\tFee: ${swap1Result.fee}\n`
-                     + `\tSwap 2: ${tokenB.symbol} to ${tokenC.symbol}\n`
-                     + `\t\tPrice: ${swap2Result.price}\n`
-                     + `\t\tGross Output: ${swap2Result.grossOutput}\n`
-                     + `\t\tNet Output: ${swap2Result.netOutput}\n`
-                     + `\t\tFee Decimal: ${swap2Result.feeDecimal}\n`
-                     + `\t\tFee: ${swap2Result.fee}\n`
-                     + `\tSwap 3: ${tokenC.symbol} to ${tokenA.symbol}\n`
-                     + `\t\tPrice: ${swap3Result.price}\n`
-                     + `\t\tGross Output: ${swap3Result.grossOutput}\n`
-                     + `\t\tNet Output: ${swap3Result.netOutput}\n`
-                     + `\t\tFee Decimal: ${swap3Result.feeDecimal}\n`
-                     + `\t\tFee: ${swap3Result.fee}\n`
-                     + `\tLending Pool Fee Percentage: ${lendingPoolFeePercentage}\n`
-                     + `\tLending Pool Fee: ${lendingPoolFeeBigNumber}\n`
-                     + `\tExpected Profit: ${expectedProfit}\n`
-                     + `\tExpected Profit (%): ${expectedProfit.mul(100).div(inputAmount)}%\n`
-                     + `==================================================`, this.constructor.name);
+        logger.debug(
+            `\n========== Expected Profit Calculation ==========\n` +
+                `\tInput Amount: ${inputAmount}\n` +
+                `\tSwap 1: ${tokenA.symbol} to ${tokenB.symbol}\n` +
+                `\t\tPrice: ${swap1Result.price}\n` +
+                `\t\tGross Output: ${swap1Result.grossOutput}\n` +
+                `\t\tNet Output: ${swap1Result.netOutput}\n` +
+                `\t\tFee Decimal: ${swap1Result.feeDecimal}\n` +
+                `\t\tFee: ${swap1Result.fee}\n` +
+                `\tSwap 2: ${tokenB.symbol} to ${tokenC.symbol}\n` +
+                `\t\tPrice: ${swap2Result.price}\n` +
+                `\t\tGross Output: ${swap2Result.grossOutput}\n` +
+                `\t\tNet Output: ${swap2Result.netOutput}\n` +
+                `\t\tFee Decimal: ${swap2Result.feeDecimal}\n` +
+                `\t\tFee: ${swap2Result.fee}\n` +
+                `\tSwap 3: ${tokenC.symbol} to ${tokenA.symbol}\n` +
+                `\t\tPrice: ${swap3Result.price}\n` +
+                `\t\tGross Output: ${swap3Result.grossOutput}\n` +
+                `\t\tNet Output: ${swap3Result.netOutput}\n` +
+                `\t\tFee Decimal: ${swap3Result.feeDecimal}\n` +
+                `\t\tFee: ${swap3Result.fee}\n` +
+                `\tLending Pool Fee Percentage: ${lendingPoolFeePercentage}\n` +
+                `\tLending Pool Fee: ${lendingPoolFeeBigNumber}\n` +
+                `\tExpected Profit: ${expectedProfit}\n` +
+                `\tExpected Profit (%): ${expectedProfit.mul(100).div(inputAmount)}%\n` +
+                `==================================================`,
+            this.constructor.name,
+        );
 
         return returnPayload;
     }
@@ -248,13 +260,18 @@ abstract class BaseDex {
      * @returns {NetOutputData} The net output data after the swap.
      */
     protected calculateNetOutput(
-        inputAmount: BigNumber, fromToken: Token, toToken: Token,
-        poolContract: PoolContract
+        inputAmount: BigNumber,
+        fromToken: Token,
+        toToken: Token,
+        poolContract: PoolContract,
     ): NetOutputData {
         const sqrtPriceX96: BigNumber = poolContract.getLastPoolSqrtPriceX96();
         if (sqrtPriceX96 === undefined || sqrtPriceX96.lte(0)) {
-            logger.debug(`Last price value for ${fromToken.symbol} to ${toToken.symbol} swap has not been `
-                         + `initialized or is zero.`, this.constructor.name);
+            logger.debug(
+                `Last price value for ${fromToken.symbol} to ${toToken.symbol} swap has not been ` +
+                    `initialized or is zero.`,
+                this.constructor.name,
+            );
             throw new Error("Last price value not initialized or is zero");
         }
 
@@ -281,7 +298,11 @@ abstract class BaseDex {
         const grossOutput = BigNumber.from(grossOutputDecimal.toFixed(0));
         const netOutput = grossOutput.sub(fee);
         return {
-            price, netOutput, grossOutput, feeDecimal, fee,
+            price,
+            netOutput,
+            grossOutput,
+            feeDecimal,
+            fee,
         };
     }
 
@@ -348,8 +369,11 @@ abstract class BaseDex {
      *     identified.
      */
     protected async pickTokenB(
-        tokenA: Token, tokenC: Token, possibleBs: Token[], inputAmount: BigNumber,
-        swapPoolContract: PoolContract
+        tokenA: Token,
+        tokenC: Token,
+        possibleBs: Token[],
+        inputAmount: BigNumber,
+        swapPoolContract: PoolContract,
     ): Promise<TokenBPickData> {
         const profitablePicks: TokenBPickData[] = [];
 
@@ -377,18 +401,15 @@ abstract class BaseDex {
                         tokenB,
                         tokenC,
                         inputAmount,
-                        [
-                            swap1PoolContract,
-                            swap2PoolContract,
-                            swap3PoolContract
-                        ],
-                        await this.lendingPoolAPContract.getFlashloanFee()
+                        [swap1PoolContract, swap2PoolContract, swap3PoolContract],
+                        await this.lendingPoolAPContract.getFlashloanFee(),
                     );
 
                     if (expectedProfitData.expectedProfit.gt(0)) {
                         profitablePicks.push({
-                                                 expectedProfitData, tokenB,
-                                             });
+                            expectedProfitData,
+                            tokenB,
+                        });
                     }
                 }
             }
@@ -410,36 +431,35 @@ abstract class BaseDex {
      */
     protected logOpportunity(opportunity: Opportunity): void {
         // Check if all the opportunity's parameters are defined
-        if (opportunity.arbitrageInfo.swap1
-            === undefined
-            || opportunity.arbitrageInfo.swap2
-            === undefined
-            || opportunity.arbitrageInfo.swap3
-            === undefined
-            || opportunity.arbitrageInfo.estimatedGasCost
-            === undefined
-            || opportunity.tokenAIn
-            === undefined
-            || opportunity.expectedProfit
-            === undefined
-            || opportunity.originalSwapPriceImpact
-            === undefined) {
+        if (
+            opportunity.arbitrageInfo.swap1 === undefined ||
+            opportunity.arbitrageInfo.swap2 === undefined ||
+            opportunity.arbitrageInfo.swap3 === undefined ||
+            opportunity.arbitrageInfo.estimatedGasCost === undefined ||
+            opportunity.tokenAIn === undefined ||
+            opportunity.expectedProfit === undefined ||
+            opportunity.originalSwapPriceImpact === undefined
+        ) {
             throw new Error("Opportunity parameters are not defined");
         }
 
         // Log the opportunity details
-        logger.info(`\n========== Arbitrage Opportunity ==========\n`
-                    + `\tInput Amount: ${opportunity.tokenAIn}\n`
-                    + `\tToken A: ${opportunity.arbitrageInfo.swap1.tokenIn.symbol}\n`
-                    + `\tToken B: ${opportunity.arbitrageInfo.swap2.tokenIn.symbol}\n`
-                    + `\tToken C: ${opportunity.arbitrageInfo.swap3.tokenIn.symbol}\n`
-                    + `\tOriginal Swap Price Impact: ${opportunity.originalSwapPriceImpact}\n`
-                    + `\tEstimated Gas Cost: ${opportunity.arbitrageInfo.estimatedGasCost}\n`
-                    + `\tExpected Profit: ${opportunity.expectedProfit}\n`
-                    + `\tExpected Profit (%): ${new Decimal(opportunity.expectedProfit.toString()).div(new Decimal(
-                opportunity.tokenAIn.toString())).mul(100)
-                                                                                                  .toString()}%\n`
-                    + `===========================================`, this.constructor.name);
+        logger.info(
+            `\n========== Arbitrage Opportunity ==========\n` +
+                `\tInput Amount: ${opportunity.tokenAIn}\n` +
+                `\tToken A: ${opportunity.arbitrageInfo.swap1.tokenIn.symbol}\n` +
+                `\tToken B: ${opportunity.arbitrageInfo.swap2.tokenIn.symbol}\n` +
+                `\tToken C: ${opportunity.arbitrageInfo.swap3.tokenIn.symbol}\n` +
+                `\tOriginal Swap Price Impact: ${opportunity.originalSwapPriceImpact}\n` +
+                `\tEstimated Gas Cost: ${opportunity.arbitrageInfo.estimatedGasCost}\n` +
+                `\tExpected Profit: ${opportunity.expectedProfit}\n` +
+                `\tExpected Profit (%): ${new Decimal(opportunity.expectedProfit.toString())
+                    .div(new Decimal(opportunity.tokenAIn.toString()))
+                    .mul(100)
+                    .toString()}%\n` +
+                `===========================================`,
+            this.constructor.name,
+        );
     }
 
     /**
@@ -460,4 +480,4 @@ abstract class BaseDex {
     }
 }
 
-export {BaseDex};
+export { BaseDex };

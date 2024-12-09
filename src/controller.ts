@@ -1,10 +1,10 @@
-import {BaseDex} from "./dexes/baseDex.js";
-import {UniswapV3Dex} from "./dexes/uniswapV3Dex.js";
-import {DexPoolSubgraph} from "./subgraphs/dexPoolSubgraph.js";
-import {config, getTGUrl, logger} from "./common.js";
-import {AflabContract} from "./contracts/aflabContract.js";
-import {LendingPoolAPContract} from "./contracts/lendingPoolAPContract.js";
-import {Alchemy, Network, Wallet} from "alchemy-sdk";
+import { BaseDex } from "./dexes/baseDex.js";
+import { UniswapV3Dex } from "./dexes/uniswapV3Dex.js";
+import { DexPoolSubgraph } from "./subgraphs/dexPoolSubgraph.js";
+import { config, getTGUrl, logger } from "./common.js";
+import { AflabContract } from "./contracts/aflabContract.js";
+import { LendingPoolAPContract } from "./contracts/lendingPoolAPContract.js";
+import { Alchemy, Network, Wallet } from "alchemy-sdk";
 
 class Controller {
     private readonly wallet: Wallet;
@@ -28,19 +28,24 @@ class Controller {
      * @throws Will throw an error if initialization fails.
      */
     constructor(
-        walletPrivateKey: string, aflabContractAddress: string, theGraphBaseUrl: string, theGraphApiKey: string,
-        uniswapV3SubgraphName: string, alchemyApiKey: string, aavePoolAddressProviderContractAddress: string
+        walletPrivateKey: string,
+        aflabContractAddress: string,
+        theGraphBaseUrl: string,
+        theGraphApiKey: string,
+        uniswapV3SubgraphName: string,
+        alchemyApiKey: string,
+        aavePoolAddressProviderContractAddress: string,
     ) {
         try {
             this.theGraphBaseUrl = theGraphBaseUrl;
             this.theGraphApiKey = theGraphApiKey;
             this.uniswapV3SubgraphName = uniswapV3SubgraphName;
             this.alchemy = new Alchemy({
-                                           apiKey: alchemyApiKey,
-                                           network: Network.MATIC_MAINNET,
-                                           maxRetries: 3,
-                                           requestTimeout: 30000,
-                                       });
+                apiKey: alchemyApiKey,
+                network: Network.MATIC_MAINNET,
+                maxRetries: 3,
+                requestTimeout: 30000,
+            });
             this.wallet = new Wallet(walletPrivateKey, this.alchemy);
             this.aflabContractAddress = aflabContractAddress;
             this.aavePoolAddressProviderContractAddress = aavePoolAddressProviderContractAddress;
@@ -94,18 +99,20 @@ class Controller {
     private async initializeDexes() {
         this.dexes = [
             new UniswapV3Dex(
-                this.alchemy, this.wallet, new DexPoolSubgraph(
-                    getTGUrl(this.theGraphBaseUrl, this.uniswapV3SubgraphName, this.theGraphApiKey)),
-                new AflabContract(
-                    this.aflabContractAddress, config.AFLAB_ABI, this.alchemy, this.wallet,
-                    137
-                ), new LendingPoolAPContract(
-                    this.aavePoolAddressProviderContractAddress, this.alchemy,
-                    config.LENDING_POOL_AP_ABI, 137
-                ), 137
+                this.alchemy,
+                this.wallet,
+                new DexPoolSubgraph(getTGUrl(this.theGraphBaseUrl, this.uniswapV3SubgraphName, this.theGraphApiKey)),
+                new AflabContract(this.aflabContractAddress, config.AFLAB_ABI, this.alchemy, this.wallet, 137),
+                new LendingPoolAPContract(
+                    this.aavePoolAddressProviderContractAddress,
+                    this.alchemy,
+                    config.LENDING_POOL_AP_ABI,
+                    137,
+                ),
+                137,
             ),
         ];
     }
 }
 
-export {Controller};
+export { Controller };

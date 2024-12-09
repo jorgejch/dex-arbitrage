@@ -1,9 +1,9 @@
-import {BaseContract} from "./baseContract.js";
-import {config, logger} from "../common.js";
-import {ContractType} from "../types.js";
+import { BaseContract } from "./baseContract.js";
+import { config, logger } from "../common.js";
+import { ContractType } from "../types.js";
 
-import {Alchemy, Contract, TransactionRequest} from "alchemy-sdk";
-import {Decimal} from "decimal.js";
+import { Alchemy, Contract, TransactionRequest } from "alchemy-sdk";
+import { Decimal } from "decimal.js";
 
 class LendingPoolAPContract extends BaseContract {
     private poolContract?: Contract;
@@ -62,7 +62,8 @@ class LendingPoolAPContract extends BaseContract {
 
     private async getPoolAddress(): Promise<string> {
         const tr: TransactionRequest = {
-            to: this.address, data: this.contract?.interface.encodeFunctionData("getPool", []),
+            to: this.address,
+            data: this.contract?.interface.encodeFunctionData("getPool", []),
         };
 
         let rawPoolAddress: string;
@@ -84,4 +85,4 @@ class LendingPoolAPContract extends BaseContract {
     }
 }
 
-export {LendingPoolAPContract};
+export { LendingPoolAPContract };

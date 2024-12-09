@@ -2,8 +2,8 @@ import poolAbi from "./abis/uniswapV3PoolAbi.js";
 import aflabAbi from "./abis/aflabUniswapV3Abi.js";
 import lendingPoolAPAbi from "./abis/lendingPoolAPAbi.js";
 import lendingPoolAbi from "./abis/lendingPoolAbi.js";
-import {BigNumber} from "alchemy-sdk";
-import {Decimal} from "decimal.js";
+import { BigNumber } from "alchemy-sdk";
+import { Decimal } from "decimal.js"; // Constants
 
 // Constants
 const constants = {
@@ -73,9 +73,7 @@ function exponentialBackoffDelay(attempt: number, baseDelay = 100): Promise<void
  */
 function sqrtPriceX96ToDecimal(sqrtPriceX96: BigNumber, token0BigNumbers: number, token1BigNumbers: number): Decimal {
     const num = sqrtPriceX96.mul(sqrtPriceX96);
-    return new Decimal(num.toString())
-        .div(constants.QI92)
-        .mul(10 ** (token0BigNumbers - token1BigNumbers));
+    return new Decimal(num.toString()).div(constants.QI92).mul(10 ** (token0BigNumbers - token1BigNumbers));
 }
 
 /**

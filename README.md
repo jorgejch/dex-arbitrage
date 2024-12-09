@@ -14,13 +14,18 @@ Another Flash-loan arbitrage bot that:
 
 ## Introduction
 
-Decentralized exchanges (DEXs) often exhibit price discrepancies due to the impact of large trades. This system aims to take advantage of these discrepancies through flash loans, which allow borrowing large amounts of cryptocurrency without collateral, provided the loan is repaid within the same transaction.
+Decentralized exchanges (DEXs) often exhibit price discrepancies due to the impact of large trades. This system aims to
+take advantage of these discrepancies through flash loans, which allow borrowing large amounts of cryptocurrency without
+collateral, provided the loan is repaid within the same transaction.
 
 Key features of this system include:
 
-- **Price Arbitrage**: Capitalize on price misalignments between exchanges. Large trades can create imbalances in liquidity pools, distorting prices and causing slippage.
-- **Smart Contract Relay**: Utilize a Solidity smart contract to act as a relay between the controller and the exchanges, ensuring efficient and secure transactions.
-- **Modular and Extensible Design**: Built with a modular architecture, allowing for easy integration of additional features and support for other exchanges.
+- **Price Arbitrage**: Capitalize on price misalignments between exchanges. Large trades can create imbalances in
+  liquidity pools, distorting prices and causing slippage.
+- **Smart Contract Relay**: Utilize a Solidity smart contract to act as a relay between the controller and the
+  exchanges, ensuring efficient and secure transactions.
+- **Modular and Extensible Design**: Built with a modular architecture, allowing for easy integration of additional
+  features and support for other exchanges.
 
 ## Tech Stack
 
@@ -52,9 +57,11 @@ Ensure you have the following installed:
 
 Additionally, you will need:
 
-- An Ethereum wallet with sufficient funds to cover gas fees. You can create a new wallet using the script in the `scripts` folder.
+- An Ethereum wallet with sufficient funds to cover gas fees. You can create a new wallet using the script in the
+  `scripts` folder.
 - An account on [Alchemy](https://www.alchemy.com/) with a new project created to obtain the API key.
-- Deployed smart contracts on the Polygon network. The [Remix IDE](https://remix.ethereum.org/) is a good tool to perform the deployment.
+- Deployed smart contracts on the Polygon network. The [Remix IDE](https://remix.ethereum.org/) is a good tool to
+  perform the deployment.
 
 ### Installation
 
@@ -71,7 +78,8 @@ Additionally, you will need:
     npm install
     ```
 
-3. Set up environment variables: Create a `.env` file in the root directory and add your configuration as in the `.env.example` file.
+3. Set up environment variables: Create a `.env` file in the root directory and add your configuration as in the
+   `.env.example` file.
 
 ### Usage
 
@@ -89,7 +97,11 @@ Additionally, you will need:
 
 ## Disclaimer
 
-This repository is for educational and informational purposes only. It is not investment advice or a recommendation to buy or sell any financial instrument. The information provided here should not be used as the basis for any investment decision. Always conduct your own research and consult with a qualified financial advisor before making any investment decisions. The authors and contributors are not responsible for any financial losses or damages incurred as a result of using this software. The contents are subject to change without notice.
+This repository is for educational and informational purposes only. It is not investment advice or a recommendation to
+buy or sell any financial instrument. The information provided here should not be used as the basis for any investment
+decision. Always conduct your own research and consult with a qualified financial advisor before making any investment
+decisions. The authors and contributors are not responsible for any financial losses or damages incurred as a result of
+using this software. The contents are subject to change without notice.
 
 ## Contributing
 

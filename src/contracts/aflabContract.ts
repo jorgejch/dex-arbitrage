@@ -1,8 +1,8 @@
-import {BaseContract} from "./baseContract.js";
-import {ContractType, Opportunity} from "../types.js";
-import {exponentialBackoffDelay, logger} from "../common.js";
+import { BaseContract } from "./baseContract.js";
+import { ContractType, Opportunity } from "../types.js";
+import { exponentialBackoffDelay, logger } from "../common.js";
 
-import {Alchemy, BigNumber, Contract, TransactionRequest, TransactionResponse, Wallet,} from "alchemy-sdk";
+import { Alchemy, BigNumber, Contract, TransactionRequest, TransactionResponse, Wallet } from "alchemy-sdk";
 
 const INITIATE_FLASHLOAN_SIG = "initiateFlashLoan";
 
@@ -53,7 +53,7 @@ class AflabContract extends BaseContract {
                 this.wallet.address,
                 this.address,
                 arbitrageInfo,
-                opportunity.tokenAIn
+                opportunity.tokenAIn,
             );
         } catch (error) {
             logger.error(`Error constructing transaction request: ${error}`, this.constructor.name);
@@ -108,7 +108,7 @@ class AflabContract extends BaseContract {
     }
 
     protected getArbitrageInfo(opportunity: Opportunity): object {
-        const {swap1, swap2, swap3, estimatedGasCost} = opportunity.arbitrageInfo;
+        const { swap1, swap2, swap3, estimatedGasCost } = opportunity.arbitrageInfo;
 
         if (!(swap1?.tokenIn && swap1.tokenOut && swap1.poolFee && swap1.amountOutMinimum)) {
             throw new Error("Missing value for component swap1");
@@ -132,23 +132,28 @@ class AflabContract extends BaseContract {
                 tokenOut: swap1.tokenOut.id, // Actual token address
                 poolFee: swap1.poolFee.toNumber(), // e.g., 3000 represents a 0.3%
                 amountOutMinimum: BigNumber.from(0), // uint256
-            }, swap2: {
+            },
+            swap2: {
                 tokenIn: swap2.tokenIn.id,
                 tokenOut: swap2.tokenOut.id,
                 poolFee: swap2.poolFee.toNumber(),
                 amountOutMinimum: BigNumber.from(0),
-            }, swap3: {
+            },
+            swap3: {
                 tokenIn: swap3.tokenIn.id,
                 tokenOut: swap3.tokenOut.id,
                 poolFee: swap3.poolFee.toNumber(),
                 amountOutMinimum: BigNumber.from(0),
-            }, extraCost: BigNumber.from(0), // uint256
+            },
+            extraCost: BigNumber.from(0), // uint256
         };
     }
 
     private async getTransactionRequest(
-        from: string, to: string, arbitrageInfo: object,
-        inputAmount: BigNumber
+        from: string,
+        to: string,
+        arbitrageInfo: object,
+        inputAmount: BigNumber,
     ): Promise<TransactionRequest> {
         if (!this.contract) {
             throw new Error("Contract not initialized");
@@ -157,9 +162,7 @@ class AflabContract extends BaseContract {
         return {
             from: from,
             to: to,
-            data: this.contract.interface.encodeFunctionData(INITIATE_FLASHLOAN_SIG, [
-                arbitrageInfo, inputAmount,
-            ]),
+            data: this.contract.interface.encodeFunctionData(INITIATE_FLASHLOAN_SIG, [arbitrageInfo, inputAmount]),
             value: BigNumber.from(0),
             chainId: this.network,
             gasLimit: 500000, // default gas limit
@@ -169,8 +172,9 @@ class AflabContract extends BaseContract {
     }
 
     private async sendTransactionWithRetry(
-        tx: TransactionRequest, retries: number = 3,
-        delayMs: number = 1000
+        tx: TransactionRequest,
+        retries: number = 3,
+        delayMs: number = 1000,
     ): Promise<any> {
         let txResponse: TransactionResponse | null = null;
         for (let attempt = 0; attempt < retries; attempt++) {
@@ -179,12 +183,12 @@ class AflabContract extends BaseContract {
                 txResponse = await this.alchemy.transact.sendTransaction(signedTransaction);
                 logger.info(`Transaction sent. Hash: ${txResponse.hash}`, this.constructor.name);
                 logger.debug(
-                    `Transaction nonce: ${txResponse.nonce}\n`
-                    + `\t gasPrice: ${txResponse.gasPrice?.toNumber()}\n`
-                    + `\t gasLimit: ${txResponse.gasLimit.toNumber()}\n`
-                    + `\t maxFeePerGas: ${txResponse.maxFeePerGas?.toNumber()}\n`
-                    + `\t maxPriorityFeePerGas: ${txResponse.maxPriorityFeePerGas?.toNumber()}`,
-                    this.constructor.name
+                    `Transaction nonce: ${txResponse.nonce}\n` +
+                        `\t gasPrice: ${txResponse.gasPrice?.toNumber()}\n` +
+                        `\t gasLimit: ${txResponse.gasLimit.toNumber()}\n` +
+                        `\t maxFeePerGas: ${txResponse.maxFeePerGas?.toNumber()}\n` +
+                        `\t maxPriorityFeePerGas: ${txResponse.maxPriorityFeePerGas?.toNumber()}`,
+                    this.constructor.name,
                 );
                 break; // Exit retry loop on successful send
             } catch (error) {
@@ -193,7 +197,7 @@ class AflabContract extends BaseContract {
                 }
                 logger.warn(
                     `Attempt ${attempt} error sending transaction: ${JSON.stringify(error)}`,
-                    this.constructor.name
+                    this.constructor.name,
                 );
                 if (attempt === retries - 1) throw error; // Re-throw after final attempt
                 tx.gasPrice = BigNumber.from(tx.gasPrice).mul(110).div(100); // Increase gas price by 10%
@@ -220,4 +224,4 @@ class AflabContract extends BaseContract {
     }
 }
 
-export {AflabContract};
+export { AflabContract };

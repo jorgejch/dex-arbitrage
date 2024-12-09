@@ -1,5 +1,5 @@
-import {logger} from "../common.js";
-import {cacheExchange, Client, fetchExchange, OperationResult,} from "@urql/core";
+import { logger } from "../common.js";
+import { cacheExchange, Client, fetchExchange, OperationResult } from "@urql/core";
 
 abstract class BaseSubgraph {
     private readonly subgraphUrl: string;
@@ -9,8 +9,9 @@ abstract class BaseSubgraph {
     protected constructor(subgraphUrl: string) {
         this.subgraphUrl = subgraphUrl;
         this.client = new Client({
-                                     url: this.subgraphUrl, exchanges: [cacheExchange, fetchExchange],
-                                 });
+            url: this.subgraphUrl,
+            exchanges: [cacheExchange, fetchExchange],
+        });
     }
 
     public initialize() {
@@ -54,4 +55,4 @@ abstract class BaseSubgraph {
     protected abstract customInit(): void;
 }
 
-export {BaseSubgraph};
+export { BaseSubgraph };

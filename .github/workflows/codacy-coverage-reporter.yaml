@@ -1,6 +1,6 @@
 name: Codacy Coverage Reporter
 
-on: ["push"]
+on: [ "push" ]
 
 jobs:
   codacy-coverage-reporter:
@@ -14,7 +14,7 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: "22"
-      
+
       - name: Install dependencies
         run: npm install
 
