@@ -1,6 +1,7 @@
 # Another Flash-loan Arbitrage Bot (AFLAB)
 
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=jorgejch_dex-arbitrage&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=jorgejch_dex-arbitrage) [![Codacy Badge](https://app.codacy.com/project/badge/Grade/7538c6b1bbb44105a7159daa9d70450e)](https://app.codacy.com/gh/jorgejch/dex-arbitrage/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade) [![Codacy Badge](https://app.codacy.com/project/badge/Coverage/7538c6b1bbb44105a7159daa9d70450e)](https://app.codacy.com/gh/jorgejch/dex-arbitrage/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_coverage)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=jorgejch_dex-arbitrage&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=jorgejch_dex-arbitrage)
+[![codecov](https://codecov.io/gh/jorgejch/dex-arbitrage/graph/badge.svg?token=lA5UzK4rHI)](https://codecov.io/gh/jorgejch/dex-arbitrage)
 
 ## What?
 
