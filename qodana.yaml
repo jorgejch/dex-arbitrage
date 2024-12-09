@@ -18,6 +18,12 @@ exclude:
     paths:
       - src/abis
       - diagrams
+      - STRATEGY.md
+      - README.md
+  - name: LongLine
+    paths:
+      - contracts/UniswapV3Arbitrage.sol
+      - .editorconfig
 
 #Execute shell command before Qodana execution (Applied in CI/CD pipeline)
 #bootstrap: sh ./prepare-qodana.sh

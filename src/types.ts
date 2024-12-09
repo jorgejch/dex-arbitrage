@@ -11,10 +11,10 @@ import { BigNumber } from "alchemy-sdk";
  * @enum {string}
  */
 enum ContractType {
-  TEST = "TEST",
-  POOL = "POOL",
-  AFLAB = "AFLAB",
-  POOL_ADDRESS_PROVIDER = "POOL_ADDRESS_PROVIDER",
+    TEST = "TEST",
+    POOL = "POOL",
+    AFLAB = "AFLAB",
+    POOL_ADDRESS_PROVIDER = "POOL_ADDRESS_PROVIDER",
 }
 
 /**
@@ -27,10 +27,10 @@ enum ContractType {
  * @property {BigNumber} swap3FeeBigNumber The fee tier for swap 3
  */
 interface ExpectedProfitData {
-  expectedProfit: BigNumber;
-  swap1FeeBigNumber: BigNumber;
-  swap2FeeBigNumber: BigNumber;
-  swap3FeeBigNumber: BigNumber;
+    expectedProfit: BigNumber;
+    swap1FeeBigNumber: BigNumber;
+    swap2FeeBigNumber: BigNumber;
+    swap3FeeBigNumber: BigNumber;
 }
 
 /**
@@ -40,8 +40,8 @@ interface ExpectedProfitData {
  * @property {Token} tokenB The token B involved in the pick
  */
 interface TokenBPickData {
-  expectedProfitData: ExpectedProfitData;
-  tokenB: Token;
+    expectedProfitData: ExpectedProfitData;
+    tokenB: Token;
 }
 
 /**
@@ -55,35 +55,35 @@ interface TokenBPickData {
  * @property {BigNumber} fee The fee
  */
 interface NetOutputData {
-  price: Decimal;
-  netOutput: BigNumber;
-  grossOutput: BigNumber;
-  feeDecimal: Decimal;
-  fee: BigNumber;
+    price: Decimal;
+    netOutput: BigNumber;
+    grossOutput: BigNumber;
+    feeDecimal: Decimal;
+    fee: BigNumber;
 }
 
 /**
  * Opportunity individual swap information.
  */
 interface SwapInfo {
-  /**
-   * The input token for the swap.
-   */
-  tokenIn: Token;
-  tokenOut: Token;
-  poolFee: BigNumber;
-  amountOutMinimum: BigNumber;
+    /**
+     * The input token for the swap.
+     */
+    tokenIn: Token;
+    tokenOut: Token;
+    poolFee: BigNumber;
+    amountOutMinimum: BigNumber;
 }
 
 /**
-  // The first swap information in the arbitrage.
-    swap1: SwapInfo | undefined;
+ // The first swap information in the arbitrage.
+ swap1: SwapInfo | undefined;
  */
 interface ArbitrageInfo {
-  swap1: SwapInfo | undefined;
-  swap2: SwapInfo | undefined;
-  swap3: SwapInfo | undefined;
-  estimatedGasCost: BigNumber;
+    swap1: SwapInfo | undefined;
+    swap2: SwapInfo | undefined;
+    swap3: SwapInfo | undefined;
+    estimatedGasCost: BigNumber;
 }
 
 /**
@@ -98,12 +98,12 @@ interface ArbitrageInfo {
  * @property {number | undefined} originalSwapPriceImpact - The price impact of the original swap, if any.
  */
 interface Opportunity {
-  arbitrageInfo: ArbitrageInfo;
-  tokenAIn: BigNumber;
-  lastPoolSqrtPriceX96: BigNumber;
-  originalSwap: BaseSwap;
-  expectedProfit: BigNumber | undefined;
-  originalSwapPriceImpact: number | undefined;
+    arbitrageInfo: ArbitrageInfo;
+    tokenAIn: BigNumber;
+    lastPoolSqrtPriceX96: BigNumber;
+    originalSwap: BaseSwap;
+    expectedProfit: BigNumber | undefined;
+    originalSwapPriceImpact: number | undefined;
 }
 
 /**
@@ -115,24 +115,24 @@ interface Opportunity {
  * @property {number} decimals The token decimals
  */
 interface Token {
-  id: string;
-  name: string;
-  symbol: string;
-  decimals: number;
+    id: string;
+    name: string;
+    symbol: string;
+    decimals: number;
 }
 
 /**
  * Fee object
  */
 interface Fee {
-  /**
-   * The percentage of the fee.
-   */
-  feePercentage: number;
-  /**
-   * The fee type.
-   */
-  feeType: string;
+    /**
+     * The percentage of the fee.
+     */
+    feePercentage: number;
+    /**
+     * The fee type.
+     */
+    feeType: string;
 }
 
 /**
@@ -146,30 +146,30 @@ interface Fee {
  * @property {Array<Token>} pool.inputTokens The pool input tokens
  */
 interface Pool {
-  id: string;
-  name: string;
-  symbol: string;
-  inputTokens: Token[];
-  fees: Fee[];
+    id: string;
+    name: string;
+    symbol: string;
+    inputTokens: Token[];
+    fees: Fee[];
 }
 
 /**
  * Liquidity pool hourly snapshot
  */
 interface LiquidityPoolHourlySnapshot {
-  pool: Pool;
+    pool: Pool;
 }
 
 export {
-  Pool,
-  Token,
-  Fee,
-  ContractType,
-  Opportunity,
-  SwapInfo,
-  ArbitrageInfo,
-  ExpectedProfitData,
-  NetOutputData,
-  TokenBPickData,
-  LiquidityPoolHourlySnapshot,
+    Pool,
+    Token,
+    Fee,
+    ContractType,
+    Opportunity,
+    SwapInfo,
+    ArbitrageInfo,
+    ExpectedProfitData,
+    NetOutputData,
+    TokenBPickData,
+    LiquidityPoolHourlySnapshot,
 };

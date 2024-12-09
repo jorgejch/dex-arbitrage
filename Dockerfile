@@ -14,7 +14,7 @@ WORKDIR $HOME
 COPY package*.json ./
 
 # Install production dependencies
-RUN npm install --production
+RUN npm install --production --ignore-scripts
 
 # Copy the built source files from dist/src to the home directory
 COPY dist/src/ $HOME/

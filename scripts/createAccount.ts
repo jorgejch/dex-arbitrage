@@ -6,15 +6,15 @@ import { promises as fs } from "fs";
  * The address and private key of the account will be saved in a .address file.
  */
 async function createAccount() {
-  const wallet = Wallet.createRandom();
-  const address  = wallet.address;
-  const privateKey = wallet.privateKey;
+    const wallet = Wallet.createRandom();
+    const address = wallet.address;
+    const privateKey = wallet.privateKey;
 
-  await fs.appendFile(".address", `${address}\t${privateKey}\n`);
-  console.log("Address and private key are saved in .address file");
+    await fs.appendFile(".address", `${address}\t${privateKey}\n`);
+    console.log("Address and private key are saved in .address file");
 }
 
 createAccount().catch((error: unknown) => {
-  console.error(error);
-  process.exit(1);
+    console.error(error);
+    process.exit(1);
 });
