@@ -18,6 +18,7 @@ ij_wrap_on_typing = false
 ij_solidity_keep_indents_on_empty_lines = false
 
 [.editorconfig]
+max_line_length = off
 ij_editorconfig_align_group_field_declarations = false
 ij_editorconfig_space_after_colon = false
 ij_editorconfig_space_after_comma = true
@@ -405,6 +406,7 @@ ij_json_spaces_within_brackets = false
 ij_json_wrap_long_lines = false
 
 [{*.markdown,*.md}]
+max_line_length = off
 ij_wrap_on_typing = true
 ij_markdown_force_one_space_after_blockquote_symbol = true
 ij_markdown_force_one_space_after_header_symbol = true

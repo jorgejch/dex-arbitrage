@@ -165,7 +165,7 @@ class AflabContract extends BaseContract {
             data: this.contract.interface.encodeFunctionData(INITIATE_FLASHLOAN_SIG, [arbitrageInfo, inputAmount]),
             value: BigNumber.from(0),
             chainId: this.network,
-            gasLimit: 500000, // default gas limit
+            gasLimit: 1500000, // default gas limit
             gasPrice: await this.alchemy.core.getGasPrice(),
             nonce: await this.alchemy.core.getTransactionCount(from, "pending"),
         };
