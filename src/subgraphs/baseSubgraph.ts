@@ -1,5 +1,5 @@
-import {logger} from "../common.js";
-import {cacheExchange, Client, fetchExchange, OperationResult,} from "@urql/core";
+import { logger } from "../common.js";
+import { cacheExchange, Client, fetchExchange, OperationResult } from "@urql/core";
 
 abstract class BaseSubgraph {
     private readonly subgraphUrl: string;
@@ -16,10 +16,7 @@ abstract class BaseSubgraph {
 
     public initialize() {
         this.customInit();
-        logger.info(
-            `Initialized subgraph: ${this.constructor.name}`,
-            this.constructor.name
-        );
+        logger.info(`Initialized subgraph: ${this.constructor.name}`, this.constructor.name);
     }
 
     public addQuery(name: string, query: string): void {
@@ -33,31 +30,19 @@ abstract class BaseSubgraph {
         return this.queries.get(name)!;
     }
 
-    protected async fetchData(
-        query: string,
-        variables?: object
-    ): Promise<any> {
+    protected async fetchData(query: string, variables?: object): Promise<any> {
         const maxRetries = 3;
         let attempts = 0;
 
         while (attempts < maxRetries) {
             try {
-                const result: OperationResult = await this.client.query(
-                    query,
-                    variables
-                );
+                const result: OperationResult = await this.client.query(query, variables);
                 return result.data;
             } catch (error: any) {
                 attempts++;
-                logger.warn(
-                    `Attempt ${attempts} failed: ${error}`,
-                    this.constructor.name
-                );
+                logger.warn(`Attempt ${attempts} failed: ${error}`, this.constructor.name);
                 if (attempts >= maxRetries) {
-                    logger.error(
-                        `Error fetching data after ${attempts} attempts: ${error}`,
-                        this.constructor.name
-                    );
+                    logger.error(`Error fetching data after ${attempts} attempts: ${error}`, this.constructor.name);
                     throw new Error("Failed to fetch data, max retries exceeded");
                 }
             }
@@ -70,4 +55,4 @@ abstract class BaseSubgraph {
     protected abstract customInit(): void;
 }
 
-export {BaseSubgraph};
+export { BaseSubgraph };

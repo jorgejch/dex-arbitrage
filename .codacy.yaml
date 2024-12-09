@@ -1,14 +1,12 @@
 ---
-reviews:
-  high_level_summary: true
 engines:
   duplication:
     config:
       languages:
         - "typescript"
     exclude_paths:
-      - "src/abis/**/*"
-      - "tests/**/*"
+      - "src/abis/**/*.ts"
+      - "tests/**/*.ts"
       - ".sonarlint/**/*"
       - ".github/**/*"
       - "diagrams/**/*"

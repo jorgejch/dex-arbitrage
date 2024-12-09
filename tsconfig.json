@@ -10,11 +10,18 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "outDir": "./dist",
-    "types": ["vitest/globals"]
+    "types": [
+      "vitest/globals"
+    ]
   },
   "ts-node": {
     "experimentalResolver": true,
-    "files": true 
+    "files": true
   },
-  "include": ["src/**/*.ts", "tests/**/*.ts", "scripts/**/*.ts", "*.ts"],
+  "include": [
+    "src/**/*.ts",
+    "tests/**/*.ts",
+    "scripts/**/*.ts",
+    "*.ts"
+  ]
 }
