@@ -1,11 +1,16 @@
 <!-- 
   PR Summary Prompt:
-  Summarize the changes introduced in this PR based on the provided diff, focusing on what was changed, why, and how it affects the project. Use code references to diff hunks when beneficial (e.g., diff --git a/src/module.js b/src/module.js), and highlight key updates within these sections. Keep descriptions concise and avoid unnecessary adjectives. Ensure accuracy and follow established patterns common in small open-source projects (like referencing the code directly, mentioning related files by name, and noting any configuration or dependency updates).
-
+  Summarize the changes introduced in this PR based on the provided diff, focusing on what was changed, why,
+  and how it affects the project. Use code references to diff hunks when beneficial (e.g., diff --git 
+  a/src/module.js b/src/module.js), and highlight key updates within these sections. Keep descriptions concise
+  and avoid unnecessary adjectives. Ensure accuracy and follow established patterns common in small open-source
+  projects (like referencing the code directly, mentioning related files by name, and noting any configuration
+  or dependency updates).
   Include:
   • Overview of what files or areas are affected, linking to diff hunks where possible.
   • Explanation of how the changes improve or fix the existing codebase.
-  • Mention if new tests are added or existing ones updated, along with any changes in test configuration (e.g., vitest.config.ts).
+  • Mention if new tests are added or existing ones updated, along with any changes in test configuration 
+    (e.g., vitest.config.ts).
   • Highlight any big updates to documentation.
 
   For example, use patterns like:
