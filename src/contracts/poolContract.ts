@@ -1,10 +1,10 @@
 import {ContractType, Pool, Token} from "../types.js";
-import {BaseContract}              from "./baseContract.js";
-import {logger}                    from "../common.js";
-import {UniswapV3Swap}             from "../swaps/uniswapV3Swap.js";
+import {BaseContract} from "./baseContract.js";
+import {logger} from "../common.js";
+import {UniswapV3Swap} from "../swaps/uniswapV3Swap.js";
 
 import {Alchemy, BigNumber, Contract} from "alchemy-sdk";
-import {Decimal}                      from "decimal.js";
+import {Decimal} from "decimal.js";
 
 /**
  * A contract class representing a liquidity pool.

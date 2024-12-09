@@ -1,9 +1,9 @@
-import {BaseContract}   from "./baseContract.js";
+import {BaseContract} from "./baseContract.js";
 import {config, logger} from "../common.js";
-import {ContractType}   from "../types.js";
+import {ContractType} from "../types.js";
 
 import {Alchemy, Contract, TransactionRequest} from "alchemy-sdk";
-import {Decimal}                               from "decimal.js";
+import {Decimal} from "decimal.js";
 
 class LendingPoolAPContract extends BaseContract {
     private poolContract?: Contract;

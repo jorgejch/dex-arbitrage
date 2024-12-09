@@ -1,9 +1,9 @@
-import poolAbi          from "./abis/uniswapV3PoolAbi.js";
-import aflabAbi         from "./abis/aflabUniswapV3Abi.js";
+import poolAbi from "./abis/uniswapV3PoolAbi.js";
+import aflabAbi from "./abis/aflabUniswapV3Abi.js";
 import lendingPoolAPAbi from "./abis/lendingPoolAPAbi.js";
-import lendingPoolAbi   from "./abis/lendingPoolAbi.js";
-import {BigNumber}      from "alchemy-sdk";
-import {Decimal}        from "decimal.js";
+import lendingPoolAbi from "./abis/lendingPoolAbi.js";
+import {BigNumber} from "alchemy-sdk";
+import {Decimal} from "decimal.js";
 
 // Constants
 const constants = {

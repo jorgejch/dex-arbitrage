@@ -1,5 +1,5 @@
-import {logger}            from "../common.js";
-import {ContractType}      from "../types.js";
+import {logger} from "../common.js";
+import {ContractType} from "../types.js";
 import {Alchemy, Contract} from "alchemy-sdk";
 
 /**

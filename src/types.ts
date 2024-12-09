@@ -2,8 +2,8 @@
  * @fileoverview TypeScript types used in AFLAB
  */
 
-import {Decimal}   from "decimal.js";
-import {BaseSwap}  from "./swaps/baseSwap.js";
+import {Decimal} from "decimal.js";
+import {BaseSwap} from "./swaps/baseSwap.js";
 import {BigNumber} from "alchemy-sdk";
 
 /**

@@ -1,5 +1,5 @@
-import {BaseContract}                    from "./baseContract.js";
-import {ContractType, Opportunity}       from "../types.js";
+import {BaseContract} from "./baseContract.js";
+import {ContractType, Opportunity} from "../types.js";
 import {exponentialBackoffDelay, logger} from "../common.js";
 
 import {Alchemy, BigNumber, Contract, TransactionRequest, TransactionResponse, Wallet,} from "alchemy-sdk";
@@ -50,7 +50,9 @@ class AflabContract extends BaseContract {
         let req: TransactionRequest;
         try {
             req = await this.getTransactionRequest(
-                this.wallet.address, this.address, arbitrageInfo,
+                this.wallet.address,
+                this.address,
+                arbitrageInfo,
                 opportunity.tokenAIn
             );
         } catch (error) {
@@ -177,7 +179,11 @@ class AflabContract extends BaseContract {
                 txResponse = await this.alchemy.transact.sendTransaction(signedTransaction);
                 logger.info(`Transaction sent. Hash: ${txResponse.hash}`, this.constructor.name);
                 logger.debug(
-                    `Transaction nonce: ${txResponse.nonce}\n` + `\t gasPrice: ${txResponse.gasPrice?.toNumber()}\n` + `\t gasLimit: ${txResponse.gasLimit.toNumber()}\n` + `\t maxFeePerGas: ${txResponse.maxFeePerGas?.toNumber()}\n` + `\t maxPriorityFeePerGas: ${txResponse.maxPriorityFeePerGas?.toNumber()}`,
+                    `Transaction nonce: ${txResponse.nonce}\n`
+                    + `\t gasPrice: ${txResponse.gasPrice?.toNumber()}\n`
+                    + `\t gasLimit: ${txResponse.gasLimit.toNumber()}\n`
+                    + `\t maxFeePerGas: ${txResponse.maxFeePerGas?.toNumber()}\n`
+                    + `\t maxPriorityFeePerGas: ${txResponse.maxPriorityFeePerGas?.toNumber()}`,
                     this.constructor.name
                 );
                 break; // Exit retry loop on successful send

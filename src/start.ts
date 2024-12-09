@@ -1,6 +1,6 @@
 import {config, logger} from "./common.js";
-import {Controller}     from "./controller.js";
-import dotenv           from "dotenv";
+import {Controller} from "./controller.js";
+import dotenv from "dotenv";
 
 dotenv.config();
 
@@ -12,7 +12,8 @@ const UNISWAP_V3_AFLAB_CONTRACT_ADDRESS: string = process.env.UNISWPV3_CONTRACT_
 const THE_GRAPH_BASE_URL: string = process.env.THE_GRAPH_BASE_URL ?? "";
 const UNISWAP_V3_SUBGRAPH_ID: string = process.env.THE_GRAPH_UNISWAP_V3_SUBGRAPH_ID ?? "";
 const THE_GRAPH_API_KEY: string = process.env.THE_GRAPH_API_KEY ?? "";
-const AAVE_POOL_ADDRESS_PROVIDER_CONTRACT_ADDRESS: string = process.env.AAVE_POOL_ADDRESS_PROVIDER_CONTRACT_ADDRESS ?? "";
+const AAVE_POOL_ADDRESS_PROVIDER_CONTRACT_ADDRESS: string = process.env.AAVE_POOL_ADDRESS_PROVIDER_CONTRACT_ADDRESS
+                                                            ?? "";
 
 let controller: Controller;
 
@@ -43,15 +44,23 @@ async function main() {
     logger.setLogLevel(LOG_LEVEL);
 
     controller = new Controller(
-        WALLET_PRIVATE_KEY, UNISWAP_V3_AFLAB_CONTRACT_ADDRESS, THE_GRAPH_BASE_URL,
-        THE_GRAPH_API_KEY, UNISWAP_V3_SUBGRAPH_ID, ALCHEMY_API_KEY,
+        WALLET_PRIVATE_KEY,
+        UNISWAP_V3_AFLAB_CONTRACT_ADDRESS,
+        THE_GRAPH_BASE_URL,
+        THE_GRAPH_API_KEY,
+        UNISWAP_V3_SUBGRAPH_ID,
+        ALCHEMY_API_KEY,
         AAVE_POOL_ADDRESS_PROVIDER_CONTRACT_ADDRESS
     );
 
     try {
         await controller.start();
-        logger.info(
-            `\n############ Controller Started ############\n` + `- UNISWAP_V3_AFLAB_CONTRACT_ADDRESS: ${UNISWAP_V3_AFLAB_CONTRACT_ADDRESS}\n` + `- THE_GRAPH_BASE_URL: ${THE_GRAPH_BASE_URL}\n` + `- UNISWAP_V3_SUBGRAPH_ID: ${UNISWAP_V3_SUBGRAPH_ID}\n` + `- Log Level: ${LOG_LEVEL}\n` + `############################################`);
+        logger.info(`\n############ Controller Started ############\n`
+                    + `- UNISWAP_V3_AFLAB_CONTRACT_ADDRESS: ${UNISWAP_V3_AFLAB_CONTRACT_ADDRESS}\n`
+                    + `- THE_GRAPH_BASE_URL: ${THE_GRAPH_BASE_URL}\n`
+                    + `- UNISWAP_V3_SUBGRAPH_ID: ${UNISWAP_V3_SUBGRAPH_ID}\n`
+                    + `- Log Level: ${LOG_LEVEL}\n`
+                    + `############################################`);
         logger.info("Controller scanning for arbitrage opportunities...");
     } catch (error) {
         logger.error(`Error running Controller: ${error}`);

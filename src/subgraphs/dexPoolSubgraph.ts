@@ -1,5 +1,5 @@
-import {BaseSubgraph}                      from "./baseSubgraph.js";
-import {getHoursSinceUnixEpoch, logger}    from "../common.js";
+import {BaseSubgraph} from "./baseSubgraph.js";
+import {getHoursSinceUnixEpoch, logger} from "../common.js";
 import {LiquidityPoolHourlySnapshot, Pool} from "../types.js";
 
 interface FetchPoolsContext {
@@ -42,10 +42,11 @@ class DexPoolSubgraph extends BaseSubgraph {
             uniquePoolIds, allPools, totalRecords: 0,
         };
 
-        logger.debug(
-            `Getting pools. Parameters: {limit: ${limit}, numOfPagesPerCall: ${numPagesToFetch}, pageSize: ${pageSize}, hoursSinceUnixEpoch: ${hsUnixEpoch}}`,
-            this.constructor.name
-        );
+        logger.debug(`Getting pools. Parameters: {`
+                     + `limit: ${limit}, `
+                     + `numOfPagesPerCall: ${numPagesToFetch}, `
+                     + `pageSize: ${pageSize}, `
+                     + `hoursSinceUnixEpoch: ${hsUnixEpoch}}`, this.constructor.name);
 
         await this.handlePoolFetching(hsUnixEpoch, numPagesToFetch, pageSize, skip, limit, context);
         return allPools;
@@ -86,19 +87,23 @@ class DexPoolSubgraph extends BaseSubgraph {
      * Fetches pools from the subgraph until the limit is reached.
      */
     private async handlePoolFetching(
-        hsUnixEpoch: number, numPagestoFetch: number, pageSize: number, skip: number,
+        hsUnixEpoch: number, numPagesToFetch: number, pageSize: number, skip: number,
         limit: number, context: FetchPoolsContext
     ): Promise<void> {
         let hasMore = true;
         while (hasMore && context.totalRecords < limit) {
             try {
                 const returnInfo = await this.fetchPoolPages(
-                    hsUnixEpoch, numPagestoFetch, pageSize, skip, limit,
+                    hsUnixEpoch,
+                    numPagesToFetch,
+                    pageSize,
+                    skip,
+                    limit,
                     context
                 );
                 context.totalRecords += returnInfo.fetchedRecords;
                 hasMore = returnInfo.hasMore;
-                skip += numPagestoFetch * pageSize;
+                skip += numPagesToFetch * pageSize;
             } catch (error) {
                 logger.error(`Error fetching data: ${error}`, this.constructor.name);
                 throw error;
@@ -110,7 +115,7 @@ class DexPoolSubgraph extends BaseSubgraph {
      * Fetches pools from the subgraph.
      *
      * @param hsUnixEpoch The hours since Unix Epoch
-     * @param numPagestoFetch The number of pages to fetch
+     * @param numPagesToFetch The number of pages to fetch
      * @param pageSize The page size
      * @param skip The number of records to skip
      * @param limit The maximum number of records to fetch
@@ -118,12 +123,12 @@ class DexPoolSubgraph extends BaseSubgraph {
      * @returns The number of fetched records and a boolean indicating if there are more records to fetch
      */
     private async fetchPoolPages(
-        hsUnixEpoch: number, numPagestoFetch: number, pageSize: number, skip: number,
+        hsUnixEpoch: number, numPagesToFetch: number, pageSize: number, skip: number,
         limit: number, context: FetchPoolsContext
     ): Promise<{ fetchedRecords: number; hasMore: boolean }> {
         const query = this.getQuery("pools");
         const fetchPromises = [];
-        for (let i = 0; i < numPagestoFetch; i++) {
+        for (let i = 0; i < numPagesToFetch; i++) {
             fetchPromises.push(this.fetchData(query, {
                 hoursSinceUnixEpoch: hsUnixEpoch, size: pageSize, offset: skip + i * pageSize,
             }));
@@ -152,7 +157,7 @@ class DexPoolSubgraph extends BaseSubgraph {
 
         logger.debug(`Fetched ${fetchedRecords} records.`, this.constructor.name);
 
-        const hasMore = fetchedRecords === numPagestoFetch * pageSize && context.totalRecords + fetchedRecords < limit;
+        const hasMore = fetchedRecords === numPagesToFetch * pageSize && context.totalRecords + fetchedRecords < limit;
         return {fetchedRecords, hasMore};
     }
 }

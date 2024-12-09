@@ -1,9 +1,9 @@
-import {BaseDex}                  from "./dexes/baseDex.js";
-import {UniswapV3Dex}             from "./dexes/uniswapV3Dex.js";
-import {DexPoolSubgraph}          from "./subgraphs/dexPoolSubgraph.js";
+import {BaseDex} from "./dexes/baseDex.js";
+import {UniswapV3Dex} from "./dexes/uniswapV3Dex.js";
+import {DexPoolSubgraph} from "./subgraphs/dexPoolSubgraph.js";
 import {config, getTGUrl, logger} from "./common.js";
-import {AflabContract}            from "./contracts/aflabContract.js";
-import {LendingPoolAPContract}    from "./contracts/lendingPoolAPContract.js";
+import {AflabContract} from "./contracts/aflabContract.js";
+import {LendingPoolAPContract} from "./contracts/lendingPoolAPContract.js";
 import {Alchemy, Network, Wallet} from "alchemy-sdk";
 
 class Controller {

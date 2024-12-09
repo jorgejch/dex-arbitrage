@@ -1,4 +1,4 @@
-import {logger}                                                 from "../common.js";
+import {logger} from "../common.js";
 import {cacheExchange, Client, fetchExchange, OperationResult,} from "@urql/core";
 
 abstract class BaseSubgraph {

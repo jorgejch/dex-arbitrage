@@ -2,7 +2,7 @@ import {Token} from "../types.js";
 import {sqrtPriceX96ToDecimal} from "../common.js";
 
 import {BigNumber} from "alchemy-sdk";
-import {Decimal}   from "decimal.js";
+import {Decimal} from "decimal.js";
 
 /**
  * BaseSwap is an abstract class that represents a swap event.
