@@ -1,0 +1,19 @@
+root = true
+
+[*]
+# Unix-style newlines
+end_of_line = lf
+# Set default charset
+charset = utf-8
+
+[*.{js,ts,cjs,py}]
+# 4 space indentation
+indent_style = space
+indent_size = 4
+# A newline ending every file
+insert_final_newline = true
+# Remove any whitespace characters preceding newline characters
+trim_trailing_whitespace = true
+# Max line length
+max_line_length = 120
+
