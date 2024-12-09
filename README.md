@@ -21,7 +21,7 @@ collateral, provided the loan is repaid within the same transaction.
 
 Key features of this system include:
 
-- **Price Arbitrage**: Capitalize on price misalignments between exchanges. Large trades can create imbalances in
+- **Price Arbitrage**: Capitalize on price misalignment's between exchanges. Large trades can create imbalances in
   liquidity pools, distorting prices and causing slippage.
 - **Smart Contract Relay**: Utilize a Solidity smart contract to act as a relay between the controller and the
   exchanges, ensuring efficient and secure transactions.
