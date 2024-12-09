@@ -80,7 +80,7 @@ class LendingPoolAPContract extends BaseContract {
         }
 
         // There is a strange series of 0s at the beginning of the address
-        const match = /^0x0+(.+)$/.exec(rawPoolAddress)!;
+        const match = /^0x0+([0-9A-Fa-f]{1,40})$/.exec(rawPoolAddress)!;
         return `0x${match[1]}`;
     }
 }
