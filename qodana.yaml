@@ -23,6 +23,7 @@ exclude:
   - name: LongLine
     paths:
       - contracts/UniswapV3Arbitrage.sol
+      - .editorconfig
 
 #Execute shell command before Qodana execution (Applied in CI/CD pipeline)
 #bootstrap: sh ./prepare-qodana.sh

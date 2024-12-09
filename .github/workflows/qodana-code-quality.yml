@@ -22,3 +22,6 @@ jobs:
         uses: JetBrains/qodana-action@v2024.2
         env:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
+      - name: Run Qodana Scan
+        run: |
+          qodana scan --project-dir . --linter-version=2024.2
