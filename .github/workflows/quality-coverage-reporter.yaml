@@ -1,0 +1,37 @@
+name: Code coverage and quality
+
+on: [ "push", "pull_request" ]
+
+jobs:
+  quality-coverage-reporter:
+    runs-on: ubuntu-latest
+    name: quality-coverage-reporter
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run unit tests and generate coverage
+        run: npm run coverage:unit
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: jorgejch/dex-arbitrage
+
+      - name: 'Qodana Scan'
+        uses: JetBrains/qodana-action@v2024.2
+        env:
+          QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
+
