@@ -16,6 +16,9 @@ ij_wrap_on_typing = false
 
 [*.sol]
 ij_solidity_keep_indents_on_empty_lines = false
+ij_solidity_indent_size = 4
+ij_solidity_continuation_indent_size = 8
+ij_solidity_tab_width = 4
 
 [.editorconfig]
 max_line_length = off
