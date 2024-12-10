@@ -2,7 +2,15 @@ import { BaseContract } from "./baseContract.js";
 import { ContractType, Opportunity } from "../types.js";
 import { exponentialBackoffDelay, logger } from "../common.js";
 
-import { Alchemy, BigNumber, Contract, TransactionRequest, TransactionResponse, Wallet } from "alchemy-sdk";
+import {
+    Alchemy,
+    BigNumber,
+    Contract,
+    TransactionReceipt,
+    TransactionRequest,
+    TransactionResponse,
+    Wallet,
+} from "alchemy-sdk";
 
 const INITIATE_FLASHLOAN_SIG = "initiateFlashLoan";
 
@@ -171,6 +179,32 @@ class AflabContract extends BaseContract {
         };
     }
 
+    private logTransactionSent(txResponse: TransactionResponse): void {
+        const logMessage = `
+        ===========================
+        📝 **Transaction Sent**
+        ---------------------------
+        - **Hash**: ${txResponse.hash}
+        - **Nonce**: ${txResponse.nonce}
+        - **From**: ${txResponse.from}
+        - **To**: ${txResponse.to}
+        - **Gas Price**: ${txResponse.gasPrice ? `${txResponse.gasPrice.toNumber()} Wei` : "N/A"}
+        - **Gas Limit**: ${txResponse.gasLimit.toNumber()}
+        - **Max Fee Per Gas**: ${txResponse.maxFeePerGas ? `${txResponse.maxFeePerGas.toNumber()} Wei` : "N/A"}
+        - **Max Priority Fee Per Gas**: ${
+            txResponse.maxPriorityFeePerGas ? `${txResponse.maxPriorityFeePerGas.toNumber()} Wei` : "N/A"
+        }
+        - **Chain ID**: ${txResponse.chainId}
+        - **Data**: ${txResponse.data}
+        - **Block Hash**: ${txResponse.blockHash ?? "Pending"}
+        - **Block Number**: ${txResponse.blockNumber ?? "Pending"}
+        - **Confirmations**: ${txResponse.confirmations}
+        ===========================
+        `;
+
+        logger.info(logMessage, this.constructor.name);
+    }
+
     private async sendTransactionWithRetry(
         tx: TransactionRequest,
         retries: number = 3,
@@ -179,17 +213,8 @@ class AflabContract extends BaseContract {
         let txResponse: TransactionResponse | null = null;
         for (let attempt = 0; attempt < retries; attempt++) {
             try {
-                const signedTransaction = await this.wallet.signTransaction(tx);
-                txResponse = await this.alchemy.transact.sendTransaction(signedTransaction);
-                logger.info(`Transaction sent. Hash: ${txResponse.hash}`, this.constructor.name);
-                logger.debug(
-                    `Transaction nonce: ${txResponse.nonce}\n` +
-                        `\t gasPrice: ${txResponse.gasPrice?.toNumber()}\n` +
-                        `\t gasLimit: ${txResponse.gasLimit.toNumber()}\n` +
-                        `\t maxFeePerGas: ${txResponse.maxFeePerGas?.toNumber()}\n` +
-                        `\t maxPriorityFeePerGas: ${txResponse.maxPriorityFeePerGas?.toNumber()}`,
-                    this.constructor.name,
-                );
+                txResponse = await this.wallet.sendTransaction(tx);
+                this.logTransactionSent(txResponse);
                 break; // Exit retry loop on successful send
             } catch (error) {
                 if (error instanceof Error && error.stack && error.message) {
@@ -210,7 +235,7 @@ class AflabContract extends BaseContract {
         }
 
         try {
-            const receipt = await txResponse.wait();
+            const receipt: TransactionReceipt = await txResponse.wait();
             logger.info(`Transaction confirmed in block ${receipt.blockNumber}`, this.constructor.name);
             logger.info(`Receipt: ${JSON.stringify(receipt.transactionHash)}`, this.constructor.name);
             return receipt;
