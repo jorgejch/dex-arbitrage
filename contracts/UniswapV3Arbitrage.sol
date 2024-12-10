@@ -129,17 +129,16 @@ contract UniswapV3Arbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
         SwapInfo memory swapInfo,
         uint256 amountIn
     ) internal returns (uint256 amountOut) {
-        ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
-            .ExactInputSingleParams({
-            tokenIn: swapInfo.tokenIn,
-            tokenOut: swapInfo.tokenOut,
-            fee: swapInfo.poolFee,
-            recipient: _contractAddress,
-            deadline: block.timestamp + 60,
-            amountIn: amountIn,
-            amountOutMinimum: 0, // Not needed, reverts if no profit
-            sqrtPriceLimitX96: 0 // No price limit
-        });
+        ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams(
+            swapInfo.tokenIn,
+            swapInfo.tokenOut,
+            swapInfo.poolFee,
+            _contractAddress,
+            block.timestamp + 60,
+            amountIn,
+            0, // Not needed, reverts if no profit
+            0 // No price limit
+        );
 
         // Approve the swap router to spend the input token
         TransferHelper.safeApprove(swapInfo.tokenIn, _swapRouterAddress, 0);
