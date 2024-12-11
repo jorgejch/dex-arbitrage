@@ -12,7 +12,10 @@ import {TransferHelper} from "@uniswap/v3-periphery/contracts/libraries/Transfer
  * @title Flash-Loan Arbitrage Contract
  * @notice This is an arbitrage contract that uses AAVE v3 flash loans to make a profit on Uniswap v3.
  */
-contract UniswapV3Arbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
+contract UniswapV3Arbitrage is
+FlashLoanSimpleReceiverBase,
+Ownable2Step
+{
     uint256 private _balanceReceived;
     uint32 private _executionCounter;
     address internal immutable _poolAddress = address(POOL);
@@ -129,7 +132,8 @@ contract UniswapV3Arbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
         SwapInfo memory swapInfo,
         uint256 amountIn
     ) internal returns (uint256 amountOut) {
-        ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams(
+        ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
+            .ExactInputSingleParams(
             swapInfo.tokenIn,
             swapInfo.tokenOut,
             swapInfo.poolFee,
@@ -148,7 +152,7 @@ contract UniswapV3Arbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
             amountIn
         );
 
-        try _swapRouter.exactInputSingle(params) returns (uint256 _amountOut){
+        try _swapRouter.exactInputSingle(params) returns (uint256 _amountOut) {
             amountOut = _amountOut;
             emit SwapExecuted(
                 _executionCounter,
@@ -157,7 +161,7 @@ contract UniswapV3Arbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
                 amountIn,
                 amountOut
             );
-        } catch Error(string memory reason){
+        } catch Error(string memory reason) {
             revert(reason);
         } catch {
             revert("swap failed");
@@ -190,7 +194,9 @@ contract UniswapV3Arbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
         uint256 swap2AmountOut = _swapTokens(decoded.swap2, swap1AmountOut);
         uint256 swap3AmountOut = _swapTokens(decoded.swap3, swap2AmountOut);
         uint256 amountOwed = amount + premium;
-        int256 profit = int256(swap3AmountOut - (amountOwed + decoded.extraCost));
+        int256 profit = int256(
+            swap3AmountOut - (amountOwed + decoded.extraCost)
+        );
 
         require(profit > 0, "not profitable");
 
@@ -248,8 +254,7 @@ contract UniswapV3Arbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
     function withdrawNative() external payable onlyOwner {
         uint256 balance = _contractAddress.balance;
         require(balance != 0, "insufficient balance");
-        (bool success,) = payable(owner()).call{value: balance}("");
-        require(success, "Transfer failed");
+        TransferHelper.safeTransferETH(owner(), balance);
         emit NativeTokenWithdrawn(owner(), balance);
     }
 
