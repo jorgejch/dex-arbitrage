@@ -110,24 +110,30 @@ contract UniswapV3Arbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
         address swap3Token,
         uint256 swap3Fee
     ) internal returns (uint256 swap3AmountOut) {
+        ISwapRouter.ExactInputParams memory swapParams = ISwapRouter
+            .ExactInputParams({
+                path: abi.encodePacked(
+                    swap1Token,
+                    swap1Fee,
+                    swap2Token,
+                    swap2Fee,
+                    swap3Token,
+                    swap3Fee,
+                    swap1Token
+                ),
+                recipient: _contractAddress,
+                deadline: block.timestamp,
+                amountIn: amount,
+                amountOutMinimum: 0
+            });
 
-        ISwapRouter.ExactInputParams memory swapParams = ISwapRouter.ExactInputParams({
-            path: abi.encodePacked(
-                swap1Token,
-                swap1Fee,
-                swap2Token,
-                swap2Fee,
-                swap3Token,
-                swap3Fee,
-                swap1Token
-            ),
-            recipient: _contractAddress,
-            deadline: block.timestamp,
-            amountIn: amount,
-            amountOutMinimum: 0
-        });
-
-        swap3AmountOut = _swapRouter.exactInput(swapParams);
+        try _swapRouter.exactInput(swapParams) returns (uint256 amountOut) {
+            swap3AmountOut = amountOut;
+        } catch Error(string memory reason) {
+            revert(reason);
+        } catch {
+            revert("swap failed");
+        }
     }
 
     /**
