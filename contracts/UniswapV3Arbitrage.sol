@@ -12,10 +12,7 @@ import {TransferHelper} from "@uniswap/v3-periphery/contracts/libraries/Transfer
  * @title Flash-Loan Arbitrage Contract
  * @notice This is an arbitrage contract that uses AAVE v3 flash loans to make a profit on Uniswap v3.
  */
-contract UniswapV3Arbitrage is
-FlashLoanSimpleReceiverBase,
-Ownable2Step
-{
+contract UniswapV3Arbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
     uint256 private _balanceReceived;
     uint32 private _executionCounter;
     address internal immutable _poolAddress = address(POOL);
@@ -59,22 +56,6 @@ Ownable2Step
     event FlashLoanSuccess(uint32 indexed executionId, uint256 amount);
 
     /**
-     * @dev Event emitted when a swap is executed.
-     * @param executionId The execution identifier number (counter)
-     * @param tokenIn The input token address
-     * @param tokenOut The output token address
-     * @param amount0Out The amount of token0 that was sent.
-     * @param amount1In The amount of token1 that was received.
-     */
-    event SwapExecuted(
-        uint32 indexed executionId,
-        address indexed tokenIn,
-        address indexed tokenOut,
-        uint256 amount0Out,
-        uint256 amount1In
-    );
-
-    /**
      * @dev Event emitted when a token is withdrawn from the contract.
      */
     event TokenWithdrawn(
@@ -116,9 +97,9 @@ Ownable2Step
         address addressProvider,
         address sRouter
     )
-    payable
-    FlashLoanSimpleReceiverBase(IPoolAddressesProvider(addressProvider))
-    Ownable(msg.sender)
+        payable
+        FlashLoanSimpleReceiverBase(IPoolAddressesProvider(addressProvider))
+        Ownable(msg.sender)
     {
         _swapRouterAddress = sRouter;
         _swapRouter = ISwapRouter(_swapRouterAddress);
@@ -131,18 +112,18 @@ Ownable2Step
     function _swapTokens(
         SwapInfo memory swapInfo,
         uint256 amountIn
-    ) internal returns (uint256 amountOut) {
+    ) external returns (uint256 amountOut) {
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
-            .ExactInputSingleParams(
-            swapInfo.tokenIn,
-            swapInfo.tokenOut,
-            swapInfo.poolFee,
-            _contractAddress,
-            block.timestamp + 60,
-            amountIn,
-            0, // Not needed, reverts if no profit
-            0 // No price limit
-        );
+            .ExactInputSingleParams({
+                tokenIn: swapInfo.tokenIn,
+                tokenOut: swapInfo.tokenOut,
+                fee: swapInfo.poolFee,
+                recipient: _contractAddress,
+                deadline: block.timestamp + 10,
+                amountIn: amountIn,
+                amountOutMinimum: 0, // Not needed, reverts if no profit
+                sqrtPriceLimitX96: 0 // No price limit
+            });
 
         // Approve the swap router to spend the input token
         TransferHelper.safeApprove(swapInfo.tokenIn, _swapRouterAddress, 0);
@@ -152,20 +133,7 @@ Ownable2Step
             amountIn
         );
 
-        try _swapRouter.exactInputSingle(params) returns (uint256 _amountOut) {
-            amountOut = _amountOut;
-            emit SwapExecuted(
-                _executionCounter,
-                swapInfo.tokenIn,
-                swapInfo.tokenOut,
-                amountIn,
-                amountOut
-            );
-        } catch Error(string memory reason) {
-            revert(reason);
-        } catch {
-            revert("swap failed");
-        }
+        amountOut = _swapRouter.exactInputSingle(params);
     }
 
     /**
@@ -188,14 +156,51 @@ Ownable2Step
             amount <= IERC20(asset).balanceOf(_contractAddress),
             "invalid balance"
         );
-
         ArbitrageInfo memory decoded = abi.decode(params, (ArbitrageInfo));
-        uint256 swap1AmountOut = _swapTokens(decoded.swap1, amount);
-        uint256 swap2AmountOut = _swapTokens(decoded.swap2, swap1AmountOut);
-        uint256 swap3AmountOut = _swapTokens(decoded.swap3, swap2AmountOut);
-        uint256 amountOwed = amount + premium;
+        uint256 swap1AmountOut;
+        uint256 swap2AmountOut;
+        uint256 swap3AmountOut;
+
+        // Swap 1
+        try this._swapTokens(decoded.swap1, amount) returns (uint256 result) {
+            swap1AmountOut = result;
+        } catch Error(string memory reason) {
+            isSuccess = false;
+            revert(reason);
+        } catch {
+            isSuccess = false;
+            revert("swap 1 failed");
+        }
+        // Swap 2
+        try this._swapTokens(decoded.swap2, swap1AmountOut) returns (
+            uint256 result
+        ) {
+            swap2AmountOut = result;
+        } catch Error(string memory reason) {
+            isSuccess = false;
+            revert(reason);
+        } catch {
+            isSuccess = false;
+            revert("swap 2 failed");
+        }
+
+        // Swap 3
+        try this._swapTokens(decoded.swap3, swap2AmountOut) returns (
+            uint256 result
+        ) {
+            swap3AmountOut = result;
+        } catch Error(string memory reason) {
+            isSuccess = false;
+            revert(reason);
+        } catch {
+            isSuccess = false;
+            revert("swap 3 failed");
+        }
+
+        uint256 amountOwned = amount + premium;
+
         int256 profit = int256(
-            swap3AmountOut - (amountOwed + decoded.extraCost)
+            swap3AmountOut - (amountOwned + decoded.extraCost)
         );
 
         require(profit > 0, "not profitable");
@@ -210,7 +215,7 @@ Ownable2Step
         );
 
         TransferHelper.safeApprove(asset, _poolAddress, 0);
-        TransferHelper.safeApprove(asset, _poolAddress, amountOwed);
+        TransferHelper.safeApprove(asset, _poolAddress, amountOwned);
         isSuccess = true;
     }
 
@@ -230,13 +235,13 @@ Ownable2Step
         _executionCounter++;
 
         try
-        POOL.flashLoanSimple(
-            _contractAddress, // The receiver address
-            data.swap1.tokenIn, // The asset to be borrowed
-            tokenAIn, // The amount to be borrowed
-            abi.encode(data), // The arbitrage data
-            0
-        )
+            POOL.flashLoanSimple(
+                _contractAddress, // The receiver address
+                data.swap1.tokenIn, // The asset to be borrowed
+                tokenAIn, // The amount to be borrowed
+                abi.encode(data), // The arbitrage data
+                0
+            )
         {
             emit FlashLoanSuccess(_executionCounter, tokenAIn);
         } catch Error(string memory reason) {
