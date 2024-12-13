@@ -106,37 +106,6 @@ contract UniswapV3Arbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
     }
 
     /**
-     * @param swapInfo  The swap information
-     * @param amountIn  The amount of input tokens
-     */
-    function _swapTokens(
-        SwapInfo memory swapInfo,
-        uint256 amountIn
-    ) external returns (uint256 amountOut) {
-        ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
-            .ExactInputSingleParams({
-                tokenIn: swapInfo.tokenIn,
-                tokenOut: swapInfo.tokenOut,
-                fee: swapInfo.poolFee,
-                recipient: _contractAddress,
-                deadline: block.timestamp + 10,
-                amountIn: amountIn,
-                amountOutMinimum: 0, // Not needed, reverts if no profit
-                sqrtPriceLimitX96: 0 // No price limit
-            });
-
-        // Approve the swap router to spend the input token
-        TransferHelper.safeApprove(swapInfo.tokenIn, _swapRouterAddress, 0);
-        TransferHelper.safeApprove(
-            swapInfo.tokenIn,
-            _swapRouterAddress,
-            amountIn
-        );
-
-        amountOut = _swapRouter.exactInputSingle(params);
-    }
-
-    /**
      * @notice Executes the flash loan operation.
      * @dev This function is called by the lending pool after receiving the flash loaned amount.
      * @param asset The address of the asset being borrowed.
@@ -161,41 +130,23 @@ contract UniswapV3Arbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
         uint256 swap2AmountOut;
         uint256 swap3AmountOut;
 
-        // Swap 1
-        try this._swapTokens(decoded.swap1, amount) returns (uint256 result) {
-            swap1AmountOut = result;
-        } catch Error(string memory reason) {
-            isSuccess = false;
-            revert(reason);
-        } catch {
-            isSuccess = false;
-            revert("swap 1 failed");
-        }
-        // Swap 2
-        try this._swapTokens(decoded.swap2, swap1AmountOut) returns (
-            uint256 result
-        ) {
-            swap2AmountOut = result;
-        } catch Error(string memory reason) {
-            isSuccess = false;
-            revert(reason);
-        } catch {
-            isSuccess = false;
-            revert("swap 2 failed");
-        }
+        ISwapRouter.ExactInputParams memory swapParams = ISwapRouter.ExactInputParams({
+            path: abi.encodePacked(
+                decoded.swap1.tokenIn,
+                decoded.swap1.poolFee,
+                decoded.swap2.tokenIn,
+                decoded.swap2.poolFee,
+                decoded.swap3.tokenIn,
+                decoded.swap3.poolFee,
+                asset
+            ),
+            recipient: _contractAddress,
+            deadline: block.timestamp,
+            amountIn: amount,
+            amountOutMinimum: 0
+        });
 
-        // Swap 3
-        try this._swapTokens(decoded.swap3, swap2AmountOut) returns (
-            uint256 result
-        ) {
-            swap3AmountOut = result;
-        } catch Error(string memory reason) {
-            isSuccess = false;
-            revert(reason);
-        } catch {
-            isSuccess = false;
-            revert("swap 3 failed");
-        }
+        swap3AmountOut = _swapRouter.exactInput(swapParams);
 
         uint256 amountOwned = amount + premium;
 
