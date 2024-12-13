@@ -25,17 +25,13 @@ contract UniswapV3Arbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
      *
      * @param executionId The execution identifier number (counter)
      * @param inputAmount The amount borrowed
-     * @param swap1AmountOut Amount of the output token for swap 1
-     * @param swap2AmountOut Amount of the output token for swap 2
-     * @param swap3AmountOut Amount of the output token for swap 3
+     * @param outputAmount Amount of the output token for swap 3
      * @param profit The profit made from the arbitrage
      */
     event ArbitrageConcluded(
         uint32 indexed executionId,
         uint256 inputAmount,
-        uint256 swap1AmountOut,
-        uint256 swap2AmountOut,
-        uint256 swap3AmountOut,
+        uint256 outputAmount,
         int256 profit
     );
 
@@ -105,6 +101,35 @@ contract UniswapV3Arbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
         _swapRouter = ISwapRouter(_swapRouterAddress);
     }
 
+    function performSwaps(
+        uint256 amount,
+        address swap1Token,
+        uint256 swap1Fee,
+        address swap2Token,
+        uint256 swap2Fee,
+        address swap3Token,
+        uint256 swap3Fee
+    ) internal returns (uint256 swap3AmountOut) {
+
+        ISwapRouter.ExactInputParams memory swapParams = ISwapRouter.ExactInputParams({
+            path: abi.encodePacked(
+                swap1Token,
+                swap1Fee,
+                swap2Token,
+                swap2Fee,
+                swap3Token,
+                swap3Fee,
+                swap1Token
+            ),
+            recipient: _contractAddress,
+            deadline: block.timestamp,
+            amountIn: amount,
+            amountOutMinimum: 0
+        });
+
+        swap3AmountOut = _swapRouter.exactInput(swapParams);
+    }
+
     /**
      * @notice Executes the flash loan operation.
      * @dev This function is called by the lending pool after receiving the flash loaned amount.
@@ -120,36 +145,22 @@ contract UniswapV3Arbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
         uint256 premium,
         address /* initiator */,
         bytes calldata params
-    ) external override returns (bool isSuccess) {
+    ) external override returns (bool) {
         require(
             amount <= IERC20(asset).balanceOf(_contractAddress),
             "invalid balance"
         );
         ArbitrageInfo memory decoded = abi.decode(params, (ArbitrageInfo));
-        uint256 swap1AmountOut;
-        uint256 swap2AmountOut;
-        uint256 swap3AmountOut;
-
-        ISwapRouter.ExactInputParams memory swapParams = ISwapRouter.ExactInputParams({
-            path: abi.encodePacked(
-                decoded.swap1.tokenIn,
-                decoded.swap1.poolFee,
-                decoded.swap2.tokenIn,
-                decoded.swap2.poolFee,
-                decoded.swap3.tokenIn,
-                decoded.swap3.poolFee,
-                asset
-            ),
-            recipient: _contractAddress,
-            deadline: block.timestamp,
-            amountIn: amount,
-            amountOutMinimum: 0
-        });
-
-        swap3AmountOut = _swapRouter.exactInput(swapParams);
-
         uint256 amountOwned = amount + premium;
-
+        uint256 swap3AmountOut = performSwaps(
+            amount,
+            asset,
+            decoded.swap1.poolFee,
+            decoded.swap2.tokenIn,
+            decoded.swap2.poolFee,
+            decoded.swap3.tokenIn,
+            decoded.swap3.poolFee
+        );
         int256 profit = int256(
             swap3AmountOut - (amountOwned + decoded.extraCost)
         );
@@ -159,15 +170,13 @@ contract UniswapV3Arbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
         emit ArbitrageConcluded(
             _executionCounter,
             amount,
-            swap1AmountOut,
-            swap2AmountOut,
             swap3AmountOut,
             profit
         );
 
         TransferHelper.safeApprove(asset, _poolAddress, 0);
         TransferHelper.safeApprove(asset, _poolAddress, amountOwned);
-        isSuccess = true;
+        return true;
     }
 
     /**
