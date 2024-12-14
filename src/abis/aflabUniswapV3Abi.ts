@@ -22,9 +22,7 @@ export default [
         inputs: [
             { indexed: true, internalType: "uint32", name: "executionId", type: "uint32" },
             { indexed: false, internalType: "uint256", name: "inputAmount", type: "uint256" },
-            { indexed: false, internalType: "uint256", name: "swap1AmountOut", type: "uint256" },
-            { indexed: false, internalType: "uint256", name: "swap2AmountOut", type: "uint256" },
-            { indexed: false, internalType: "uint256", name: "swap3AmountOut", type: "uint256" },
+            { indexed: false, internalType: "uint256", name: "outputAmount", type: "uint256" },
             { indexed: false, internalType: "int256", name: "profit", type: "int256" },
         ],
         name: "ArbitrageConcluded",
@@ -99,26 +97,6 @@ export default [
         stateMutability: "view",
         type: "function",
     },
-    {
-        inputs: [
-            {
-                components: [
-                    { internalType: "address", name: "tokenIn", type: "address" },
-                    { internalType: "address", name: "tokenOut", type: "address" },
-                    { internalType: "uint24", name: "poolFee", type: "uint24" },
-                    { internalType: "uint256", name: "amountOutMinimum", type: "uint256" },
-                ],
-                internalType: "struct UniswapV3Arbitrage.SwapInfo",
-                name: "swapInfo",
-                type: "tuple",
-            },
-            { internalType: "uint256", name: "amountIn", type: "uint256" },
-        ],
-        name: "_swapTokens",
-        outputs: [{ internalType: "uint256", name: "amountOut", type: "uint256" }],
-        stateMutability: "nonpayable",
-        type: "function",
-    },
     { inputs: [], name: "acceptOwnership", outputs: [], stateMutability: "nonpayable", type: "function" },
     {
         inputs: [
@@ -129,7 +107,7 @@ export default [
             { internalType: "bytes", name: "params", type: "bytes" },
         ],
         name: "executeOperation",
-        outputs: [{ internalType: "bool", name: "isSuccess", type: "bool" }],
+        outputs: [{ internalType: "bool", name: "", type: "bool" }],
         stateMutability: "nonpayable",
         type: "function",
     },
