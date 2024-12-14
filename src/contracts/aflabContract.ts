@@ -101,9 +101,6 @@ class AflabContract extends BaseContract {
     }
 
     protected async listenForEvents(contract: Contract): Promise<void> {
-        contract.on("SwapExecuted", (...args: unknown[]) => {
-            logger.info(`Swap executed: ${JSON.stringify(args)}`, this.constructor.name);
-        });
         contract.on("FlashloanError", (...args: unknown[]) => {
             logger.info(`Flashloan error: ${JSON.stringify(args)}`, this.constructor.name);
         });
