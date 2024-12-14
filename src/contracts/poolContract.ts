@@ -66,7 +66,7 @@ class PoolContract extends BaseContract {
      * @returns {Decimal} The total pool fees
      */
     public getTotalPoolFeesAsDecimal(): Decimal {
-       return new Decimal(this.pool.fees[-1].feePercentage).div(100); // FIXED_TRADING_FEE; 
+        return new Decimal(this.getPool().fees.at(-1)!.feePercentage).div(100); // FIXED_TRADING_FEE;
     }
 
     /**
