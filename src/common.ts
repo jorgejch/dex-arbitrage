@@ -3,9 +3,11 @@ import aflabAbi from "./abis/aflabUniswapV3Abi.js";
 import lendingPoolAPAbi from "./abis/lendingPoolAPAbi.js";
 import lendingPoolAbi from "./abis/lendingPoolAbi.js";
 import { BigNumber } from "alchemy-sdk";
-import { Decimal } from "decimal.js"; // Constants
+import { Decimal } from "decimal.js";
 
-// Constants
+/**
+ * Static configuration values
+ */
 const constants = {
     QI92: new Decimal(6277101735386680763835789423207666416102355444464034512896n.toString()),
     MAX_FEE_DECIMAL: new Decimal(0.01),
