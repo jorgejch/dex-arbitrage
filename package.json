@@ -26,7 +26,6 @@
   "devDependencies": {
     "@aave/core-v3": "1.19.3",
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
-    "@openzeppelin/contracts": "5.1.0",
     "@types/node": "^20.17.6",
     "@uniswap/v3-core": "^1.0.1",
     "@uniswap/v3-periphery": "^1.4.4",
@@ -39,6 +38,7 @@
     "vitest": "^2.1.5"
   },
   "dependencies": {
+    "@openzeppelin/contracts": "5.1.0",
     "@urql/core": "^5.0.8",
     "alchemy-sdk": "^3.5.0",
     "decimal.js": "^10.4.3",
