@@ -21,10 +21,6 @@ const config = {
     LENDING_POOL_AP_ABI: lendingPoolAPAbi,
     LENDING_POOL_ABI: lendingPoolAbi,
     LOG_LEVEL: "INFO",
-    RECONNECT_INTERVAL_BASE: 1000, // Base interval for WSS reconnection attempts in milliseconds
-    EXPECTED_PONG_BACK: 5000, // Time to wait for a pong response in milliseconds
-    KEEP_ALIVE_CHECK_INTERVAL: 7500, // Interval for sending ping messages in milliseconds
-    SIMULATE_DISCONNECT_INTERVAL: 15000, // Interval to simulate disconnections in milliseconds
     PRICE_IMPACT_THRESHOLD: 10, // Price impact threshold for arbitrage opportunities in bps
 };
 
