@@ -6,6 +6,7 @@ import {IPoolAddressesProvider} from "@aave/core-v3/contracts/interfaces/IPoolAd
 import {Ownable2Step, Ownable} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {ISwapRouter} from "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import {TransferHelper} from "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
 
@@ -179,15 +180,13 @@ contract UniswapV3Arbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
         int256 profit = int256(swap3AmountOut) -
             int256(amountOwned + decoded.extraCost);
 
-        require(profit > 0, "not profitable");
-
         emit ArbitrageConcluded(
             _executionCounter,
             amount,
             swap3AmountOut,
             profit
         );
-
+        require(profit > 0, string(abi.encodePacked("not profitable:", Strings.toString(uint256(profit)))));
         IERC20(asset).approve(_poolAddress, amountOwned);
         return true;
     }
