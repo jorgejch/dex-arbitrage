@@ -176,9 +176,8 @@ contract UniswapV3Arbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
             decoded.swap3.tokenIn,
             decoded.swap3.poolFee
         );
-        int256 profit = int256(
-            swap3AmountOut - (amountOwned + decoded.extraCost)
-        );
+        int256 profit = int256(swap3AmountOut) -
+            int256(amountOwned + decoded.extraCost);
 
         require(profit > 0, "not profitable");
 
