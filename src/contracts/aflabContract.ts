@@ -1,6 +1,7 @@
 import { BaseContract } from "./baseContract.js";
 import { ContractType, Opportunity } from "../types.js";
-import { exponentialBackoffDelay, logger } from "../common.js";
+import { logger } from "../common.js";
+import { TxHandler } from "../TxHandler.js";
 
 import {
     Alchemy,
@@ -19,6 +20,7 @@ const INITIATE_FLASHLOAN_SIG = "initiateFlashLoan";
  */
 class AflabContract extends BaseContract {
     private readonly wallet: Wallet;
+    private readonly txHandler: TxHandler;
 
     /**
      * Creates an instance of the AFLAB contract.
@@ -28,10 +30,19 @@ class AflabContract extends BaseContract {
      * @param alchemy The Alchemy SDK instance
      * @param wallet The provider instance
      * @param network The network ID
+     * @param txHandler The transaction handler instance
      */
-    constructor(address: string, abi: object[], alchemy: Alchemy, wallet: Wallet, network: number) {
+    constructor(
+        address: string,
+        abi: object[],
+        alchemy: Alchemy,
+        wallet: Wallet,
+        network: number,
+        txHandler: TxHandler,
+    ) {
         super(address, abi, ContractType.AFLAB, alchemy, network);
         this.wallet = wallet;
+        this.txHandler = txHandler;
     }
 
     /**
@@ -72,20 +83,25 @@ class AflabContract extends BaseContract {
             return;
         }
 
-        logger.debug(`Transaction request: ${JSON.stringify(req)}`, this.constructor.name);
-
-        let txResponse: TransactionResponse;
-        try {
-            txResponse = await this.sendTransactionWithRetry(req);
-        } catch (error) {
-            logger.error(`Transaction error: ${error}`, this.constructor.name);
-            // Print stack trace
-            if (error instanceof Error && error.stack) {
-                logger.error(error.stack, this.constructor.name);
+        this.txHandler.push(req, async (err: any, result: TransactionResponse) => {
+            if (err) {
+                logger.error(`Error processing transaction: ${err}`, this.constructor.name);
+                return;
             }
-            return;
-        }
-        logger.info(`Transaction Concluded. Response: ${JSON.stringify(txResponse)}`, this.constructor.name);
+
+            try {
+                const receipt: TransactionReceipt = await result.wait();
+                logger.info(`Transaction confirmed in block ${receipt.blockNumber}`, this.constructor.name);
+                logger.info(`Receipt: ${JSON.stringify(receipt.transactionHash)}`, this.constructor.name);
+                return receipt;
+            } catch (error) {
+                // Transaction failed after being mined
+                if (error instanceof Error && error.stack && error.message) {
+                    logger.error(error.stack, this.constructor.name);
+                }
+                logger.error(`Transaction failed after being mined: ${JSON.stringify(error)}`, this.constructor.name);
+            }
+        });
     }
 
     protected async createContract(): Promise<void> {
@@ -172,77 +188,7 @@ class AflabContract extends BaseContract {
             chainId: this.network,
             gasLimit: 1500000, // default gas limit
             gasPrice: await this.alchemy.core.getGasPrice(),
-            nonce: await this.alchemy.core.getTransactionCount(from, "pending"),
         };
-    }
-
-    private logTransactionSent(txResponse: TransactionResponse): void {
-        const logMessage = `
-        ===========================
-        📝 **Transaction Sent**
-        ---------------------------
-        - **Hash**: ${txResponse.hash}
-        - **Nonce**: ${txResponse.nonce}
-        - **From**: ${txResponse.from}
-        - **To**: ${txResponse.to}
-        - **Gas Price**: ${txResponse.gasPrice ? `${txResponse.gasPrice.toNumber()} Wei` : "N/A"}
-        - **Gas Limit**: ${txResponse.gasLimit.toNumber()}
-        - **Max Fee Per Gas**: ${txResponse.maxFeePerGas ? `${txResponse.maxFeePerGas.toNumber()} Wei` : "N/A"}
-        - **Max Priority Fee Per Gas**: ${
-            txResponse.maxPriorityFeePerGas ? `${txResponse.maxPriorityFeePerGas.toNumber()} Wei` : "N/A"
-        }
-        - **Chain ID**: ${txResponse.chainId}
-        - **Data**: ${txResponse.data}
-        - **Block Hash**: ${txResponse.blockHash ?? "Pending"}
-        - **Block Number**: ${txResponse.blockNumber ?? "Pending"}
-        - **Confirmations**: ${txResponse.confirmations}
-        ===========================
-        `;
-
-        logger.info(logMessage, this.constructor.name);
-    }
-
-    private async sendTransactionWithRetry(
-        tx: TransactionRequest,
-        retries: number = 3,
-        delayMs: number = 1000,
-    ): Promise<any> {
-        let txResponse: TransactionResponse | null = null;
-        for (let attempt = 0; attempt < retries; attempt++) {
-            try {
-                txResponse = await this.wallet.sendTransaction(tx);
-                this.logTransactionSent(txResponse);
-                break; // Exit retry loop on successful send
-            } catch (error) {
-                if (error instanceof Error && error.stack && error.message) {
-                    logger.error(error.stack, this.constructor.name);
-                }
-                logger.warn(
-                    `Attempt ${attempt} error sending transaction: ${JSON.stringify(error)}`,
-                    this.constructor.name,
-                );
-                if (attempt === retries - 1) throw error; // Re-throw after final attempt
-                tx.gasPrice = BigNumber.from(tx.gasPrice).mul(110).div(100); // Increase gas price by 10%
-                await exponentialBackoffDelay(delayMs, attempt);
-            }
-        }
-
-        if (!txResponse) {
-            throw new Error("Failed to send transaction after multiple attempts");
-        }
-
-        try {
-            const receipt: TransactionReceipt = await txResponse.wait();
-            logger.info(`Transaction confirmed in block ${receipt.blockNumber}`, this.constructor.name);
-            logger.info(`Receipt: ${JSON.stringify(receipt.transactionHash)}`, this.constructor.name);
-            return receipt;
-        } catch (error) {
-            // Transaction failed after being mined
-            if (error instanceof Error && error.stack && error.message) {
-                logger.error(error.stack, this.constructor.name);
-            }
-            logger.error(`Transaction failed after being mined: ${JSON.stringify(error)}`, this.constructor.name);
-        }
     }
 }
 

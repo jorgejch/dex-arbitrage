@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AflabContract } from "../../../src/contracts/aflabContract.js";
-import { Alchemy, BigNumber, Contract, TransactionResponse, TransactionRequest, Wallet } from "alchemy-sdk";
+import { Alchemy, BigNumber, Contract, TransactionResponse, Wallet } from "alchemy-sdk";
 import { Opportunity } from "../../../src/types.js";
 
 describe("AflabContract Unit Tests", () => {
@@ -54,7 +54,8 @@ describe("AflabContract Unit Tests", () => {
 
         network = 137; // Example network ID
 
-        aflabContract = new AflabContract(address, abi, alchemy, wallet, network);
+        const mockTxHandler = {} as any;
+        aflabContract = new AflabContract(address, abi, alchemy, wallet, network, mockTxHandler);
     });
 
     afterEach(() => {
@@ -165,39 +166,5 @@ describe("AflabContract Unit Tests", () => {
 
         expect(mockContract.interface.encodeFunctionData).toHaveBeenCalled();
         expect(wallet.sendTransaction).toHaveBeenCalled();
-    });
-
-    it("should retry and succeed sending transaction when error occurs", async () => {
-        aflabContract["wallet"].sendTransaction = vi
-            .fn()
-            .mockRejectedValueOnce(new Error("Transaction failed"))
-            .mockResolvedValue({
-                hash: "0xTransactionHash",
-                wait: vi.fn().mockResolvedValue({
-                    blockNumber: 123,
-                    transactionHash: "0xTransactionHash",
-                }),
-                nonce: 1,
-                gasPrice: BigNumber.from("1000000000"),
-                gasLimit: BigNumber.from("21000"),
-            });
-
-        const txRequest: TransactionRequest = {
-            from: "0xFrom",
-            to: "0xTo",
-            data: "0xData",
-            value: BigNumber.from(0),
-            chainId: network,
-            gasLimit: 500000,
-            gasPrice: BigNumber.from("1000000000"),
-            nonce: 1,
-        };
-
-        const result = await aflabContract["sendTransactionWithRetry"](txRequest, 2, 100);
-
-        expect(result).toEqual({
-            blockNumber: 123,
-            transactionHash: "0xTransactionHash",
-        });
     });
 });
