@@ -5,6 +5,7 @@ import {FlashLoanSimpleReceiverBase} from "@aave/core-v3/contracts/flashloan/bas
 import {IPoolAddressesProvider} from "@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol";
 import {Ownable2Step, Ownable} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ISwapRouter} from "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import {TransferHelper} from "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
 
@@ -13,12 +14,16 @@ import {TransferHelper} from "@uniswap/v3-periphery/contracts/libraries/Transfer
  * @notice This is an arbitrage contract that uses AAVE v3 flash loans to make a profit on Uniswap v3.
  */
 contract UniswapV3Arbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
+    uint256 internal constant MAX_UINT256 = type(uint256).max;
+
     uint256 private _balanceReceived;
     uint32 private _executionCounter;
-    address internal immutable _poolAddress = address(POOL);
-    address internal immutable _contractAddress = address(this);
     ISwapRouter internal immutable _swapRouter;
     address internal immutable _swapRouterAddress;
+    address internal immutable _poolAddress = address(POOL);
+    address internal immutable _contractAddress = address(this);
+
+    using SafeERC20 for IERC20;
 
     /**
      * @dev Event emitted when the arbitrage is concluded, regardless of success or failure.
@@ -104,11 +109,11 @@ contract UniswapV3Arbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
     function performSwaps(
         uint256 amount,
         address swap1Token,
-        uint256 swap1Fee,
+        uint24 swap1Fee,
         address swap2Token,
-        uint256 swap2Fee,
+        uint24 swap2Fee,
         address swap3Token,
-        uint256 swap3Fee
+        uint24 swap3Fee
     ) internal returns (uint256 swap3AmountOut) {
         ISwapRouter.ExactInputParams memory swapParams = ISwapRouter
             .ExactInputParams({
@@ -126,6 +131,10 @@ contract UniswapV3Arbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
                 amountIn: amount,
                 amountOutMinimum: 0
             });
+
+        IERC20(swap1Token).approve(_swapRouterAddress, amount);
+        IERC20(swap2Token).approve(_swapRouterAddress, MAX_UINT256);
+        IERC20(swap3Token).approve(_swapRouterAddress, MAX_UINT256);
 
         try _swapRouter.exactInput(swapParams) returns (uint256 amountOut) {
             swap3AmountOut = amountOut;
@@ -180,8 +189,7 @@ contract UniswapV3Arbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
             profit
         );
 
-        TransferHelper.safeApprove(asset, _poolAddress, 0);
-        TransferHelper.safeApprove(asset, _poolAddress, amountOwned);
+        IERC20(asset).approve(_poolAddress, amountOwned);
         return true;
     }
 
