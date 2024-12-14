@@ -4,7 +4,8 @@ import { DexPoolSubgraph } from "./subgraphs/dexPoolSubgraph.js";
 import { config, getTGUrl, logger } from "./common.js";
 import { AflabContract } from "./contracts/aflabContract.js";
 import { LendingPoolAPContract } from "./contracts/lendingPoolAPContract.js";
-import { Alchemy, Network, Wallet } from "alchemy-sdk";
+import { Alchemy, Network, TransactionResponse, Wallet } from "alchemy-sdk";
+import { TxHandler } from "./TxHandler.js";
 
 class Controller {
     private readonly walletPrivateKey: string;
@@ -114,7 +115,31 @@ class Controller {
                 this.alchemy,
                 this.wallet,
                 new DexPoolSubgraph(getTGUrl(this.theGraphBaseUrl, this.uniswapV3SubgraphName, this.theGraphApiKey)),
-                new AflabContract(this.aflabContractAddress, config.AFLAB_ABI, this.alchemy, this.wallet, 137),
+                new AflabContract(
+                    this.aflabContractAddress,
+                    config.AFLAB_ABI,
+                    this.alchemy,
+                    this.wallet,
+                    137,
+                    new TxHandler(this.alchemy, async (tx, cb) => {
+                        let txResponse: TransactionResponse;
+
+                        try {
+                            txResponse = await this.wallet!.sendTransaction(tx);
+                        } catch (error) {
+                            logger.error(`Error sending transaction: ${error}`, this.constructor.name);
+                            cb(error, null);
+                            return;
+                        }
+                        try {
+                            cb(null, txResponse);
+                        } catch (error) {
+                            logger.error(`Transaction: ${error}`, this.constructor.name);
+                            cb(error, null);
+                        }
+                    }),
+                ),
+
                 new LendingPoolAPContract(
                     this.aavePoolAddressProviderContractAddress,
                     this.alchemy,
