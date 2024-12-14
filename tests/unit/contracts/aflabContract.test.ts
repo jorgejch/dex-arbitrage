@@ -99,7 +99,7 @@ describe("AflabContract Unit Tests", () => {
                     poolFee: BigNumber.from(3000),
                     amountOutMinimum: BigNumber.from(0),
                 },
-                estimatedGasCost: BigNumber.from(200000),
+                estimatedGasCost: BigNumber.from(0),
             },
         } as Opportunity;
 
