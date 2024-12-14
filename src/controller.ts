@@ -7,7 +7,7 @@ import { LendingPoolAPContract } from "./contracts/lendingPoolAPContract.js";
 import { Alchemy, Network, Wallet } from "alchemy-sdk";
 
 class Controller {
-    private readonly wallet: Wallet;
+    private readonly walletPrivateKey: string;
     private readonly aflabContractAddress: string;
     private readonly alchemy: Alchemy;
     private readonly theGraphBaseUrl: string;
@@ -15,6 +15,7 @@ class Controller {
     private readonly uniswapV3SubgraphName: string;
     private readonly aavePoolAddressProviderContractAddress: string;
     private dexes?: BaseDex[];
+    private wallet?: Wallet;
 
     /**
      * @param walletPrivateKey - The private key of the wallet.
@@ -37,6 +38,7 @@ class Controller {
         aavePoolAddressProviderContractAddress: string,
     ) {
         try {
+            this.walletPrivateKey = walletPrivateKey;
             this.theGraphBaseUrl = theGraphBaseUrl;
             this.theGraphApiKey = theGraphApiKey;
             this.uniswapV3SubgraphName = uniswapV3SubgraphName;
@@ -46,7 +48,6 @@ class Controller {
                 maxRetries: 3,
                 requestTimeout: 30000,
             });
-            this.wallet = new Wallet(walletPrivateKey, this.alchemy);
             this.aflabContractAddress = aflabContractAddress;
             this.aavePoolAddressProviderContractAddress = aavePoolAddressProviderContractAddress;
         } catch (error) {
@@ -59,6 +60,13 @@ class Controller {
      * Starts the Controller.
      */
     public async start() {
+        try {
+            this.wallet = new Wallet(this.walletPrivateKey, await this.alchemy.config.getWebSocketProvider());
+        } catch (error) {
+            logger.error(`Error initializing Wallet: ${error}`, this.constructor.name);
+            return;
+        }
+
         try {
             await this.initializeDexes();
         } catch (error) {
@@ -97,6 +105,10 @@ class Controller {
     }
 
     private async initializeDexes() {
+        if (!this.wallet) {
+            throw new Error("Wallet is not initialized");
+        }
+
         this.dexes = [
             new UniswapV3Dex(
                 this.alchemy,

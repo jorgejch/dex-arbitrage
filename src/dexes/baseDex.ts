@@ -185,7 +185,7 @@ abstract class BaseDex {
         }
 
         if (swap1Result.netOutput.lte(0)) return returnPayload;
-        returnPayload.swap1FeeBigNumber = BigNumber.from(swap1Result.feeDecimal.mul(10 ** 7).toFixed(0));
+        returnPayload.swap1FeeBigNumber = BigNumber.from(swap1Result.feeDecimal.mul(10 ** 6).toFixed(0));
 
         // Swap 2: Token B to Token C
         let swap2Result: NetOutputData;
@@ -197,7 +197,7 @@ abstract class BaseDex {
         }
 
         if (swap2Result.netOutput.lte(0)) return returnPayload;
-        returnPayload.swap2FeeBigNumber = BigNumber.from(swap2Result.feeDecimal.mul(10 ** 7).toFixed(0));
+        returnPayload.swap2FeeBigNumber = BigNumber.from(swap2Result.feeDecimal.mul(10 ** 6).toFixed(0));
 
         // Swap 3: Token C to Token A
 
@@ -210,7 +210,7 @@ abstract class BaseDex {
         }
 
         if (swap3Result.netOutput.lte(0)) return returnPayload;
-        returnPayload.swap3FeeBigNumber = BigNumber.from(swap3Result.feeDecimal.mul(10 ** 7).toFixed(0));
+        returnPayload.swap3FeeBigNumber = BigNumber.from(swap3Result.feeDecimal.mul(10 ** 6).toFixed(0));
 
         const lendingPoolFeeBigNumber = BigNumber.from(
             new Decimal(inputAmount.toString()).mul(lendingPoolFeePercentage).toFixed(0),

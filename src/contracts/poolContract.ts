@@ -27,7 +27,6 @@ class PoolContract extends BaseContract {
     protected readonly pool: Pool;
     private readonly processSwap: (psv3Swap: UniswapV3Swap, lastPoolSqrtPriceX96: BigNumber) => Promise<void>;
     private lastPoolSqrtPriceX96: BigNumber;
-    private totalPoolFeesCache: Decimal | null = null;
 
     constructor(
         address: string,
@@ -67,14 +66,7 @@ class PoolContract extends BaseContract {
      * @returns {Decimal} The total pool fees
      */
     public getTotalPoolFeesAsDecimal(): Decimal {
-        if (this.totalPoolFeesCache === null) {
-            const totalFeePercentage: Decimal = this.pool.fees.reduce((acc, fee) => {
-                const feePercentage: Decimal = new Decimal(fee.feePercentage);
-                return acc.add(feePercentage);
-            }, new Decimal(0));
-            this.totalPoolFeesCache = totalFeePercentage.div(100);
-        }
-        return this.totalPoolFeesCache;
+        return new Decimal(this.getPool().fees.at(-1)!.feePercentage).div(100); // FIXED_TRADING_FEE;
     }
 
     /**
