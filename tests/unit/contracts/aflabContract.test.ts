@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AflabContract } from "../../../src/contracts/aflabContract.js";
-import { Alchemy, BigNumber, Contract, Wallet } from "alchemy-sdk";
+import { Alchemy, BigNumber, Contract, TransactionResponse, TransactionRequest, Wallet } from "alchemy-sdk";
 import { Opportunity } from "../../../src/types.js";
 
 describe("AflabContract Unit Tests", () => {
@@ -16,8 +16,18 @@ describe("AflabContract Unit Tests", () => {
         abi = []; // Replace with actual ABI
 
         wallet = {
-            signTransaction: vi.fn().mockResolvedValue("0xSignedTx"), // Add other mocked methods and properties as
-            // needed
+            sendTransaction: vi.fn().mockResolvedValue({
+                hash: "0xMockTransactionHash",
+                to: "0xRecipientAddress",
+                from: "0xSenderAddress",
+                nonce: 0,
+                gasLimit: BigNumber.from("21000"),
+                gasPrice: BigNumber.from("1000000000"),
+                data: "0xMockData",
+                value: BigNumber.from("0"),
+                chainId: 1,
+                confirmations: 0, // Add more properties if needed based on TransactionResponse interface
+            } as TransactionResponse),
         } as unknown as Wallet;
 
         alchemy = vi.mocked({
@@ -89,7 +99,7 @@ describe("AflabContract Unit Tests", () => {
                     poolFee: BigNumber.from(3000),
                     amountOutMinimum: BigNumber.from(0),
                 },
-                estimatedGasCost: BigNumber.from(200000),
+                estimatedGasCost: BigNumber.from(0),
             },
         } as Opportunity;
 
@@ -154,12 +164,11 @@ describe("AflabContract Unit Tests", () => {
         await aflabContract.executeOpportunity(opportunity);
 
         expect(mockContract.interface.encodeFunctionData).toHaveBeenCalled();
-        expect(alchemy.transact.sendTransaction).toHaveBeenCalled();
+        expect(wallet.sendTransaction).toHaveBeenCalled();
     });
 
     it("should retry and succeed sending transaction when error occurs", async () => {
-        aflabContract["wallet"].signTransaction = vi.fn().mockResolvedValue("0xSignedTx");
-        aflabContract["alchemy"].transact.sendTransaction = vi
+        aflabContract["wallet"].sendTransaction = vi
             .fn()
             .mockRejectedValueOnce(new Error("Transaction failed"))
             .mockResolvedValue({
@@ -173,7 +182,7 @@ describe("AflabContract Unit Tests", () => {
                 gasLimit: BigNumber.from("21000"),
             });
 
-        const txRequest = {
+        const txRequest: TransactionRequest = {
             from: "0xFrom",
             to: "0xTo",
             data: "0xData",

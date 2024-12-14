@@ -16,3 +16,4 @@ bin/
 .vscode/
 package-lock.json
 coverage/
+.quokka/

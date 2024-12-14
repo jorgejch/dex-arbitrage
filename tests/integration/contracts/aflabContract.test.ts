@@ -72,7 +72,7 @@ describe("AflabContract Integration Tests", () => {
                 symbol: "DAO",
                 decimals: 18,
             },
-            poolFee: BigNumber.from(0.03).mul(10 ** 5),
+            poolFee: BigNumber.from(0.03 * (10 ** 5)),
             amountOutMinimum: BigNumber.from(0),
         };
 
@@ -89,7 +89,7 @@ describe("AflabContract Integration Tests", () => {
                 symbol: "USDT",
                 decimals: 18,
             },
-            poolFee: BigNumber.from(0.03).mul(10 ** 5),
+            poolFee: BigNumber.from(0.03 * 10 ** 5),
             amountOutMinimum: BigNumber.from(0),
         };
 

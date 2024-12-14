@@ -16,7 +16,7 @@ describe("PoolContract", () => {
         symbol: "MP",
         fees: [
             { feePercentage: 1, feeType: "" },
-            { feePercentage: 2, feeType: "" },
+            { feePercentage: 3, feeType: "" },
         ],
         inputTokens: [
             { id: "1", name: "Token1", symbol: "TK1", decimals: 18 },
@@ -55,6 +55,10 @@ describe("PoolContract", () => {
     it("should throw an error if input tokens are not defined", () => {
         pool.inputTokens = undefined as any;
         expect(() => poolContract.getInputTokens()).toThrowError("Input tokens are not defined");
+    });
+
+    it("should return 2 Fee objects", () => {
+        expect(poolContract.getPool().fees).toHaveLength(2);
     });
 
     it("should return the total pool fees as a Decimal", () => {

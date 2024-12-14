@@ -25,7 +25,7 @@ const config = {
     EXPECTED_PONG_BACK: 5000, // Time to wait for a pong response in milliseconds
     KEEP_ALIVE_CHECK_INTERVAL: 7500, // Interval for sending ping messages in milliseconds
     SIMULATE_DISCONNECT_INTERVAL: 15000, // Interval to simulate disconnections in milliseconds
-    PRICE_IMPACT_THRESHOLD: 20, // Price impact threshold for arbitrage opportunities in bps
+    PRICE_IMPACT_THRESHOLD: 10, // Price impact threshold for arbitrage opportunities in bps
 };
 
 /**
