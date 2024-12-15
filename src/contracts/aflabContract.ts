@@ -48,8 +48,6 @@ class AflabContract extends BaseContract {
     /**
      * Executes an arbitrage opportunity.
      * @param opportunity The arbitrage opportunity to execute.
-     * @returns A promise that resolves when the opportunity is executed.
-     * @throws An error if the opportunity cannot be executed.
      */
     public async executeOpportunity(opportunity: Opportunity): Promise<void> {
         if (!this.contract) {
