@@ -12,11 +12,34 @@ describe("AflabContract Unit Tests", () => {
     let alchemy: Alchemy;
     let network: number;
     let mockTxHandler: any;
+    let opportunity: Opportunity;
 
     beforeEach(() => {
         address = "0xContractAddress";
         abi = []; // Replace with actual ABI
-
+        opportunity = {
+            arbitrageInfo: {
+                swap1: {
+                    tokenIn: { id: "0xTokenIn1" },
+                    tokenOut: { id: "0xTokenOut1" },
+                    poolFee: BigNumber.from(3000),
+                    amountOutMinimum: BigNumber.from(0),
+                },
+                swap2: {
+                    tokenIn: { id: "0xTokenIn2" },
+                    tokenOut: { id: "0xTokenOut2" },
+                    poolFee: BigNumber.from(3000),
+                    amountOutMinimum: BigNumber.from(0),
+                },
+                swap3: {
+                    tokenIn: { id: "0xTokenIn3" },
+                    tokenOut: { id: "0xTokenOut3" },
+                    poolFee: BigNumber.from(3000),
+                    amountOutMinimum: BigNumber.from(0),
+                },
+                estimatedGasCost: BigNumber.from(0),
+            },
+        } as Opportunity;
         wallet = {
             sendTransaction: vi.fn().mockResolvedValue({
                 hash: "0xMockTransactionHash",
@@ -27,8 +50,8 @@ describe("AflabContract Unit Tests", () => {
                 gasPrice: BigNumber.from("1000000000"),
                 data: "0xMockData",
                 value: BigNumber.from("0"),
-                chainId: 1,
-                confirmations: 0
+                chainId: 137,
+                confirmations: 0,
             } as TransactionResponse),
         } as unknown as Wallet;
 
@@ -84,30 +107,6 @@ describe("AflabContract Unit Tests", () => {
     });
 
     it("should return valid arbitrageInfo from getArbitrageInfo", () => {
-        const opportunity: Opportunity = {
-            arbitrageInfo: {
-                swap1: {
-                    tokenIn: { id: "0xTokenIn1" },
-                    tokenOut: { id: "0xTokenOut1" },
-                    poolFee: BigNumber.from(3000),
-                    amountOutMinimum: BigNumber.from(0),
-                },
-                swap2: {
-                    tokenIn: { id: "0xTokenIn2" },
-                    tokenOut: { id: "0xTokenOut2" },
-                    poolFee: BigNumber.from(3000),
-                    amountOutMinimum: BigNumber.from(0),
-                },
-                swap3: {
-                    tokenIn: { id: "0xTokenIn3" },
-                    tokenOut: { id: "0xTokenOut3" },
-                    poolFee: BigNumber.from(3000),
-                    amountOutMinimum: BigNumber.from(0),
-                },
-                estimatedGasCost: BigNumber.from(0),
-            },
-        } as Opportunity;
-
         const arbitrageInfo = aflabContract["getArbitrageInfo"](opportunity);
 
         expect(arbitrageInfo).toEqual({
@@ -141,63 +140,13 @@ describe("AflabContract Unit Tests", () => {
         };
         aflabContract["contract"] = mockContract as unknown as Contract;
 
-        const opportunity: Opportunity = {
-            arbitrageInfo: {
-                swap1: {
-                    tokenIn: { id: "0xTokenIn1" },
-                    tokenOut: { id: "0xTokenOut1" },
-                    poolFee: BigNumber.from(3000),
-                    amountOutMinimum: BigNumber.from(0),
-                },
-                swap2: {
-                    tokenIn: { id: "0xTokenIn2" },
-                    tokenOut: { id: "0xTokenOut2" },
-                    poolFee: BigNumber.from(3000),
-                    amountOutMinimum: BigNumber.from(0),
-                },
-                swap3: {
-                    tokenIn: { id: "0xTokenIn3" },
-                    tokenOut: { id: "0xTokenOut3" },
-                    poolFee: BigNumber.from(3000),
-                    amountOutMinimum: BigNumber.from(0),
-                },
-                estimatedGasCost: BigNumber.from(200000),
-            },
-            tokenAIn: BigNumber.from(1000000000000000000n), // 1 token
-        } as Opportunity;
-
         await aflabContract.executeOpportunity(opportunity);
 
         expect(mockContract.interface.encodeFunctionData).toHaveBeenCalled();
         expect(mockTxHandler.push).toHaveBeenCalled();
     });
-    it("should should log message and return on executeOpportunity when the contract is not initialized", async () => {
+    it("should should log error message on executeOpportunity when the contract is not initialized", async () => {
         aflabContract["contract"] = undefined;
-
-        const opportunity: Opportunity = {
-            arbitrageInfo: {
-                swap1: {
-                    tokenIn: { id: "0xTokenIn1" },
-                    tokenOut: { id: "0xTokenOut1" },
-                    poolFee: BigNumber.from(3000),
-                    amountOutMinimum: BigNumber.from(0),
-                },
-                swap2: {
-                    tokenIn: { id: "0xTokenIn2" },
-                    tokenOut: { id: "0xTokenOut2" },
-                    poolFee: BigNumber.from(3000),
-                    amountOutMinimum: BigNumber.from(0),
-                },
-                swap3: {
-                    tokenIn: { id: "0xTokenIn3" },
-                    tokenOut: { id: "0xTokenOut3" },
-                    poolFee: BigNumber.from(3000),
-                    amountOutMinimum: BigNumber.from(0),
-                },
-                estimatedGasCost: BigNumber.from(200000),
-            },
-            tokenAIn: BigNumber.from(1000000000000000000n), // 1 token
-        } as Opportunity;
 
         // Spy the logger.error method
         const spy = vi.spyOn(logger, "error");
