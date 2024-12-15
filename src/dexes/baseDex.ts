@@ -461,23 +461,6 @@ abstract class BaseDex {
             this.constructor.name,
         );
     }
-
-    /**
-     * Triggers the smart contract to execute an arbitrage opportunity.
-     *
-     * @param opportunity - The arbitrage opportunity to execute.
-     */
-    protected async triggerSmartContract(opportunity: Opportunity) {
-        try {
-            await this.aflabContract.executeOpportunity(opportunity);
-        } catch (error) {
-            logger.warn(`Error triggering smart contract: ${error}`, this.constructor.name);
-            // Print stack trace
-            if (error instanceof Error && error.stack) {
-                logger.warn(error.stack, this.constructor.name);
-            }
-        }
-    }
 }
 
 export { BaseDex };

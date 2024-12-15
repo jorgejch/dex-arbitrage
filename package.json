@@ -39,8 +39,10 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "5.1.0",
+    "@types/better-queue": "^3.8.6",
     "@urql/core": "^5.0.8",
     "alchemy-sdk": "^3.5.0",
+    "better-queue": "^3.8.12",
     "decimal.js": "^10.4.3",
     "dotenv": "^16.4.5",
     "ethers": "^6.13.4",
