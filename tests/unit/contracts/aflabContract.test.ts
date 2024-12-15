@@ -132,19 +132,6 @@ describe("AflabContract Unit Tests", () => {
         });
     });
 
-    it("should execute opportunity successfully", async () => {
-        const mockContract = {
-            interface: {
-                encodeFunctionData: vi.fn().mockReturnValue("0xEncodedData"),
-            },
-        };
-        aflabContract["contract"] = mockContract as unknown as Contract;
-
-        await aflabContract.executeOpportunity(opportunity);
-
-        expect(mockContract.interface.encodeFunctionData).toHaveBeenCalled();
-        expect(mockTxHandler.push).toHaveBeenCalled();
-    });
     it("should should log error message on executeOpportunity when the contract is not initialized", async () => {
         aflabContract["contract"] = undefined;
 
@@ -158,4 +145,223 @@ describe("AflabContract Unit Tests", () => {
             "AflabContract",
         );
     }, 10000);
+
+    it("should log error and return if getArbitrageInfo throws an error", async () => {
+        // Mock getArbitrageInfo to throw an error
+        const errorMsg = "Invalid arbitrage opportunity";
+        vi.spyOn(aflabContract as any, "getArbitrageInfo").mockImplementation(() => {
+            throw new Error(errorMsg);
+        });
+
+        // Spy on logger.error
+        const loggerErrorSpy = vi.spyOn(logger, "error");
+
+        await aflabContract.executeOpportunity(opportunity);
+
+        expect(loggerErrorSpy).toHaveBeenCalledWith(
+            "AFLAB contract not initialized. Cannot execute opportunity.",
+            "AflabContract",
+        );
+        expect(mockTxHandler.push).not.toHaveBeenCalled();
+    });
+
+    it("should get the correct transaction request from getTransactionRequest", async () => {
+        const arbitrageInfo = {
+            swap1: {
+                tokenIn: "0xTokenIn1",
+                tokenOut: "0xTokenOut1",
+                poolFee: 3000,
+                amountOutMinimum: BigNumber.from(0),
+            },
+            swap2: {
+                tokenIn: "0xTokenIn2",
+                tokenOut: "0xTokenOut2",
+                poolFee: 3000,
+                amountOutMinimum: BigNumber.from(0),
+            },
+            swap3: {
+                tokenIn: "0xTokenIn3",
+                tokenOut: "0xTokenOut3",
+                poolFee: 3000,
+                amountOutMinimum: BigNumber.from(0),
+            },
+            extraCost: BigNumber.from(0),
+        };
+        vi.spyOn(aflabContract as any, "getArbitrageInfo").mockReturnValue(arbitrageInfo);
+
+       const mockContract = {
+            interface: {
+                encodeFunctionData: vi.fn().mockReturnValue("0xEncodedData"),
+            },
+        };
+        aflabContract["contract"] = mockContract as unknown as Contract;
+
+        const txRequest = await aflabContract["getTransactionRequest"](
+            wallet.address,
+            address,
+            arbitrageInfo,
+            BigNumber.from(1000),
+        );
+
+        expect(txRequest).toEqual({
+            from: wallet.address,
+            to: address,
+            data: "0xEncodedData",
+            value: BigNumber.from(0),
+            chainId: network,
+            gasLimit: 1500000,
+            gasPrice: BigNumber.from("1000000000"),
+        });
+    });
+
+    it("should log error and return if getTransactionRequest throws an error", async () => {
+        // Mock getArbitrageInfo to return valid data
+        const arbitrageInfo = {
+            swap1: {
+                tokenIn: "0xTokenIn1",
+                tokenOut: "0xTokenOut1",
+                poolFee: 3000,
+                amountOutMinimum: BigNumber.from(0),
+            },
+            swap2: {
+                tokenIn: "0xTokenIn2",
+                tokenOut: "0xTokenOut2",
+                poolFee: 3000,
+                amountOutMinimum: BigNumber.from(0),
+            },
+            swap3: {
+                tokenIn: "0xTokenIn3",
+                tokenOut: "0xTokenOut3",
+                poolFee: 3000,
+                amountOutMinimum: BigNumber.from(0),
+            },
+            extraCost: BigNumber.from(0),
+        };
+        vi.spyOn(aflabContract as any, "getArbitrageInfo").mockReturnValue(arbitrageInfo);
+
+        // Mock getTransactionRequest to throw an error
+        const errorMsg = "Error constructing transaction request";
+        vi.spyOn(aflabContract as any, "getTransactionRequest").mockImplementation(() => {
+            throw new Error(errorMsg);
+        });
+
+        // Spy on logger.error
+        const loggerErrorSpy = vi.spyOn(logger, "error");
+
+        await aflabContract.executeOpportunity(opportunity);
+
+        expect(loggerErrorSpy).toHaveBeenCalledWith(
+            "AFLAB contract not initialized. Cannot execute opportunity.",
+            "AflabContract",
+        );
+        expect(mockTxHandler.push).not.toHaveBeenCalled();
+    });
+
+    it("should push transaction request to txHandler when all steps succeed", async () => {
+        // Mock getArbitrageInfo to return valid data
+        const arbitrageInfo = {
+            swap1: {
+                tokenIn: "0xTokenIn1",
+                tokenOut: "0xTokenOut1",
+                poolFee: 3000,
+                amountOutMinimum: BigNumber.from(0),
+            },
+            swap2: {
+                tokenIn: "0xTokenIn2",
+                tokenOut: "0xTokenOut2",
+                poolFee: 3000,
+                amountOutMinimum: BigNumber.from(0),
+            },
+            swap3: {
+                tokenIn: "0xTokenIn3",
+                tokenOut: "0xTokenOut3",
+                poolFee: 3000,
+                amountOutMinimum: BigNumber.from(0),
+            },
+            extraCost: BigNumber.from(0),
+        };
+        vi.spyOn(aflabContract as any, "getArbitrageInfo").mockReturnValue(arbitrageInfo);
+
+        // Mock getTransactionRequest to return a mock transaction request
+        const txRequest = {
+            from: wallet.address,
+            to: address,
+            data: "0xEncodedData",
+            value: BigNumber.from(0),
+            chainId: network,
+            gasLimit: 1500000,
+            gasPrice: BigNumber.from("1000000000"),
+        };
+        vi.spyOn(aflabContract as any, "getTransactionRequest").mockResolvedValue(txRequest);
+
+        // Mock contract interface
+        const mockContract = {
+            interface: {
+                encodeFunctionData: vi.fn().mockReturnValue("0xEncodedData"),
+            },
+        };
+        aflabContract["contract"] = mockContract as unknown as Contract;
+
+        await aflabContract.executeOpportunity(opportunity);
+
+        expect(mockTxHandler.push).toHaveBeenCalledWith(txRequest, expect.any(Function));
+    });
+
+    it("should handle error when waiting for transaction receipt", async () => {
+        // Mock getArbitrageInfo and getTransactionRequest
+        const arbitrageInfo = {
+            swap1: {
+                tokenIn: "0xTokenIn1",
+                tokenOut: "0xTokenOut1",
+                poolFee: 3000,
+                amountOutMinimum: BigNumber.from(0),
+            },
+            swap2: {
+                tokenIn: "0xTokenIn2",
+                tokenOut: "0xTokenOut2",
+                poolFee: 3000,
+                amountOutMinimum: BigNumber.from(0),
+            },
+            swap3: {
+                tokenIn: "0xTokenIn3",
+                tokenOut: "0xTokenOut3",
+                poolFee: 3000,
+                amountOutMinimum: BigNumber.from(0),
+            },
+            extraCost: BigNumber.from(0),
+        };
+        vi.spyOn(aflabContract as any, "getArbitrageInfo").mockReturnValue(arbitrageInfo);
+
+        const txRequest = {
+            from: wallet.address,
+            to: address,
+            data: "0xEncodedData",
+            value: BigNumber.from(0),
+            chainId: network,
+            gasLimit: 1500000,
+            gasPrice: BigNumber.from("1000000000"),
+        };
+        vi.spyOn(aflabContract as any, "getTransactionRequest").mockResolvedValue(txRequest);
+
+        // Mock transaction response with wait throwing an error
+        const errorMsg = "Error waiting for receipt";
+        const mockTransactionResponse = {
+            wait: vi.fn().mockRejectedValue(new Error(errorMsg)),
+        } as unknown as TransactionResponse;
+
+        // Mock txHandler.push to call the callback with null error and mock transaction response
+        mockTxHandler.push.mockImplementation((_: any, callback: (arg0: null, arg1: TransactionResponse) => void) => {
+            callback(null, mockTransactionResponse);
+        });
+
+        // Spy on logger.error
+        const loggerErrorSpy = vi.spyOn(logger, "error");
+
+        await aflabContract.executeOpportunity(opportunity);
+
+        expect(loggerErrorSpy).toHaveBeenCalledWith(
+            "AFLAB contract not initialized. Cannot execute opportunity.",
+            "AflabContract",
+        );
+    });
 });
