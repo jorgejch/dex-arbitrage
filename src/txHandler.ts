@@ -5,7 +5,7 @@ import Queue from "better-queue";
  * TxHandler is responsible for handling and processing transaction requests.
  * It manages a queue of transactions and processes them sequentially.
  */
-export class TxHandler {
+class TxHandler {
     private readonly queue: Queue<TransactionRequest>;
     private readonly alchemy: Alchemy;
 
@@ -16,14 +16,16 @@ export class TxHandler {
         alchemy: Alchemy,
         processTx: (
             tx: TransactionRequest,
-            cb: (error: unknown, result: TransactionResponse | null) => void,
+            cb: (error: Error | null, result: TransactionResponse | null) => void,
         ) => Promise<void>,
     ) {
-        this.queue = new Queue<TransactionRequest>(processTx, { concurrent: 1, filo: true, batchSize: 1 });
+        this.queue = new Queue<TransactionRequest>(processTx, { concurrent: 1, filo: false, batchSize: 1 });
         this.alchemy = alchemy;
     }
 
-    public push(tx: TransactionRequest, cb: (err: any, result: TransactionResponse | null) => void): void {
+    public push(tx: TransactionRequest, cb: (err: Error | null, result: TransactionResponse | null) => void): void {
         this.queue.push(tx, cb);
     }
 }
+
+export { TxHandler };

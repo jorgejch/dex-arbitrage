@@ -126,7 +126,7 @@ class Controller {
                         this.alchemy,
                         async (
                             tx: TransactionRequest,
-                            cb: (error: unknown, result: TransactionResponse | null) => void,
+                            cb: (error: Error | null, result: TransactionResponse | null) => void,
                         ) => {
                             let txResponse: TransactionResponse;
 
@@ -137,14 +137,14 @@ class Controller {
                                 txResponse = await this.alchemy.transact.sendTransaction(signedTx);
                             } catch (error) {
                                 logger.error(`Error sending transaction: ${error}`, this.constructor.name);
-                                cb(error, null);
+                                cb(error as Error, null);
                                 return;
                             }
                             try {
                                 cb(null, txResponse);
                             } catch (error) {
                                 logger.error(`Transaction: ${error}`, this.constructor.name);
-                                cb(error, null);
+                                cb(error as Error, null);
                             }
                         } /* This callback handles sending the transaction */,
                     ),
