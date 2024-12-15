@@ -10,6 +10,7 @@ describe("AflabContract Unit Tests", () => {
     let wallet: Wallet;
     let alchemy: Alchemy;
     let network: number;
+    let mockTxHandler: any;
 
     beforeEach(() => {
         address = "0xContractAddress";
@@ -54,7 +55,9 @@ describe("AflabContract Unit Tests", () => {
 
         network = 137; // Example network ID
 
-        const mockTxHandler = {} as any;
+        mockTxHandler = {
+            push: vi.fn(),
+        } as any;
         aflabContract = new AflabContract(address, abi, alchemy, wallet, network, mockTxHandler);
     });
 
@@ -165,6 +168,6 @@ describe("AflabContract Unit Tests", () => {
         await aflabContract.executeOpportunity(opportunity);
 
         expect(mockContract.interface.encodeFunctionData).toHaveBeenCalled();
-        expect(wallet.sendTransaction).toHaveBeenCalled();
+        expect(mockTxHandler.push).toHaveBeenCalled();
     });
 });
