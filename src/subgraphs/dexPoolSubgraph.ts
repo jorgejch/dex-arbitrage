@@ -68,7 +68,7 @@ class DexPoolSubgraph extends BaseSubgraph {
       liquidityPoolHourlySnapshots(
         first: $size,
         skip: $offset,
-        orderBy: hourlySwapCount,
+        orderBy: totalValueLockedUSD,
         orderDirection: desc,
         where: { hour: $hoursSinceUnixEpoch }
       ) {
