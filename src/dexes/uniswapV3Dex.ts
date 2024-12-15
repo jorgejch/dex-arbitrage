@@ -2,11 +2,10 @@ import { BaseDex } from "./baseDex.js";
 import { DexPoolSubgraph } from "../subgraphs/dexPoolSubgraph.js";
 import { UniswapV3Swap } from "../swaps/uniswapV3Swap.js";
 import { ExpectedProfitData, Opportunity, Token } from "../types.js";
-import { isPriceImpactSignificant, logger } from "../common.js";
+import { config, isPriceImpactSignificant, logger } from "../common.js";
 import { PoolContract } from "../contracts/poolContract.js";
 import { AflabContract } from "../contracts/aflabContract.js";
 import { LendingPoolAPContract } from "../contracts/lendingPoolAPContract.js";
-import abi from "../abis/uniswapV3PoolAbi.js";
 
 import { Alchemy, BigNumber, Wallet } from "alchemy-sdk";
 
@@ -82,7 +81,7 @@ class UniswapV3Dex extends BaseDex {
             const poolContract = new PoolContract(
                 pool.id,
                 this.alchemy,
-                abi,
+                config.POOL_ABI,
                 pool,
                 this.processSwap.bind(this),
                 this.network,
@@ -242,9 +241,9 @@ class UniswapV3Dex extends BaseDex {
         }
 
         try {
-            await this.triggerSmartContract(opportunity);
+            await this.aflabContract.executeOpportunity(opportunity);
         } catch (error) {
-            logger.error(`Error triggering smart contract: ${error}`, this.constructor.name);
+            logger.error(`Error executing opportunities: ${error}`, this.constructor.name);
         }
     }
 }
