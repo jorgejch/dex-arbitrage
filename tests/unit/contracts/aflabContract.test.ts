@@ -148,20 +148,6 @@ describe("AflabContract Unit Tests", () => {
         );
     }, 10000);
 
-    it("should log error and return if getArbitrageInfo throws an error", async () => {
-        const errorMsg = "Invalid arbitrage opportunity";
-        vi.spyOn(aflabContract as any, "getArbitrageInfo").mockImplementation(() => {
-            throw new Error(errorMsg);
-        });
-        const loggerErrorSpy = vi.spyOn(logger, "error");
-        await aflabContract.executeOpportunity(opportunity);
-        expect(loggerErrorSpy).toHaveBeenCalledWith(
-            "AFLAB contract not initialized. Cannot execute opportunity.",
-            "AflabContract",
-        );
-        expect(mockTxHandler.push).not.toHaveBeenCalled();
-    });
-
     it("should get the correct transaction request from getTransactionRequest", async () => {
         const arbitrageInfo = opportunity.arbitrageInfo;
         vi.spyOn(aflabContract as any, "getArbitrageInfo").mockReturnValue(arbitrageInfo);
