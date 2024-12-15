@@ -83,7 +83,7 @@ class AflabContract extends BaseContract {
 
         this.txHandler.push(
             req,
-            async (err: Error| null, result: TransactionResponse | null) => {
+            async (err: Error | null, result: TransactionResponse | null) => {
                 if (err) {
                     logger.error(`Error processing transaction: ${err}`, this.constructor.name);
                     return;

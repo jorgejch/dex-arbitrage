@@ -253,4 +253,16 @@ describe("AflabContract Unit Tests", () => {
             "AflabContract",
         );
     });
+
+    it("should listen to contract events", async () => {
+        const mockContract = {
+            on: vi.fn(),
+        } as unknown as Contract;
+        const loggerInfoSpy = vi.spyOn(logger, "info");
+        await aflabContract["listenForEvents"](mockContract);
+        expect(mockContract.on).toHaveBeenCalledTimes(3);
+        expect(mockContract.on).toHaveBeenNthCalledWith(1, "FlashloanError", expect.any(Function));
+        expect(mockContract.on).toHaveBeenNthCalledWith(2, "FlashLoanSuccess", expect.any(Function));
+        expect(mockContract.on).toHaveBeenNthCalledWith(3, "ArbitrageConcluded", expect.any(Function));
+    });
 });
