@@ -258,7 +258,6 @@ describe("AflabContract Unit Tests", () => {
         const mockContract = {
             on: vi.fn(),
         } as unknown as Contract;
-        const loggerInfoSpy = vi.spyOn(logger, "info");
         await aflabContract["listenForEvents"](mockContract);
         expect(mockContract.on).toHaveBeenCalledTimes(3);
         expect(mockContract.on).toHaveBeenNthCalledWith(1, "FlashloanError", expect.any(Function));
