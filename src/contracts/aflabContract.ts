@@ -1,7 +1,7 @@
 import { BaseContract } from "./baseContract.js";
 import { ContractType, Opportunity } from "../types.js";
 import { logger } from "../common.js";
-import { TxHandler } from "../TxHandler.js";
+import { TxHandler } from "../txHandler.js";
 
 import {
     Alchemy,
@@ -83,25 +83,30 @@ class AflabContract extends BaseContract {
             return;
         }
 
-        this.txHandler.push(req, async (err: any, result: TransactionResponse) => {
-            if (err) {
-                logger.error(`Error processing transaction: ${err}`, this.constructor.name);
-                return;
-            }
-
-            try {
-                const receipt: TransactionReceipt = await result.wait();
-                logger.info(`Transaction confirmed in block ${receipt.blockNumber}`, this.constructor.name);
-                logger.info(`Receipt: ${JSON.stringify(receipt.transactionHash)}`, this.constructor.name);
-                return receipt;
-            } catch (error) {
-                // Transaction failed after being mined
-                if (error instanceof Error && error.stack && error.message) {
-                    logger.error(error.stack, this.constructor.name);
+        this.txHandler.push(
+            req,
+            async (err: any, result: TransactionResponse | null) => {
+                if (err) {
+                    logger.error(`Error processing transaction: ${err}`, this.constructor.name);
+                    return;
                 }
-                logger.error(`Transaction failed after being mined: ${JSON.stringify(error)}`, this.constructor.name);
-            }
-        });
+
+                try {
+                    const receipt: TransactionReceipt = await result!.wait();
+                    logger.info(`Transaction confirmed in block ${receipt.blockNumber}`, this.constructor.name);
+                    logger.info(`Receipt: ${JSON.stringify(receipt.transactionHash)}`, this.constructor.name);
+                } catch (error) {
+                    // Transaction failed after being mined
+                    if (error instanceof Error && error.stack && error.message) {
+                        logger.error(error.stack, this.constructor.name);
+                    }
+                    logger.error(
+                        `Transaction failed after being mined: ${JSON.stringify(error)}`,
+                        this.constructor.name,
+                    );
+                }
+            } /* This cb handle errors while sending the tx, waits for confirmation and logs the receipt */,
+        );
     }
 
     protected async createContract(): Promise<void> {

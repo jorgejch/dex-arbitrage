@@ -4,8 +4,8 @@ import { DexPoolSubgraph } from "./subgraphs/dexPoolSubgraph.js";
 import { config, getTGUrl, logger } from "./common.js";
 import { AflabContract } from "./contracts/aflabContract.js";
 import { LendingPoolAPContract } from "./contracts/lendingPoolAPContract.js";
-import { Alchemy, Network, TransactionResponse, Wallet } from "alchemy-sdk";
-import { TxHandler } from "./TxHandler.js";
+import { Alchemy, Network, TransactionRequest, TransactionResponse, Wallet } from "alchemy-sdk";
+import { TxHandler } from "./txHandler.js";
 
 class Controller {
     private readonly walletPrivateKey: string;
@@ -121,23 +121,33 @@ class Controller {
                     this.alchemy,
                     this.wallet,
                     137,
-                    new TxHandler(this.alchemy, async (tx, cb) => {
-                        let txResponse: TransactionResponse;
 
-                        try {
-                            txResponse = await this.wallet!.sendTransaction(tx);
-                        } catch (error) {
-                            logger.error(`Error sending transaction: ${error}`, this.constructor.name);
-                            cb(error, null);
-                            return;
-                        }
-                        try {
-                            cb(null, txResponse);
-                        } catch (error) {
-                            logger.error(`Transaction: ${error}`, this.constructor.name);
-                            cb(error, null);
-                        }
-                    }),
+                    new TxHandler(
+                        this.alchemy,
+                        async (
+                            tx: TransactionRequest,
+                            cb: (error: unknown, result: TransactionResponse | null) => void,
+                        ) => {
+                            let txResponse: TransactionResponse;
+
+                            try {
+                                // Get the current nonce considering the pending transactions
+                                tx.nonce = await this.alchemy.core.getTransactionCount(this.wallet!.address, "pending");
+                                const signedTx: string = await this.wallet!.signTransaction(tx);
+                                txResponse = await this.alchemy.transact.sendTransaction(signedTx);
+                            } catch (error) {
+                                logger.error(`Error sending transaction: ${error}`, this.constructor.name);
+                                cb(error, null);
+                                return;
+                            }
+                            try {
+                                cb(null, txResponse);
+                            } catch (error) {
+                                logger.error(`Transaction: ${error}`, this.constructor.name);
+                                cb(error, null);
+                            }
+                        } /* This callback handles sending the transaction */,
+                    ),
                 ),
 
                 new LendingPoolAPContract(
