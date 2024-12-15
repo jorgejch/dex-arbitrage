@@ -23,7 +23,7 @@ const config = {
     LENDING_POOL_AP_ABI: lendingPoolAPAbi,
     LENDING_POOL_ABI: lendingPoolAbi,
     LOG_LEVEL: "INFO",
-    PRICE_IMPACT_THRESHOLD: 5, // Price impact threshold for arbitrage opportunities in bps
+    PRICE_IMPACT_THRESHOLD: 10, // Price impact threshold for arbitrage opportunities in bps
 };
 
 /**

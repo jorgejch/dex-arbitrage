@@ -179,14 +179,21 @@ contract UniswapV3Arbitrage is FlashLoanSimpleReceiverBase, Ownable2Step {
         );
         int256 profit = int256(swap3AmountOut) -
             int256(amountOwned + decoded.extraCost);
-
         emit ArbitrageConcluded(
             _executionCounter,
             amount,
             swap3AmountOut,
             profit
         );
-        require(profit > 0, string(abi.encodePacked("not profitable:", Strings.toString(uint256(profit)))));
+        require(
+            profit > 0,
+            string(
+                abi.encodePacked(
+                    "not profitable by: ",
+                    Strings.toString(uint256(-profit))
+                )
+            )
+        );
         IERC20(asset).approve(_poolAddress, amountOwned);
         return true;
     }
