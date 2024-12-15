@@ -142,7 +142,7 @@ class UniswapV3Dex extends BaseDex {
         );
 
         const opportunity: Opportunity = {
-            tokenAIn: BigNumber.from(swapInputAmount).div(100), // Start dividing by 100 and adapt
+            tokenAIn: BigNumber.from(swapInputAmount).div(1000), // Start dividing by 1000 and adapt
             lastPoolSqrtPriceX96: lastPoolSqrtPriceX96,
             originalSwap: swap,
             expectedProfit: undefined, // To be
