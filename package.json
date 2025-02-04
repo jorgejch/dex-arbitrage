@@ -38,7 +38,7 @@
     "vitest": "^2.1.5"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "5.1.0",
+    "@openzeppelin/contracts": "5.2.0",
     "@types/better-queue": "^3.8.6",
     "@urql/core": "^5.0.8",
     "alchemy-sdk": "^3.5.0",
